@@ -4,7 +4,7 @@ export type LoadType = 'fcl' | 'lcl'
 export type SlotBusyness = 'available' | 'busy' | 'full' | 'closed'
 export type IcsStatus = 'cleared' | 'held' | 'examination' | 'pending' | 'unavailable'
 export type PalletType = 'chep' | 'plain' | 'other' | 'none'
-export type WalkInPurpose = 'walk_in_pickup' | 'walk_in_dropoff' | 'visit_person'
+export type WalkInPurpose = 'walk_in_pickup' | 'walk_in_dropoff' | 'visit_person' | 'visit_office' | 'visit_yard'
 
 export interface Booking {
   id: string
@@ -42,8 +42,20 @@ export interface Booking {
   checkedInAt?: string
   completedAt?: string
   completionNotes?: string
+  // Extended shipment / load fields
+  containerSize?:      string
+  entryNumber?:        string
+  purpose?:            string
+  consolidator?:       string
+  bookingReference?:   string
+  vehicleRegistration?: string
+  // Multi-slot grouping
+  bookingGroupId?:     string
+  slotIndex?:          number
+  groupReference?:     string   // human-readable master ref, same across all slots in a group
   tenantId: string
   createdAt: string
+  updatedAt: string
 }
 
 export interface TimeSlot {
@@ -72,8 +84,9 @@ export interface WalkIn {
 }
 
 export interface DashboardStats {
-  totalScheduled: number
+  todaysVisitors: number
   checkedIn: number
-  completed: number
+  pending: number
   held: number   // ICS held
+  recentVisitors: Booking[]
 }

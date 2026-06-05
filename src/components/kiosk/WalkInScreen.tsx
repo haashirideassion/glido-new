@@ -1,89 +1,146 @@
-export const WalkInScreen = () => (
-  <div
-    class="h-full flex flex-col items-center justify-center px-8 overflow-y-auto py-10"
-    x-show="$store.kiosk.currentScreen === 'walkin'"
-  >
-    <button
-      type="button"
-      x-on:click="$store.kiosk.goTo('welcome')"
-      class="absolute top-6 left-6 flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm"
-    >
-      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-      </svg>
-      Back
-    </button>
+import { useKiosk } from '@/contexts/KioskContext'
+import { Icon, ICONS } from '@/lib/Icon'
 
-    <div class="w-full max-w-sm">
-      <h2 class="text-3xl font-bold text-white mb-1 text-center">Walk-In Registration</h2>
-      <p class="text-slate-400 mb-6 text-center text-sm">Please provide your details</p>
+const OFFICE_REASONS = [
+  'Meeting with Staff',
+  'Document Submission',
+  'Invoice / Payment Query',
+  'Customs Documentation',
+  'General Enquiry',
+]
 
-      <div class="space-y-4" x-data="{ submitted: false, ref: '' }">
-        <template x-if="!submitted">
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm text-slate-400 mb-1.5">Your Name</label>
-              <input
-                type="text"
-                placeholder="Full name"
-                class="w-full bg-slate-800 border-2 border-slate-600 text-white placeholder-slate-500 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label class="block text-sm text-slate-400 mb-1.5">Phone Number</label>
-              <input
-                type="tel"
-                placeholder="03XX-XXXXXXX"
-                class="w-full bg-slate-800 border-2 border-slate-600 text-white placeholder-slate-500 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label class="block text-sm text-slate-400 mb-1.5">Vehicle Registration</label>
-              <input
-                type="text"
-                placeholder="LEA-1234"
-                class="w-full bg-slate-800 border-2 border-slate-600 text-white placeholder-slate-500 rounded-xl px-4 py-3.5 text-base uppercase focus:outline-none focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label class="block text-sm text-slate-400 mb-1.5">B/L or Reference</label>
-              <input
-                type="text"
-                placeholder="e.g. COSCO2026041201"
-                class="w-full bg-slate-800 border-2 border-slate-600 text-white placeholder-slate-500 rounded-xl px-4 py-3.5 text-base focus:outline-none focus:border-blue-500"
-              />
-            </div>
-            <button
-              type="button"
-              x-on:click={`
-                const rand = String(Math.floor(Math.random() * 90000) + 10000);
-                ref = 'GLD-2026-' + rand;
-                submitted = true;
-                setTimeout(() => { $store.kiosk.goTo('welcome'); submitted = false; }, 8000);
-              `}
-              class="kiosk-btn w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-2xl transition-all mt-2"
-            >
-              Submit & Notify Reception
-            </button>
+const YARD_REASONS = [
+  'Container Inspection',
+  'Cargo Survey',
+  'Damage Assessment',
+  'Photography / Documentation',
+  'Customs Examination',
+  'Insurance Assessment',
+  'Quality Control Inspection',
+]
+
+export function WalkInScreen() {
+  const { state, dispatch, submitWalkIn, goTo } = useKiosk()
+  if (state.currentScreen !== 'walkin') return null
+
+  type WalkInField = 'walkInPurpose' | 'walkInName' | 'walkInPhone' | 'walkInVehicle' | 'walkInBLRef' | 'walkInPersonVisited' | 'walkInReason'
+  const set = (field: WalkInField, value: string) =>
+    dispatch({ type: 'SET_WALK_IN_FIELD', field: field as any, value })
+
+  const purpose    = state.walkInPurpose
+  const isPickup   = purpose === 'walk_in_pickup'
+  const isDropoff  = purpose === 'walk_in_dropoff'
+  const isCargo    = isPickup || isDropoff
+  const isOffice   = purpose === 'visit_office'
+  const isYard     = purpose === 'visit_yard'
+  const isVisit    = isOffice || isYard || purpose === 'visit_person'
+
+  const reasonOptions = isOffice ? OFFICE_REASONS : isYard ? YARD_REASONS : []
+
+  const LABEL: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 600, color: '#78716C', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 6 }
+  const FIELD: React.CSSProperties = { minHeight: 64, padding: '20px 14px', fontSize: 15 }
+
+  const handleSubmit = () => {
+    if (isYard) {
+      // Yard visits require licence scan — route through consent → idscan before completing
+      dispatch({ type: 'SET_ARRIVED_VISITOR', name: state.walkInName.trim() })
+      goTo('consent')
+    } else {
+      submitWalkIn()
+    }
+  }
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: 480, marginTop: 200 }}>
+        <div style={{ marginBottom: 28, textAlign: 'center' }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, marginBottom: 8 }}>Walk-In Registration</h2>
+          <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.5 }}>Please provide your details so reception can assist you</p>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div>
+            <label style={LABEL}>Your Name <span style={{ color: 'var(--brand-color)' }}>*</span></label>
+            <input type="text" placeholder="Full name" className="wizard-field" style={FIELD} value={state.walkInName} onChange={e => set('walkInName', e.target.value)} />
           </div>
-        </template>
-
-        <template x-if="submitted">
-          <div class="text-center py-4">
-            <div class="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg class="w-9 h-9 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <p class="text-xl font-bold text-white mb-1">Registered!</p>
-            <p class="text-slate-400 text-sm mb-4">Reception has been notified. Please wait.</p>
-            <div class="bg-slate-800 rounded-xl px-5 py-3 inline-block">
-              <p class="text-xs text-slate-400 mb-0.5">Your Reference</p>
-              <p class="font-mono font-bold text-lg text-white" x-text="ref"></p>
-            </div>
+          <div>
+            <label style={LABEL}>Phone Number <span style={{ fontWeight: 400, color: '#A8A29E', fontSize: 10 }}>(optional)</span></label>
+            <input type="tel" placeholder="04XX XXX XXX" className="wizard-field" style={FIELD} value={state.walkInPhone} onChange={e => set('walkInPhone', e.target.value)} />
           </div>
-        </template>
+
+          {/* Cargo-specific fields */}
+          {isCargo && (
+            <>
+              <div>
+                <label style={LABEL}>Vehicle Registration <span style={{ fontWeight: 400, color: '#A8A29E', fontSize: 10 }}>(optional)</span></label>
+                <input type="text" placeholder="LEA-1234" className="wizard-field uppercase" style={{ ...FIELD, textTransform: 'uppercase' }} value={state.walkInVehicle} onChange={e => set('walkInVehicle', e.target.value.toUpperCase())} />
+              </div>
+              <div>
+                <label style={LABEL}>B/L or Shipment Reference <span style={{ fontWeight: 400, color: '#A8A29E', fontSize: 10 }}>(optional)</span></label>
+                <input type="text" placeholder="e.g. COSCO2026041201" className="wizard-field" style={FIELD} value={state.walkInBLRef} onChange={e => set('walkInBLRef', e.target.value)} />
+              </div>
+            </>
+          )}
+
+          {/* Person being visited — for visit_person legacy + office/yard */}
+          {isVisit && (
+            <div>
+              <label style={LABEL}>Person You're Visiting <span style={{ fontWeight: 400, color: '#A8A29E', fontSize: 10 }}>(optional)</span></label>
+              <input type="text" placeholder="Staff member's name" className="wizard-field" style={FIELD} value={state.walkInPersonVisited} onChange={e => set('walkInPersonVisited', e.target.value)} />
+            </div>
+          )}
+
+          {/* Reason for Visit — dropdown for office/yard, free text for cargo/legacy */}
+          <div>
+            <label style={LABEL}>
+              Reason for Visit
+              {(isOffice || isYard) && <span style={{ color: 'var(--brand-color)', marginLeft: 3 }}>*</span>}
+              {!isOffice && !isYard && <span style={{ fontWeight: 400, color: '#A8A29E', fontSize: 10, marginLeft: 6 }}>(optional)</span>}
+            </label>
+            {(isOffice || isYard) ? (
+              <select
+                className="wizard-field"
+                style={{ ...FIELD, width: '100%', background: '#fff', appearance: 'auto' }}
+                value={state.walkInReason}
+                onChange={e => set('walkInReason', e.target.value)}
+              >
+                <option value="">Select reason...</option>
+                {reasonOptions.map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            ) : (
+              <input type="text" placeholder="e.g. Delivery, meeting, container pickup…" className="wizard-field" style={FIELD} value={state.walkInReason} onChange={e => set('walkInReason', e.target.value)} />
+            )}
+          </div>
+
+          {/* Yard visit licence scan notice */}
+          {isYard && (
+            <div style={{ background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.22)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <Icon name={ICONS.shield} size={16} style={{ color: 'var(--brand-color)', flexShrink: 0, marginTop: 1 }} />
+              <p style={{ fontSize: 13, color: '#78716C', lineHeight: 1.5 }}>
+                Yard access requires <strong style={{ color: '#1C1917' }}>ID verification</strong>. You will be asked to scan your driver's licence before entry.
+              </p>
+            </div>
+          )}
+
+          <button
+            className="btn-primary"
+            style={{ width: '100%', padding: '18px 24px', fontSize: 16, fontWeight: 700, borderRadius: 14, justifyContent: 'center', opacity: canProceed(state.walkInName, state.walkInReason, isOffice || isYard) ? 1 : 0.4, cursor: canProceed(state.walkInName, state.walkInReason, isOffice || isYard) ? 'pointer' : 'not-allowed' }}
+            disabled={!canProceed(state.walkInName, state.walkInReason, isOffice || isYard)}
+            onClick={handleSubmit}
+          >
+            <Icon name={ICONS.check} size={20} />
+            {isYard ? 'Continue to ID Scan' : 'Register My Visit'}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-)
+  )
+}
+
+function canProceed(name: string, reason: string, requireReason: boolean): boolean {
+  if (!name.trim()) return false
+  if (requireReason && !reason.trim()) return false
+  return true
+}

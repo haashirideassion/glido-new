@@ -10,9 +10,9 @@ interface Props {
 type StatusVariant = 'warning' | 'default' | 'success' | 'secondary' | 'outline' | 'destructive'
 
 const CARD  = 'background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07); margin-bottom:16px;'
-const SL    = 'font-size:10px; font-weight:700; color:#A8A29E; text-transform:uppercase; letter-spacing:0.09em; margin-bottom:12px;'
-const RL    = 'display:flex; align-items:center; gap:6px; font-size:13px; color:#78716C;'
-const RV    = 'font-size:13px; font-weight:600; color:#1C1917;'
+const SL    = 'font-size:14px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:0.09em; margin-bottom:12px;'
+const RL    = 'display:flex; align-items:center; gap:6px; font-size:15px; color:#4B5563;'
+const RV    = 'font-size:16px; font-weight:600; color:#1C1917;'
 const DIVIDER = 'border:none; border-top:1px solid rgba(0,0,0,0.06); margin:10px 0;'
 
 export const BookingDetailPage = ({ booking: b }: Props) => (
@@ -25,29 +25,29 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
       <div style="display:flex; align-items:center; gap:14px;">
         <a
           href="/reception/bookings"
-          style="display:inline-flex; align-items:center; gap:5px; font-size:13px; font-weight:500; color:#78716C; text-decoration:none; transition:color 0.14s ease;"
+          style="display:inline-flex; align-items:center; gap:5px; font-size:15px; font-weight:600; color:#4B5563; text-decoration:none; transition:color 0.14s ease;"
           onmouseover="this.style.color='#1C1917'"
-          onmouseout="this.style.color='#78716C'"
+          onmouseout="this.style.color='#4B5563'"
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M9 11L5 7l4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <svg width="15" height="15" viewBox="0 0 14 14" fill="none">
+            <path d="M9 11L5 7l4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           Bookings
         </a>
         <span style="color:rgba(0,0,0,0.15); font-size:14px;">/</span>
         <span
-          style="font-family:ui-monospace,monospace; font-size:14px; font-weight:700; color:#FC6514; cursor:pointer; display:inline-flex; align-items:center; gap:5px;"
+          style="font-family:ui-monospace,monospace; font-size:16px; font-weight:700; color:#FC6514; cursor:pointer; display:inline-flex; align-items:center; gap:6px;"
           title="Click to copy"
           onclick={`navigator.clipboard.writeText('${b.referenceNumber}').then(function(){window.gToast&&window.gToast('Reference copied','info')});`}
         >
           {b.referenceNumber}
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.45;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </span>
         <Badge variant={STATUS_BADGE_VARIANT[b.status] as StatusVariant}>
           {STATUS_LABEL[b.status]}
         </Badge>
       </div>
-      <p style="font-size:12px; color:#A8A29E;">
+      <p style="font-size:14px; color:#4B5563;">
         Created {new Date(b.createdAt).toLocaleString('en-AU', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}
       </p>
     </div>
@@ -80,24 +80,24 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
           <p style={SL}>Slot</p>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
             <div>
-              <p style="font-size:11px; color:#A8A29E; margin-bottom:4px; font-weight:500;">Date</p>
-              <p style="font-size:14px; font-weight:600; color:#1C1917; display:flex; align-items:center; gap:6px;">
-                <Icon name={ICONS.calendar} size={14} style="color:#A8A29E;" />{b.slotDate}
+              <p style="font-size:13px; color:#4B5563; margin-bottom:4px; font-weight:500;">Date</p>
+              <p style="font-size:16px; font-weight:600; color:#1C1917; display:flex; align-items:center; gap:6px;">
+                <Icon name={ICONS.calendar} size={15} style="color:#A8A29E;" />{b.slotDate}
               </p>
             </div>
             <div>
-              <p style="font-size:11px; color:#A8A29E; margin-bottom:4px; font-weight:500;">Time</p>
-              <p style="font-size:14px; font-weight:600; color:#1C1917; display:flex; align-items:center; gap:6px;">
-                <Icon name={ICONS.clock} size={14} style="color:#A8A29E;" />{b.slotStartTime} – {b.slotEndTime}
+              <p style="font-size:13px; color:#4B5563; margin-bottom:4px; font-weight:500;">Time</p>
+              <p style="font-size:16px; font-weight:600; color:#1C1917; display:flex; align-items:center; gap:6px;">
+                <Icon name={ICONS.clock} size={15} style="color:#A8A29E;" />{b.slotStartTime} – {b.slotEndTime}
               </p>
             </div>
             <div>
-              <p style="font-size:11px; color:#A8A29E; margin-bottom:4px; font-weight:500;">Service</p>
-              <p style="font-size:14px; font-weight:600; color:#1C1917;">{SERVICE_LABEL[b.serviceType]}</p>
+              <p style="font-size:13px; color:#4B5563; margin-bottom:4px; font-weight:500;">Service</p>
+              <p style="font-size:16px; font-weight:600; color:#1C1917;">{SERVICE_LABEL[b.serviceType]}</p>
             </div>
             <div>
-              <p style="font-size:11px; color:#A8A29E; margin-bottom:4px; font-weight:500;">Load Type</p>
-              <p style="font-size:14px; font-weight:600; color:#1C1917;">{LOAD_LABEL[b.loadType]}</p>
+              <p style="font-size:13px; color:#4B5563; margin-bottom:4px; font-weight:500;">Load Type</p>
+              <p style="font-size:16px; font-weight:600; color:#1C1917;">{LOAD_LABEL[b.loadType]}</p>
             </div>
           </div>
         </div>
@@ -108,14 +108,14 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
           <div style="display:flex; flex-direction:column; gap:10px;">
             {b.houseBillNumber && (
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style={RL}><Icon name={ICONS.document} size={14} style="color:#A8A29E;" />HBL</span>
-                <span style="font-family:ui-monospace,monospace; font-size:13px; font-weight:700; color:#78716C;">{b.houseBillNumber}</span>
+                <span style={RL}><Icon name={ICONS.document} size={15} style="color:#A8A29E;" />HBL</span>
+                <span style="font-family:ui-monospace,monospace; font-size:16px; font-weight:700; color:#4B5563;">{b.houseBillNumber}</span>
               </div>
             )}
             {b.containerNumber && (
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style={RL}><Icon name={ICONS.container} size={14} style="color:#A8A29E;" />Container</span>
-                <span style="font-family:ui-monospace,monospace; font-size:13px; font-weight:700; color:#78716C;">{b.containerNumber}</span>
+                <span style={RL}><Icon name={ICONS.container} size={15} style="color:#A8A29E;" />Container</span>
+                <span style="font-family:ui-monospace,monospace; font-size:16px; font-weight:700; color:#4B5563;">{b.containerNumber}</span>
               </div>
             )}
             {b.weightKg && (
@@ -174,7 +174,7 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
                 </a>
               </div>
             </div>
-            <span class={`inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border ${ICS_BADGE_CLASS[b.icsStatus]}`}>
+            <span class={`inline-flex items-center px-3 py-1 rounded-full border ${ICS_BADGE_CLASS[b.icsStatus]}`} style="font-size:13px; font-weight:600;">
               {ICS_LABEL[b.icsStatus]}
             </span>
             {b.icsLastCheckedAt && (
@@ -258,7 +258,7 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
         {/* Timeline */}
         <div style={CARD}>
           <p style={SL}>Timeline</p>
-          <div style="display:flex; flex-direction:column; gap:10px; font-size:12px;">
+          <div style="display:flex; flex-direction:column; gap:10px; font-size:14px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <span style="display:flex; align-items:center; gap:6px; color:#78716C;"><Icon name={ICONS.document} size={13} style="color:#A8A29E;" />Created</span>
               <span style="color:#1C1917; font-weight:500;">{new Date(b.createdAt).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</span>

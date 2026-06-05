@@ -1,23 +1,82 @@
-import { Icon, ICONS } from '../../lib/Icon'
+import { useKiosk } from '@/contexts/KioskContext'
+import { Icon, ICONS } from '@/lib/Icon'
 
-export const ArrivedScreen = () => (
-  <div
-    class="h-full flex flex-col items-center justify-center px-8 text-center"
-    x-show="$store.kiosk.currentScreen === 'arrived'"
-  >
-    <div class="w-28 h-28 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
-      <Icon name={ICONS.check} size={64} class="text-green-400" />
+export function ArrivedScreen() {
+  const { state } = useKiosk()
+  if (state.currentScreen !== 'arrived') return null
+
+  const isWalkIn = !state.lookupResult
+  const countdown = state.arrivedCountdown
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px', textAlign: 'center' }}>
+      <div style={{ width: 112, height: 112, background: 'rgba(22,163,74,0.10)', borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+        <Icon name={ICONS.check} size={64} style={{ color: '#16A34A' }} />
+      </div>
+
+      <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: 8, color: '#1C1917' }}>
+        {isWalkIn ? 'Visit Registered!' : "You're Checked In!"}
+      </h2>
+      <p style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 4, color: '#16A34A' }}>
+        {state.arrivedVisitorName || 'Welcome'}
+      </p>
+      <p style={{ color: '#78716C', marginBottom: 24 }}>
+        {isWalkIn
+          ? 'Your visit has been logged. Reception has been notified and will assist you shortly.'
+          : 'Your arrival has been recorded. Reception has been notified.'}
+      </p>
+
+      {/* Booking reference — only for booked check-ins */}
+      {state.lookupResult?.ref && (
+        <div style={{ marginBottom: 20, padding: '16px 32px', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#A8A29E', marginBottom: 4 }}>Booking Reference</p>
+          <p style={{ fontFamily: 'ui-monospace,monospace', fontWeight: 700, fontSize: '1.5rem', color: '#FC6514' }}>{state.lookupResult.ref}</p>
+        </div>
+      )}
+
+      {/* Walk-in confirmation card */}
+      {isWalkIn && state.arrivedVisitorName && (
+        <div style={{ marginBottom: 20, padding: '16px 32px', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#A8A29E', marginBottom: 4 }}>Registered Visitor</p>
+          <p style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1C1917' }}>{state.arrivedVisitorName}</p>
+        </div>
+      )}
+
+      <div style={{ width: '100%', maxWidth: 384, display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
+        {!isWalkIn && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, textAlign: 'left', padding: '12px 20px', background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 12 }}>
+              <Icon name={ICONS.warning} size={18} style={{ color: '#D97706', marginTop: 2, flexShrink: 0 }} />
+              <p style={{ fontSize: 14, color: '#92400E' }}>
+                <strong style={{ color: '#78350F' }}>CHEP pallets: </strong>
+                Ensure CHEP pallets are clearly separated before entering the depot.
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, textAlign: 'left', padding: '12px 20px', background: 'rgba(252,101,20,0.05)', border: '1px solid rgba(252,101,20,0.18)', borderRadius: 12 }}>
+              <Icon name={ICONS.arrowRight} size={18} style={{ color: '#FC6514', marginTop: 2, flexShrink: 0 }} />
+              <p style={{ fontSize: 14, color: '#78716C' }}>
+                <strong style={{ color: '#1C1917' }}>Bay assignment: </strong>
+                Proceed to the reception window for bay directions.
+              </p>
+            </div>
+          </>
+        )}
+        {isWalkIn && (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, textAlign: 'left', padding: '12px 20px', background: 'rgba(252,101,20,0.05)', border: '1px solid rgba(252,101,20,0.18)', borderRadius: 12 }}>
+            <Icon name={ICONS.arrowRight} size={18} style={{ color: '#FC6514', marginTop: 2, flexShrink: 0 }} />
+            <p style={{ fontSize: 14, color: '#78716C' }}>
+              <strong style={{ color: '#1C1917' }}>Next step: </strong>
+              Please proceed to the reception desk — a staff member will assist you.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#A8A29E' }}>
+        <span>Returning to home screen in</span>
+        <span style={{ fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#1C1917', fontSize: '1rem', fontVariantNumeric: 'tabular-nums' }}>{countdown}</span>
+        <span>sec</span>
+      </div>
     </div>
-
-    <h2 class="text-4xl font-extrabold text-white mb-3">Welcome!</h2>
-    <p class="text-xl text-green-300 mb-2" x-text="$store.kiosk.lookupResult?.name || 'Visitor'"></p>
-    <p class="text-slate-400 mb-8">Your arrival has been recorded. Reception has been notified.</p>
-
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl px-8 py-5 mb-8">
-      <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">Booking Reference</p>
-      <p class="font-mono font-bold text-2xl text-white" x-text="$store.kiosk.lookupResult?.ref"></p>
-    </div>
-
-    <p class="text-slate-500 text-sm">This screen will reset automatically in a few seconds.</p>
-  </div>
-)
+  )
+}

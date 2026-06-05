@@ -1,35 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
-import * as ws from 'ws'
 import type { Database } from './db/types'
 
-const url        = process.env.SUPABASE_URL              ?? 'https://lnknynjqxyfvtjpnaljc.supabase.co'
-const key        = process.env.SUPABASE_ANON_KEY         ?? 'anon-placeholder'
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? key
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
-// Cap every Supabase HTTP call at 20 s so a hung Supabase endpoint can never
-// cause a Vercel function to sit for the full 300 s timeout.
-const fetchWithTimeout = (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 20_000)
-  return fetch(input as RequestInfo, { ...init, signal: controller.signal })
-    .finally(() => clearTimeout(timer))
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY')
 }
 
-// Node.js 20 has no native WebSocket — pass ws explicitly.
-// Node.js 22+ has it natively; passing ws here is harmless.
-const wsImpl = ws as unknown as typeof WebSocket
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
 
-// Standard client (anon key) — for client-facing queries
-export const supabase = createClient<Database>(url, key, {
-  global:   { fetch: fetchWithTimeout },
-  realtime: { transport: wsImpl },
-})
-
-// Admin client (service role) — for server-side operations, bypasses RLS
-export const supabaseAdmin = createClient<Database>(url, serviceKey, {
-  auth:     { autoRefreshToken: false, persistSession: false },
-  global:   { fetch: fetchWithTimeout },
-  realtime: { transport: wsImpl },
-})
+// In the browser there is no service-role key — alias so existing db/* imports compile unchanged.
+// All queries run through RLS with the anon key.
+export const supabaseAdmin = supabase
 
 export const DEFAULT_TENANT_ID = 'a0000000-0000-0000-0000-000000000001'

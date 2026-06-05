@@ -594,29 +594,48 @@ function wizardStore() {
 
 function kioskStore() {
   return {
-    currentScreen: 'welcome',   // 'welcome' | 'lookup' | 'purpose' | 'idscan' | 'confirm' | 'walkin' | 'arrived' | 'screensaver'
+    // ── Screen state ──────────────────────────────────────────────────────────
+    // Valid screens: 'welcome' | 'lookup' | 'scan' | 'confirm' | 'consent' |
+    //               'idscan' | 'arrived' | 'purpose' | 'walkin' | 'screensaver'
+    currentScreen: 'welcome',
     idleSeconds: 0,
     idleInterval: null,
-    referenceInput: '',
-    lookupResult: null,
-    lookupError: false,
-    licenceData: null,
-    walkInPurpose: null,
 
+    // ── Booking flow ──────────────────────────────────────────────────────────
+    referenceInput: '',
+    lookupResult:   null,
+    lookupError:    false,
+
+    // ── ID scan ───────────────────────────────────────────────────────────────
+    licenceData:    null,
+    licenceExpired: false,
+
+    // ── Arrived screen countdown ──────────────────────────────────────────────
+    arrivedCountdown: 0,
+    arrivedTimer:     null,
+    arrivedVisitorName: '',
+
+    // ── Walk-in form fields ───────────────────────────────────────────────────
+    walkInPurpose:       null,
+    walkInName:          '',
+    walkInPhone:         '',
+    walkInVehicle:       '',
+    walkInBLRef:         '',
+    walkInPersonVisited: '',
+    walkInReason:        '',
+
+    // ─────────────────────────────────────────────────────────────────────────
     init() {
       var self = this
-
-      function resetIdle() {
-        self.idleSeconds = 0
-      }
-
+      function resetIdle() { self.idleSeconds = 0 }
       document.addEventListener('mousemove', resetIdle)
       document.addEventListener('touchstart', resetIdle)
       document.addEventListener('keydown', resetIdle)
       document.addEventListener('click', resetIdle)
 
       self.idleInterval = setInterval(function () {
-        if (self.currentScreen === 'welcome' || self.currentScreen === 'screensaver') return
+        // Don't trigger screensaver while on welcome, screensaver, or arrived screens
+        if (['welcome', 'screensaver', 'arrived'].includes(self.currentScreen)) return
         self.idleSeconds++
         if (self.idleSeconds >= 60) {
           self.goTo('screensaver')
@@ -627,105 +646,214 @@ function kioskStore() {
 
     goTo(screen) {
       this.currentScreen = screen
-      this.idleSeconds = 0
+      this.idleSeconds   = 0
     },
 
     wakeFromScreensaver() {
       if (this.currentScreen === 'screensaver') {
+        this._resetFlow()
         this.goTo('welcome')
-        this.referenceInput = ''
-        this.lookupResult = null
-        this.lookupError = false
-        this.licenceData = null
-        this.walkInPurpose = null
       }
     },
 
-    startBookingLookup() { this.goTo('lookup') },
-    startVisitingFlow() { this.goTo('purpose') },
+    _resetFlow() {
+      this.referenceInput      = ''
+      this.lookupResult        = null
+      this.lookupError         = false
+      this.licenceData         = null
+      this.licenceExpired      = false
+      this.arrivedVisitorName  = ''
+      this.walkInPurpose       = null
+      this.walkInName          = ''
+      this.walkInPhone         = ''
+      this.walkInVehicle       = ''
+      this.walkInBLRef         = ''
+      this.walkInPersonVisited = ''
+      this.walkInReason        = ''
+      if (this.arrivedTimer) {
+        clearInterval(this.arrivedTimer)
+        this.arrivedTimer    = null
+        this.arrivedCountdown = 0
+      }
+    },
+
+    // ── Booking flow ──────────────────────────────────────────────────────────
+    startBookingLookup() {
+      this._resetFlow()
+      this.goTo('lookup')
+    },
+
+    startVisitingFlow() {
+      this._resetFlow()
+      this.goTo('purpose')
+    },
 
     performLookup() {
       if (!this.referenceInput.trim()) return
       var self = this
-      var ref = this.referenceInput.trim().toUpperCase()
+      var ref  = this.referenceInput.trim().toUpperCase()
       self.lookupError = false
       fetch('/kiosk/lookup/' + encodeURIComponent(ref))
         .then(function (r) { return r.json() })
         .then(function (data) {
           if (data.found) {
             self.lookupResult = data
-            self.lookupError = false
-            self.goTo('idscan')
+            self.lookupError  = false
+            self.goTo('confirm')   // show booking summary first
           } else {
-            self.lookupError = true
+            self.lookupError  = true
             self.lookupResult = null
           }
         })
         .catch(function () {
-          self.lookupError = true
+          self.lookupError  = true
           self.lookupResult = null
         })
     },
 
-    confirmBooking() { this.goTo('idscan') },
+    // User confirmed it's their booking → show data consent notice
+    confirmBooking() { this.goTo('consent') },
 
+    // User accepted consent → show ID scan
+    acceptConsent() { this.goTo('idscan') },
+
+    // ── Fuzzy name match — Jaro-Winkler ──────────────────────────────────────
+    _jaroWinkler(s1, s2) {
+      if (!s1 || !s2) return 0
+      s1 = s1.toLowerCase().trim()
+      s2 = s2.toLowerCase().trim()
+      if (s1 === s2) return 1
+      var len1 = s1.length, len2 = s2.length
+      var matchDist = Math.max(Math.floor(Math.max(len1, len2) / 2) - 1, 0)
+      var s1m = new Array(len1).fill(false)
+      var s2m = new Array(len2).fill(false)
+      var matches = 0, transpositions = 0
+      for (var i = 0; i < len1; i++) {
+        var start = Math.max(0, i - matchDist)
+        var end   = Math.min(i + matchDist + 1, len2)
+        for (var j = start; j < end; j++) {
+          if (s2m[j] || s1[i] !== s2[j]) continue
+          s1m[i] = s2m[j] = true
+          matches++
+          break
+        }
+      }
+      if (!matches) return 0
+      var k = 0
+      for (var i = 0; i < len1; i++) {
+        if (!s1m[i]) continue
+        while (!s2m[k]) k++
+        if (s1[i] !== s2[k]) transpositions++
+        k++
+      }
+      var jaro = (matches / len1 + matches / len2 + (matches - transpositions / 2) / matches) / 3
+      var prefix = 0
+      for (var i = 0; i < Math.min(4, Math.min(len1, len2)); i++) {
+        if (s1[i] !== s2[i]) break
+        prefix++
+      }
+      return jaro + prefix * 0.1 * (1 - jaro)
+    },
+
+    _parseExpiryDate(str) {
+      // Accepts DD/MM/YYYY
+      if (!str) return null
+      var parts = str.split('/')
+      if (parts.length !== 3) return null
+      return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]))
+    },
+
+    // ── ID scan ───────────────────────────────────────────────────────────────
     simulateScan() {
+      var scannedName  = 'Carlos Mendez'
+      var bookingName  = this.lookupResult ? (this.lookupResult.driverName || '') : ''
+      var score        = this._jaroWinkler(scannedName, bookingName)
+      var matchResult  = score >= 0.85 ? 'matched' : (score >= 0.60 ? 'warning' : 'mismatch')
+      var expiryStr    = '12/06/2028'
+      var expiryDate   = this._parseExpiryDate(expiryStr)
+      var expired      = expiryDate ? expiryDate < new Date() : false
+
+      this.licenceExpired = expired
       this.licenceData = {
-        name: 'Carlos Mendez',
-        licenceNo: 'NSW8832145',
-        dob: '12/06/1983',
-        expiry: '12/06/2028',
-        address: '18 Harbour St, Sydney NSW 2000',
-        nameMatched: true,
+        name:            scannedName,
+        licenceNo:       'NSW8832145',
+        dob:             '12/06/1983',
+        expiry:          expiryStr,
+        address:         '18 Harbour St, Sydney NSW 2000',
+        nameMatchResult: matchResult,
+        nameMatchScore:  Math.round(score * 100),
       }
     },
 
-    completeCheckIn() {
+    // ── Countdown helper ──────────────────────────────────────────────────────
+    _startArrivedCountdown() {
       var self = this
-      var bookingId = self.lookupResult ? self.lookupResult.bookingId : null
-      var licenceName   = self.licenceData ? self.licenceData.name         : ''
-      var licenceNumber = self.licenceData ? self.licenceData.licenceNo    : ''
-      var nameMatched   = self.licenceData ? self.licenceData.nameMatched  : false
-      var nameMatchResult = nameMatched ? 'matched' : 'not_checked'
-
-      // POST to server for real check-in
-      if (bookingId) {
-        fetch('/kiosk/checkin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bookingId: bookingId, licenceName: licenceName, licenceNumber: licenceNumber, nameMatchResult: nameMatchResult }),
-        }).catch(function (err) { console.warn('[kiosk] check-in POST failed:', err) })
-      }
-
-      self.goTo('arrived')
-      var countdown = 5
-      var timer = setInterval(function () {
-        countdown--
-        if (countdown <= 0) {
-          clearInterval(timer)
+      if (self.arrivedTimer) clearInterval(self.arrivedTimer)
+      self.arrivedCountdown = 5
+      self.arrivedTimer = setInterval(function () {
+        self.arrivedCountdown--
+        if (self.arrivedCountdown <= 0) {
+          clearInterval(self.arrivedTimer)
+          self.arrivedTimer = null
+          self._resetFlow()
           self.goTo('welcome')
-          self.referenceInput = ''
-          self.lookupResult = null
-          self.licenceData = null
-          self.walkInPurpose = null
         }
       }, 1000)
     },
 
-    submitWalkIn() {
-      var self = this
-      // POST walk-in record to server (non-blocking)
-      fetch('/kiosk/walk-in', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ purpose: self.walkInPurpose || 'visit_person' }),
-      }).catch(function(err) { console.warn('[kiosk] walk-in POST failed:', err) })
+    // ── Complete booking check-in ─────────────────────────────────────────────
+    completeCheckIn() {
+      var self         = this
+      var bookingId    = self.lookupResult ? self.lookupResult.bookingId : null
+      var ld           = self.licenceData || {}
+
+      self.arrivedVisitorName = ld.name || (self.lookupResult ? self.lookupResult.name : '') || 'Visitor'
+
+      if (bookingId) {
+        fetch('/kiosk/checkin', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bookingId:       bookingId,
+            licenceName:     ld.name            || '',
+            licenceNumber:   ld.licenceNo       || '',
+            licenceDob:      ld.dob             || '',
+            licenceExpiry:   ld.expiry          || '',
+            licenceAddress:  ld.address         || '',
+            nameMatchResult: ld.nameMatchResult || 'not_checked',
+            nameMatchScore:  ld.nameMatchScore  || 0,
+            expiryValid:     !self.licenceExpired,
+          }),
+        }).catch(function (err) { console.warn('[kiosk] check-in POST failed:', err) })
+      }
 
       self.goTo('arrived')
-      setTimeout(function () {
-        self.goTo('welcome')
-        self.walkInPurpose = null
-      }, 5000)
+      self._startArrivedCountdown()
+    },
+
+    // ── Submit walk-in ────────────────────────────────────────────────────────
+    submitWalkIn() {
+      var self = this
+      if (!self.walkInName.trim()) return   // guard: name required
+
+      self.arrivedVisitorName = self.walkInName.trim()
+
+      fetch('/kiosk/walk-in', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          purpose:            self.walkInPurpose       || 'visit_person',
+          visitorName:        self.walkInName.trim()   || 'Kiosk Walk-In',
+          contactNumber:      self.walkInPhone.trim()  || null,
+          vehicleReg:         self.walkInVehicle.trim() || null,
+          blRef:              self.walkInBLRef.trim()  || null,
+          personBeingVisited: self.walkInPersonVisited.trim() || null,
+          reason:             self.walkInReason.trim() || null,
+        }),
+      }).catch(function (err) { console.warn('[kiosk] walk-in POST failed:', err) })
+
+      self.goTo('arrived')
+      self._startArrivedCountdown()
     },
   }
 }

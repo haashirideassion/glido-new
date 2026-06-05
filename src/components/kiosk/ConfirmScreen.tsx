@@ -1,55 +1,39 @@
-import { Icon, ICONS } from '../../lib/Icon'
+import { useKiosk } from '@/contexts/KioskContext'
+import { Icon, ICONS } from '@/lib/Icon'
 
-export const ConfirmScreen = () => (
-  <div
-    class="h-full flex flex-col items-center justify-center px-8 relative"
-    x-show="$store.kiosk.currentScreen === 'confirm'"
-  >
-    <button
-      type="button"
-      x-on:click="$store.kiosk.goTo('lookup')"
-      class="absolute top-6 left-6 flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm"
-    >
-      <Icon name={ICONS.arrowLeft} size={18} />
-      Back
-    </button>
+export function ConfirmScreen() {
+  const { state, confirmBooking, goTo } = useKiosk()
+  if (state.currentScreen !== 'confirm' || !state.lookupResult) return null
+  const r = state.lookupResult
 
-    <div class="text-center max-w-md w-full" x-show="$store.kiosk.lookupResult">
-      <h2 class="text-3xl font-bold text-white mb-1">Booking Found</h2>
-      <p class="text-slate-400 mb-8">Please confirm this is your booking</p>
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: 448, textAlign: 'center' }}>
+        <h2 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: 4, color: '#1C1917' }}>Booking Found</h2>
+        <p style={{ color: '#78716C', marginBottom: 32 }}>Please confirm this is your booking</p>
 
-      <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 mb-6 text-left space-y-3">
-        {[
-          { label: 'Reference', key: 'ref',     mono: true },
-          { label: 'Name',      key: 'name',    mono: false },
-          { label: 'Slot',      key: 'slot',    mono: false },
-          { label: 'Service',   key: 'service', mono: false },
-        ].map((row) => (
-          <div key={row.label} class="flex justify-between text-sm">
-            <span class="text-slate-400">{row.label}</span>
-            <span
-              class={`font-semibold ${row.mono ? 'font-mono text-blue-300' : 'text-white'}`}
-              x-text={`$store.kiosk.lookupResult?.${row.key}`}
-            ></span>
-          </div>
-        ))}
+        <div style={{ textAlign: 'left', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)', marginBottom: 24 }}>
+          {[
+            { label: 'Reference', val: r.ref,     mono: true },
+            { label: 'Name',      val: r.name,    mono: false },
+            { label: 'Slot',      val: r.slot,    mono: false },
+            { label: 'Service',   val: r.service, mono: false },
+          ].map(row => (
+            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, padding: '6px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+              <span style={{ color: '#A8A29E' }}>{row.label}</span>
+              <span style={{ fontWeight: 600, fontFamily: row.mono ? 'ui-monospace,monospace' : undefined, color: row.mono ? 'var(--brand-color)' : '#1C1917' }}>{row.val}</span>
+            </div>
+          ))}
+        </div>
+
+        <button className="kiosk-btn kiosk-btn-primary" style={{ width: '100%', borderRadius: 16, marginBottom: 12 }} onClick={confirmBooking}>
+          <Icon name={ICONS.check} size={26} />
+          Yes, This Is My Booking
+        </button>
+        <button className="kiosk-btn kiosk-btn-secondary" style={{ width: '100%', borderRadius: 16 }} onClick={() => goTo('lookup')}>
+          This is not my booking
+        </button>
       </div>
-
-      <button
-        type="button"
-        x-on:click="$store.kiosk.completeCheckIn()"
-        class="kiosk-btn w-full bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold rounded-2xl transition-all shadow-lg mb-3 flex items-center justify-center gap-3"
-      >
-        <Icon name={ICONS.check} size={26} />
-        Confirm Arrival
-      </button>
-      <button
-        type="button"
-        x-on:click="$store.kiosk.goTo('lookup')"
-        class="kiosk-btn w-full bg-transparent border border-slate-600 text-slate-300 font-medium rounded-2xl hover:bg-slate-800 transition-all"
-      >
-        This is not my booking
-      </button>
     </div>
-  </div>
-)
+  )
+}

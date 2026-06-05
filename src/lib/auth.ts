@@ -1,118 +1,42 @@
-import { supabase, supabaseAdmin } from './supabase'
-import type { Context } from 'hono'
-import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
+import { supabase } from '@/lib/supabase'
 
-const COOKIE_NAME = 'glido_session'
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
-
-// ── Sign in with email + password ────────────────────────────────────────────
-export async function signInWithPassword(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-  if (error) throw error
-  return data
-}
-
-// ── Sign up a new visitor account ────────────────────────────────────────────
-export async function signUpVisitor(opts: {
+export interface SignUpVisitorOpts {
   email: string
   password: string
   firstName: string
   lastName: string
   phone?: string
   company?: string
-}) {
-  const { data, error } = await supabase.auth.signUp({
+}
+
+/**
+ * Create a visitor account.
+ *
+ * Calls supabase.auth.signUp() and stores user metadata in auth.users for JWT.
+ * The corresponding public.users row is created automatically by a database
+ * trigger — no manual insert needed here.
+ */
+export async function signUpVisitor(opts: SignUpVisitorOpts): Promise<void> {
+  // ── Phase 1: Supabase Auth signup ────────────────────────────────────────
+  const { data, error: authError } = await supabase.auth.signUp({
     email: opts.email,
     password: opts.password,
     options: {
+      // Keep metadata in the JWT so downstream reads have a fallback
       data: {
         first_name: opts.firstName,
         last_name:  opts.lastName,
-        phone:      opts.phone ?? null,
+        phone:      opts.phone  ?? null,
         company:    opts.company ?? null,
         role:       'visitor_registered',
       },
     },
   })
-  if (error) throw error
-  return data
+
+  if (authError) throw authError
+  if (!data.user) throw new Error('Signup succeeded but returned no user object')
 }
 
-// ── Resolve a promise with a fallback value if it takes longer than `ms` ─────
-function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
-  ])
-}
-
-// ── Read session from cookie, return verified user or null ───────────────────
-export async function getSessionUser(c: Context): Promise<{
-  id: string
-  email: string
-  role: string
-  firstName: string | null
-} | null> {
-  const token = getCookie(c, COOKIE_NAME)
-  if (!token) return null
-
-  try {
-    // Hard 10 s cap — if Supabase auth is unreachable, fail fast instead of
-    // waiting for the Vercel 300 s function timeout.
-    const authResult = await withTimeout(
-      supabaseAdmin.auth.getUser(token),
-      10_000,
-      { data: { user: null }, error: new Error('auth.getUser timeout') } as any,
-    )
-    const { data, error } = authResult
-    if (error) {
-      console.warn('[getSessionUser] auth.getUser error:', (error as any).message)
-      return null
-    }
-    if (!data.user) return null
-
-    // Pull role from our users table (10 s cap, failure is non-fatal)
-    const rowResult = await withTimeout(
-      Promise.resolve(supabaseAdmin.from('users').select('role, first_name').eq('id', data.user.id).maybeSingle()),
-      10_000,
-      { data: null, error: new Error('users table timeout') } as any,
-    )
-    const { data: userRow, error: rowErr } = rowResult
-    if (rowErr) console.warn('[getSessionUser] users table error:', (rowErr as any).message)
-
-    return {
-      id:        data.user.id,
-      email:     data.user.email ?? '',
-      role:      userRow?.role ?? 'visitor_registered',
-      firstName: userRow?.first_name ?? null,
-    }
-  } catch (err: any) {
-    console.error('[getSessionUser] unexpected error:', err?.message ?? err)
-    return null
-  }
-}
-
-// ── Persist session token in HttpOnly cookie ─────────────────────────────────
-export function setSessionCookie(c: Context, accessToken: string) {
-  setCookie(c, COOKIE_NAME, accessToken, {
-    httpOnly: true,
-    secure:   process.env.NODE_ENV === 'production',
-    sameSite: 'Lax',
-    maxAge:   COOKIE_MAX_AGE,
-    path:     '/',
-  })
-}
-
-// ── Clear session cookie ─────────────────────────────────────────────────────
-export function clearSessionCookie(c: Context) {
-  deleteCookie(c, COOKIE_NAME, { path: '/' })
-}
-
-// ── Role guards ───────────────────────────────────────────────────────────────
-export function isReceptionRole(role: string) {
-  return role === 'reception_staff' || role === 'reception_admin'
-}
-
-export function isVisitorRole(role: string) {
-  return role === 'visitor_registered' || role === 'visitor'
-}
+// ── Re-exports ────────────────────────────────────────────────────────────────
+// Role helpers and useAuth hook remain in AuthContext as the single source.
+export { isReceptionRole, isVisitorRole, useAuth } from '@/contexts/AuthContext'

@@ -1,97 +1,110 @@
-import { Icon, ICONS } from '../../lib/Icon'
+import { useKiosk } from '@/contexts/KioskContext'
+import { Icon, ICONS } from '@/lib/Icon'
 
-export const IDScanScreen = () => (
-  <div
-    class="h-full flex flex-col items-center justify-center px-8 relative"
-    x-show="$store.kiosk.currentScreen === 'idscan'"
-  >
-    <button
-      type="button"
-      x-on:click="$store.kiosk.goTo('lookup')"
-      class="absolute top-6 left-6 flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm"
-    >
-      <Icon name={ICONS.arrowLeft} size={18} />
-      Back
-    </button>
+export function IDScanScreen() {
+  const { state, dispatch, simulateScan, completeCheckIn } = useKiosk()
+  if (state.currentScreen !== 'idscan') return null
 
-    <div class="w-full max-w-md text-center">
-      <div class="w-16 h-16 bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
-        <Icon name={ICONS.shield} size={36} class="text-blue-400" />
-      </div>
-      <h2 class="text-3xl font-bold text-white mb-2">Identity Verification</h2>
-      <p class="text-slate-400 mb-8">Scan your driver's licence to verify your identity</p>
+  const ld = state.licenceData
+  const match = ld?.nameMatchResult
 
-      {/* Scanning options */}
-      <div x-show="!$store.kiosk.licenceData" class="space-y-4">
-        {/* Thales card reader */}
-        <div class="bg-slate-800 border-2 border-slate-700 rounded-2xl p-5 text-center">
-          <p class="text-xs text-slate-400 uppercase tracking-widest mb-3 font-semibold">Option 1 — Card Reader</p>
-          <div class="w-full h-28 bg-slate-700/50 border-2 border-dashed border-slate-600 rounded-xl flex flex-col items-center justify-center mb-3">
-            <Icon name={ICONS.shield} size={36} class="text-slate-500 mb-1" />
-            <p class="text-slate-500 text-sm">Insert driver's licence face down</p>
-          </div>
-          <p class="text-xs text-slate-500">Thales double-sided card reader</p>
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: 448, textAlign: 'center', marginTop: 200 }}>
+        <div style={{ width: 64, height: 64, background: 'rgba(252,101,20,0.09)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+          <Icon name={ICONS.shield} size={36} style={{ color: '#FC6514' }} />
         </div>
+        <h2 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: 8, color: '#1C1917' }}>Identity Verification</h2>
+        <p style={{ color: '#78716C', marginBottom: 32 }}>Scan your driver's licence to verify your identity</p>
 
-        <div class="text-slate-600 text-sm font-medium">— or —</div>
-
-        {/* NSW Digital Licence QR */}
-        <div class="bg-slate-800 border-2 border-slate-700 rounded-2xl p-5 text-center">
-          <p class="text-xs text-slate-400 uppercase tracking-widest mb-3 font-semibold">Option 2 — Digital Licence</p>
-          <div class="w-full h-28 bg-slate-700/50 border-2 border-dashed border-slate-600 rounded-xl flex flex-col items-center justify-center mb-3">
-            <Icon name={ICONS.qrCode} size={36} class="text-slate-500 mb-1" />
-            <p class="text-slate-500 text-sm">Show NSW Digital Licence QR code</p>
-          </div>
-          <p class="text-xs text-slate-500">NSW Service App or Digital Wallet</p>
-        </div>
-
-        {/* Demo simulate button */}
-        <button
-          type="button"
-          x-on:click="$store.kiosk.simulateScan()"
-          class="kiosk-btn w-full bg-blue-600/20 border border-blue-500/40 text-blue-300 font-medium rounded-2xl hover:bg-blue-600/30 transition-all"
-        >
-          Simulate ID Scan (Demo)
-        </button>
-      </div>
-
-      {/* Scanned licence data — shown after scan */}
-      <div x-show="$store.kiosk.licenceData" class="text-left">
-        <div class="bg-green-900/30 border border-green-500/30 rounded-2xl p-4 mb-5">
-          <div class="flex items-center gap-2 mb-3">
-            <Icon name={ICONS.check} size={20} class="text-green-400" />
-            <p class="text-green-400 font-semibold">Identity Verified</p>
-          </div>
-          <div class="space-y-2 text-sm">
+        {!ld ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {[
-              { label: 'Name',        key: 'name' },
-              { label: 'Licence No.', key: 'licenceNo' },
-              { label: 'Date of Birth', key: 'dob' },
-              { label: 'Expiry',      key: 'expiry' },
-              { label: 'Address',     key: 'address' },
-            ].map((row) => (
-              <div key={row.label} class="flex justify-between gap-4">
-                <span class="text-slate-400 shrink-0">{row.label}</span>
-                <span class="font-medium text-white text-right" x-text={`$store.kiosk.licenceData?.${row.key} || '—'`}></span>
+              { title: 'Option 1 — Card Reader', icon: ICONS.shield, desc: 'Insert driver\'s licence face down', sub: 'Thales double-sided card reader' },
+              { title: 'Option 2 — Digital Licence', icon: ICONS.qrCode, desc: 'Show NSW Digital Licence QR code', sub: 'NSW Service App or Digital Wallet' },
+            ].map(opt => (
+              <div key={opt.title} style={{ background: '#FFFFFF', border: '1.5px solid rgba(0,0,0,0.10)', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <p style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#A8A29E', marginBottom: 12 }}>{opt.title}</p>
+                <div style={{ height: 112, background: '#F7F6F5', border: '1.5px dashed rgba(0,0,0,0.12)', borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                  <Icon name={opt.icon} size={36} style={{ color: '#C7C1BB' }} />
+                  <p style={{ fontSize: 14, color: '#A8A29E', marginTop: 4 }}>{opt.desc}</p>
+                </div>
+                <p style={{ fontSize: 12, color: '#A8A29E' }}>{opt.sub}</p>
               </div>
             ))}
+            <button className="kiosk-btn" style={{ width: '100%', borderRadius: 16, background: 'rgba(252,101,20,0.07)', border: '1px solid rgba(252,101,20,0.25)', color: '#FC6514', cursor: 'pointer' }} onClick={simulateScan}>
+              Simulate ID Scan (Demo)
+            </button>
           </div>
-        </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, textAlign: 'left' }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                <Icon name={ICONS.check} size={18} style={{ color: '#FC6514' }} />
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#FC6514' }}>Licence Scanned</p>
+              </div>
+              {[['Name', ld.name], ['Licence No.', ld.licenceNo], ['Date of Birth', ld.dob], ['Expiry', ld.expiry], ['Address', ld.address]].map(([label, val]) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', gap: 16, padding: '6px 0', borderBottom: '1px solid rgba(0,0,0,0.05)', fontSize: 14 }}>
+                  <span style={{ color: '#A8A29E' }}>{label}</span>
+                  <span style={{ fontWeight: 500, color: '#1C1917', textAlign: 'right' }}>{val}</span>
+                </div>
+              ))}
+            </div>
 
-        <div class="bg-amber-900/20 border border-amber-500/30 rounded-xl p-3 mb-5 text-sm">
-          <p class="text-amber-400 font-semibold mb-1">Name match: Confirmed</p>
-          <p class="text-amber-300/70 text-xs">Licence name matches booking — Ahmed Raza</p>
-        </div>
+            {state.licenceExpired && (
+              <Alert type="error" title="Licence Expired">
+                Your licence has expired. You cannot check in at the kiosk. Please speak with the reception team.
+              </Alert>
+            )}
+            {!state.licenceExpired && match === 'mismatch' && (
+              <Alert type="error" title="Name Does Not Match Booking">
+                The name on your licence does not match the name on the booking. Please see the reception team.
+              </Alert>
+            )}
+            {!state.licenceExpired && match === 'warning' && (
+              <Alert type="warning" title="Name Similarity Warning">
+                Your licence name is similar but may not exactly match the booking. You can still proceed — reception will verify.
+              </Alert>
+            )}
+            {!state.licenceExpired && match === 'matched' && (
+              <Alert type="success" title="Name Confirmed">
+                Licence name matches the booking driver name.
+              </Alert>
+            )}
 
-        <button
-          type="button"
-          x-on:click="$store.kiosk.goTo('confirm')"
-          class="kiosk-btn w-full bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold rounded-2xl transition-all shadow-lg flex items-center justify-center gap-3"
-        >
-          <Icon name={ICONS.arrowRight} size={24} />
-          Proceed to Check-In
-        </button>
+            {!state.licenceExpired && match !== 'mismatch' && (
+              <button className="kiosk-btn kiosk-btn-primary" style={{ width: '100%', borderRadius: 16 }} onClick={completeCheckIn}>
+                <Icon name={ICONS.arrowRight} size={24} />
+                Proceed to Check-In
+              </button>
+            )}
+            {(state.licenceExpired || match === 'mismatch') && (
+              <p style={{ textAlign: 'center', fontSize: 14, color: '#78716C' }}>Please proceed to the reception desk for assistance.</p>
+            )}
+            <button className="kiosk-btn kiosk-btn-secondary" style={{ width: '100%', borderRadius: 16, fontSize: 14 }}
+              onClick={() => dispatch({ type: 'SET_LICENCE', data: null, expired: false })}>
+              Scan Again
+            </button>
+          </div>
+        )}
       </div>
     </div>
-  </div>
-)
+  )
+}
+
+function Alert({ type, title, children }: { type: 'error' | 'warning' | 'success'; title: string; children: React.ReactNode }) {
+  const cfg = {
+    error:   { bg: 'rgba(239,68,68,0.06)',  border: 'rgba(239,68,68,0.25)',  icon: ICONS.close,   iconC: '#DC2626', titleC: '#DC2626', bodyC: '#EF4444' },
+    warning: { bg: 'rgba(245,158,11,0.07)', border: 'rgba(245,158,11,0.30)', icon: ICONS.warning, iconC: '#D97706', titleC: '#D97706', bodyC: '#B45309' },
+    success: { bg: 'rgba(22,163,74,0.07)',  border: 'rgba(22,163,74,0.25)',  icon: ICONS.check,   iconC: '#16A34A', titleC: '#16A34A', bodyC: '#15803D' },
+  }[type]
+  return (
+    <div style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 12, padding: '14px 16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <Icon name={cfg.icon} size={18} style={{ color: cfg.iconC }} />
+        <p style={{ fontWeight: 700, fontSize: 14, color: cfg.titleC }}>{title}</p>
+      </div>
+      <p style={{ fontSize: 12, color: cfg.bodyC }}>{children}</p>
+    </div>
+  )
+}

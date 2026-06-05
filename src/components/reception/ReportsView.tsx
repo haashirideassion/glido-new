@@ -120,23 +120,23 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
               name="from"
               value={from || ''}
               placeholder="From"
-              style="font-size:12px; padding:7px 10px; border:1px solid rgba(0,0,0,0.10); border-radius:8px; background:#F7F6F5; color:#1C1917; outline:none; cursor:pointer;"
+              style="font-size:16px; padding:10px 16px; height:48px; border:1px solid rgba(0,0,0,0.10); border-radius:8px; background:#F7F6F5; color:#1C1917; outline:none; cursor:pointer;"
               onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'"
             />
-            <span style="font-size:11px; color:#A8A29E;">→</span>
+            <span style="font-size:14px; color:#4B5563;">→</span>
             <input
               type="date"
               name="to"
               value={to || ''}
               placeholder="To"
-              style="font-size:12px; padding:7px 10px; border:1px solid rgba(0,0,0,0.10); border-radius:8px; background:#F7F6F5; color:#1C1917; outline:none; cursor:pointer;"
+              style="font-size:16px; padding:10px 16px; height:48px; border:1px solid rgba(0,0,0,0.10); border-radius:8px; background:#F7F6F5; color:#1C1917; outline:none; cursor:pointer;"
               onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'"
             />
-            <button type="submit" style="padding:7px 14px; font-size:12px; font-weight:600; background:#1C1917; color:#fff; border:none; border-radius:8px; cursor:pointer; transition:opacity 0.15s ease;"
+            <button type="submit" style="padding:0 24px; height:48px; font-size:15px; font-weight:600; background:#1C1917; color:#fff; border:none; border-radius:8px; cursor:pointer; transition:opacity 0.15s ease;"
               onmouseover="this.style.opacity='0.80'" onmouseout="this.style.opacity='1'"
             >Filter</button>
             {(from || to) && (
-              <a href="/reception/reports" style="font-size:12px; color:#78716C; text-decoration:none; font-weight:500; padding:7px 10px; border-radius:8px; transition:all 0.15s ease;"
+              <a href="/reception/reports" style="font-size:15px; color:#4B5563; text-decoration:none; font-weight:500; padding:12px 16px; border-radius:8px; transition:all 0.15s ease;"
                 onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='transparent'"
               >Clear</a>
             )}
@@ -144,10 +144,10 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
           <button
             type="button"
             class="btn-ghost"
-            style="padding:8px 16px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;"
+            style="padding:0 20px; height:48px; border:1px solid rgba(0,0,0,0.1); border-radius:8px; font-size:15px; font-weight:600; color:#374151; cursor:pointer; display:inline-flex; align-items:center; gap:8px;"
             onclick="window._gExportCsv && window._gExportCsv()"
           >
-            <Icon name={ICONS.download} size={13} />
+            <Icon name={ICONS.download} size={15} />
             Export CSV
           </button>
         </div>
@@ -163,10 +163,10 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
         ].map(s => (
           <div
             key={s.label}
-            style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:12px; padding:18px 20px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07);"
+            style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:12px; padding:18px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07);"
           >
-            <p style={`font-size:28px; font-weight:700; letter-spacing:-0.04em; color:${s.color}; line-height:1; margin-bottom:6px;`}>{s.value}</p>
-            <p style="font-size:12px; color:#78716C;">{s.label}</p>
+            <p style={`font-size:38px; font-weight:800; letter-spacing:-0.04em; color:${s.color}; line-height:1; margin-bottom:6px;`}>{s.value}</p>
+            <p style="font-size:14px; font-weight:600; color:#4B5563;">{s.label}</p>
           </div>
         ))}
       </div>
@@ -174,13 +174,13 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
       {/* ── Row 1: Weekly bar + status donut ────────────────────────────────── */}
       <div style="display:grid; grid-template-columns:1.6fr 1fr; gap:12px;">
         <div style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07);">
-          <p style="font-size:13px; font-weight:600; color:#1C1917; margin-bottom:4px;">Bookings last 7 days</p>
-          <p style="font-size:11.5px; color:#78716C; margin-bottom:16px;">Daily booking volume</p>
+          <p style="font-size:16px; font-weight:700; color:#1C1917; margin-bottom:4px;">Bookings last 7 days</p>
+          <p style="font-size:14px; color:#4B5563; margin-bottom:16px;">Daily booking volume</p>
           <div id="chart-weekly" style="width:100%; height:220px;"></div>
         </div>
         <div style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07);">
-          <p style="font-size:13px; font-weight:600; color:#1C1917; margin-bottom:4px;">Status breakdown</p>
-          <p style="font-size:11.5px; color:#78716C; margin-bottom:16px;">All-time distribution</p>
+          <p style="font-size:16px; font-weight:700; color:#1C1917; margin-bottom:4px;">Status breakdown</p>
+          <p style="font-size:14px; color:#4B5563; margin-bottom:16px;">All-time distribution</p>
           <div id="chart-status" style="width:100%; height:220px;"></div>
         </div>
       </div>
@@ -188,13 +188,13 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
       {/* ── Row 2: Hourly + service mix ──────────────────────────────────────── */}
       <div style="display:grid; grid-template-columns:1.8fr 1fr; gap:12px;">
         <div style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07);">
-          <p style="font-size:13px; font-weight:600; color:#1C1917; margin-bottom:4px;">Hourly traffic pattern</p>
-          <p style="font-size:11.5px; color:#78716C; margin-bottom:16px;">Average bookings by time window</p>
+          <p style="font-size:16px; font-weight:700; color:#1C1917; margin-bottom:4px;">Hourly traffic pattern</p>
+          <p style="font-size:14px; color:#4B5563; margin-bottom:16px;">Average bookings by time window</p>
           <div id="chart-hourly" style="width:100%; height:200px;"></div>
         </div>
         <div style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07);">
-          <p style="font-size:13px; font-weight:600; color:#1C1917; margin-bottom:4px;">Service mix</p>
-          <p style="font-size:11.5px; color:#78716C; margin-bottom:20px;">Pick Up vs Drop Off · FCL vs LCL</p>
+          <p style="font-size:16px; font-weight:700; color:#1C1917; margin-bottom:4px;">Service mix</p>
+          <p style="font-size:14px; color:#4B5563; margin-bottom:20px;">Pick Up vs Drop Off · FCL vs LCL</p>
           <div id="chart-mix" style="width:100%; height:200px;"></div>
         </div>
       </div>
@@ -202,11 +202,11 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
       {/* ── Booking table ──────────────────────────────────────────────────── */}
       <div id="reports-table" style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07);">
         <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid rgba(0,0,0,0.07); flex-wrap:wrap; gap:8px;">
-          <p style="font-size:13px; font-weight:600; color:#1C1917;">
+          <p style="font-size:16px; font-weight:700; color:#1C1917;">
             All Bookings
-            {totalPages > 1 && <span style="font-size:11px; font-weight:400; color:#A8A29E; margin-left:8px;">Page {currentPage} of {totalPages}</span>}
+            {totalPages > 1 && <span style="font-size:13px; font-weight:400; color:#4B5563; margin-left:8px;">Page {currentPage} of {totalPages}</span>}
           </p>
-          <span style="font-size:12px; color:#78716C;">{bookings.length} records · showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, bookings.length)}</span>
+          <span style="font-size:14px; color:#4B5563;">{bookings.length} records · showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, bookings.length)}</span>
         </div>
         <div style="overflow-x:auto;">
           <table style="width:100%; border-collapse:collapse;">
@@ -215,7 +215,7 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
                 {['Reference', 'Date', 'Time', 'Driver', 'Service', 'HBL', 'Amount', 'Status'].map(h => (
                   <th
                     key={h}
-                    style="padding:10px 20px; text-align:left; font-size:10px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color:#A8A29E; white-space:nowrap;"
+                    style="padding:16px 20px; text-align:left; font-size:14px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:#374151; white-space:nowrap;"
                   >{h}</th>
                 ))}
               </tr>
@@ -229,21 +229,21 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
                   onmouseout={`this.style.background='${i % 2 !== 0 ? 'rgba(0,0,0,0.01)' : 'transparent'}'`}
                   onclick={`window.location.href='/reception/bookings/${b.id}'`}
                 >
-                  <td style="padding:11px 20px; font-family:ui-monospace,monospace; font-size:12px; font-weight:700; color:#FC6514; white-space:nowrap;">{b.referenceNumber}</td>
-                  <td style="padding:11px 20px; font-size:12.5px; color:#78716C; white-space:nowrap;">{b.slotDate}</td>
-                  <td style="padding:11px 20px; font-size:12.5px; color:#78716C; white-space:nowrap;">{b.slotStartTime} – {b.slotEndTime}</td>
-                  <td style="padding:11px 20px; font-size:12.5px; color:#1C1917; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{b.driverName}</td>
-                  <td style="padding:11px 20px; font-size:12px; color:#78716C; white-space:nowrap;">
+                  <td style="padding:14px 20px; font-family:ui-monospace,monospace; font-size:16px; font-weight:700; color:#FC6514; white-space:nowrap;">{b.referenceNumber}</td>
+                  <td style="padding:14px 20px; font-size:15px; color:#4B5563; white-space:nowrap;">{b.slotDate}</td>
+                  <td style="padding:14px 20px; font-size:15px; color:#4B5563; white-space:nowrap;">{b.slotStartTime} – {b.slotEndTime}</td>
+                  <td style="padding:14px 20px; font-size:16px; font-weight:600; color:#1C1917; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{b.driverName}</td>
+                  <td style="padding:14px 20px; font-size:15px; color:#4B5563; white-space:nowrap;">
                     {SERVICE_LABEL[b.serviceType]} · {LOAD_LABEL[b.loadType]}
                   </td>
-                  <td style="padding:11px 20px; font-family:ui-monospace,monospace; font-size:11.5px; color:#A8A29E; white-space:nowrap;">
+                  <td style="padding:14px 20px; font-family:ui-monospace,monospace; font-size:14px; color:#4B5563; white-space:nowrap;">
                     {b.houseBillNumber || b.containerNumber || '—'}
                   </td>
-                  <td style="padding:11px 20px; font-size:12.5px; font-weight:600; color:#1C1917; white-space:nowrap;">
+                  <td style="padding:14px 20px; font-size:16px; font-weight:600; color:#1C1917; white-space:nowrap;">
                     {b.totalAmount ? `$${b.totalAmount.toFixed(2)}` : '—'}
                   </td>
-                  <td style="padding:11px 20px;">
-                    <span style={`display:inline-block; padding:3px 10px; border-radius:9999px; font-size:11px; font-weight:600; ${STATUS_STYLE[b.status] || STATUS_STYLE.scheduled}`}>
+                  <td style="padding:14px 20px;">
+                    <span style={`display:inline-block; padding:4px 12px; border-radius:9999px; font-size:13px; font-weight:600; ${STATUS_STYLE[b.status] || STATUS_STYLE.scheduled}`}>
                       {STATUS_LABEL[b.status] || b.status}
                     </span>
                   </td>
@@ -268,19 +268,20 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 24px; border-top:1px solid rgba(0,0,0,0.07); background:rgba(0,0,0,0.01);">
-            <span style="font-size:12px; color:#78716C;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-top:1px solid rgba(0,0,0,0.07); background:rgba(0,0,0,0.01);">
+            <span style="font-size:14px; color:#4B5563;">
               Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, bookings.length)} of {bookings.length}
             </span>
             <div style="display:flex; align-items:center; gap:6px;">
               {currentPage > 1 && (
                 <a
                   href={`/reception/reports?page=${currentPage - 1}${rangeQuery}`}
-                  style="padding:6px 14px; font-size:12px; font-weight:500; color:#1C1917; background:#fff; border:1px solid rgba(0,0,0,0.10); border-radius:8px; text-decoration:none; transition:all 0.15s ease;"
+                  style="padding:0 16px; height:38px; display:inline-flex; align-items:center; font-size:14px; font-weight:600; color:#1C1917; background:#fff; border:1px solid rgba(0,0,0,0.10); border-radius:8px; text-decoration:none; transition:all 0.15s ease;"
                   onmouseover="this.style.background='#F7F6F5'" onmouseout="this.style.background='#fff'"
                 >
                   ← Prev
                 </a>
+                
               )}
               {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
                 const pg = totalPages <= 7

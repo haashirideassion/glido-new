@@ -1,446 +1,424 @@
-import { Button } from '../ui/button'
-import { Badge } from '../ui/badge'
-import { Icon, ICONS } from '../../lib/Icon'
-import { STATUS_LABEL, STATUS_BADGE_VARIANT, SERVICE_LABEL, LOAD_LABEL, ICS_BADGE_CLASS, ICS_LABEL } from '../../lib/constants'
-import type { Booking } from '../../data/types'
+import { useState } from 'react'
+import { Icon, ICONS } from '@/lib/Icon'
+import { fmtDateTime } from '@/lib/time'
+import { toast } from '@/lib/toast'
+import {
+  checkInBooking, completeBooking, cancelBooking,
+  rescheduleBooking, refreshIcsStatus,
+} from '@/lib/db/bookings'
+import type { Booking } from '@/data/types'
+
+const ICS_BADGE: Record<string, string> = {
+  cleared:     'background:rgba(34,197,94,0.10);color:#16A34A;border:1px solid rgba(34,197,94,0.22);',
+  held:        'background:rgba(239,68,68,0.10);color:#EF4444;border:1px solid rgba(239,68,68,0.22);',
+  examination: 'background:rgba(251,191,36,0.10);color:#B45309;border:1px solid rgba(251,191,36,0.22);',
+  pending:     'background:rgba(0,0,0,0.04);color:#78716C;border:1px solid rgba(0,0,0,0.10);',
+  unavailable: 'background:rgba(0,0,0,0.04);color:#78716C;border:1px solid rgba(0,0,0,0.10);',
+}
+const ICS_LABEL: Record<string, string> = { cleared: 'Cleared', held: 'Held', examination: 'On Hold', pending: 'Pending', unavailable: 'N/A' }
+
+const STATUS_BADGE: Record<string, React.CSSProperties> = {
+  scheduled:  { background: '#F5F5F4', color: '#57534E', border: '1px solid rgba(0,0,0,0.10)' },
+  checked_in: { background: 'rgba(34,197,94,0.12)', color: '#16A34A', border: '1px solid rgba(34,197,94,0.25)' },
+  completed:  { background: '#F5F5F4', color: '#78716C', border: '1px solid rgba(0,0,0,0.08)' },
+  cancelled:  { background: 'transparent', color: '#A8A29E', border: '1px solid rgba(0,0,0,0.15)' },
+}
+const STATUS_LABEL: Record<string, string> = { scheduled: 'Scheduled', checked_in: 'Checked In', completed: 'Completed', cancelled: 'Cancelled' }
+
+const SL: React.CSSProperties = { fontSize: 10, fontWeight: 700, color: '#A8A29E', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }
+const PANEL: React.CSSProperties = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }
+const RL: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#78716C' }
+const RV: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: '#1C1917' }
 
 interface Props {
   booking: Booking
+  onClose: () => void
+  onUpdated: (b: Booking) => void
 }
 
-type StatusVariant = 'warning' | 'default' | 'success' | 'secondary' | 'outline' | 'destructive'
+export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props) {
+  const [b, setB] = useState<Booking>(initial)
+  const [loading, setLoading] = useState('')
 
-const SECTION_LABEL = "font-size:10px; font-weight:700; color:#A8A29E; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;"
-const PANEL_STYLE  = "background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:10px; padding:14px 16px; box-shadow:0 1px 3px rgba(0,0,0,0.04);"
-const ROW_LABEL    = "display:flex; align-items:center; gap:6px; font-size:12px; color:#78716C;"
-const ROW_VALUE    = "font-size:12px; font-weight:600; color:#1C1917;"
+  // Modal state
+  const [confirmModal,    setConfirmModal]    = useState(false)
+  const [cancelModal,     setCancelModal]     = useState(false)
+  const [rescheduleModal, setRescheduleModal] = useState(false)
 
-export const BookingSlideOver = ({ booking: b }: Props) => (
-  <div style="display:flex; flex-direction:column; height:100%;" x-data="{ confirmModal: false, cancelModal: false, rescheduleModal: false, completionNotes: '', guestEmail: '', newDate: '', newStart: '' }">
-    {/* Header — sticky so it stays visible while the panel body scrolls */}
-    <div style="position:sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; padding:10px 14px 10px 20px; border-bottom:1px solid rgba(0,0,0,0.07); background:#FFFFFF; flex-shrink:0; gap:12px;">
-      {/* Reference + badge inline */}
-      <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-        <p
-          style="font-family:ui-monospace,monospace; font-size:13px; font-weight:700; color:#FC6514; cursor:pointer; display:flex; align-items:center; gap:5px; white-space:nowrap; flex-shrink:0;"
-          title="Click to copy reference"
-          onclick={`navigator.clipboard.writeText('${b.referenceNumber}').then(function(){window.gToast&&window.gToast('Reference copied','info');});`}
-        >{b.referenceNumber} <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.45;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></p>
-        <Badge variant={STATUS_BADGE_VARIANT[b.status] as StatusVariant}>
-          {STATUS_LABEL[b.status]}
-        </Badge>
-      </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onclick="document.getElementById('slide-over-backdrop').classList.add('hidden'); document.getElementById('slide-over').classList.add('translate-x-full')"
-      >
-        <Icon name={ICONS.close} size={20} />
-      </Button>
-    </div>
+  // Form fields
+  const [completionNotes, setCompletionNotes] = useState('')
+  const [newDate,  setNewDate]  = useState(b.slotDate)
+  const [newStart, setNewStart] = useState(b.slotStartTime)
 
-    {/* Body */}
-    <div style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:20px; background:#F5F4F3;">
+  const act = async (
+    label: string,
+    fn: () => Promise<Booking | undefined>,
+    successMsg?: string,
+    toastType: 'success' | 'info' | 'error' = 'success',
+  ) => {
+    setLoading(label)
+    try {
+      const updated = await fn()
+      if (updated) { setB(updated); onUpdated(updated) }
+      if (successMsg) toast(successMsg, toastType)
+    } catch (err: any) {
+      toast(err?.message ?? 'Action failed', 'error')
+    } finally {
+      setLoading('')
+    }
+  }
 
-      {/* Driver / Visitor */}
-      <section>
-        <p style={SECTION_LABEL}>Driver / Visitor</p>
-        <div style={PANEL_STYLE + " display:flex; flex-direction:column; gap:10px;"}>
-          {[
-            { label: 'Driver', value: b.driverName,  icon: ICONS.user },
-            { label: 'Phone',  value: b.driverPhone || '—', icon: ICONS.phone },
-            { label: 'Guest',  value: b.guestName || b.driverName, icon: ICONS.users },
-          ].map((row) => (
-            <div key={row.label} style="display:flex; justify-content:space-between; align-items:center;">
-              <span style={ROW_LABEL}>
-                <Icon name={row.icon} size={13} style="color:#78716C;" />
-                {row.label}
-              </span>
-              <span style={ROW_VALUE}>{row.value}</span>
-            </div>
-          ))}
-        </div>
-      </section>
+  const fieldStyle: React.CSSProperties = {
+    width: '100%', padding: '10px 14px', fontSize: 14, color: '#1C1917',
+    background: '#EBEBEA', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10,
+    outline: 'none', boxSizing: 'border-box',
+  }
+  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.target.style.borderColor = 'rgba(252,101,20,0.50)' }
+  const blur  = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.target.style.borderColor = 'rgba(0,0,0,0.10)' }
 
-      {/* Slot */}
-      <section>
-        <p style={SECTION_LABEL}>Slot</p>
-        <div style={PANEL_STYLE + " display:grid; grid-template-columns:1fr 1fr; gap:12px;"}>
-          <div>
-            <p style="font-size:10px; color:#78716C; margin-bottom:3px;">Date</p>
-            <p style="font-size:13px; font-weight:600; color:#1C1917; display:flex; align-items:center; gap:5px;">
-              <Icon name={ICONS.calendar} size={13} style="color:#78716C;" />
-              {b.slotDate}
-            </p>
-          </div>
-          <div>
-            <p style="font-size:10px; color:#78716C; margin-bottom:3px;">Time</p>
-            <p style="font-size:13px; font-weight:600; color:#1C1917; display:flex; align-items:center; gap:5px;">
-              <Icon name={ICONS.clock} size={13} style="color:#78716C;" />
-              {b.slotStartTime} – {b.slotEndTime}
-            </p>
-          </div>
-          <div>
-            <p style="font-size:10px; color:#78716C; margin-bottom:3px;">Service</p>
-            <p style="font-size:13px; font-weight:600; color:#1C1917;">{SERVICE_LABEL[b.serviceType]}</p>
-          </div>
-          <div>
-            <p style="font-size:10px; color:#78716C; margin-bottom:3px;">Load Type</p>
-            <p style="font-size:13px; font-weight:600; color:#1C1917;">{LOAD_LABEL[b.loadType]}</p>
-          </div>
-        </div>
-      </section>
+  const icsStyle = ICS_BADGE[b.icsStatus ?? ''] ?? ICS_BADGE.unavailable
 
-      {/* Shipment */}
-      <section>
-        <p style={SECTION_LABEL}>Shipment</p>
-        <div style={PANEL_STYLE + " display:flex; flex-direction:column; gap:8px;"}>
-          {b.houseBillNumber && (
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style={ROW_LABEL}><Icon name={ICONS.document} size={13} style="color:#78716C;" />HBL</span>
-              <span style="font-family:ui-monospace,monospace; font-size:12px; font-weight:700; color:#78716C;">{b.houseBillNumber}</span>
-            </div>
-          )}
-          {b.containerNumber && (
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style={ROW_LABEL}><Icon name={ICONS.container} size={13} style="color:#78716C;" />Container</span>
-              <span style="font-family:ui-monospace,monospace; font-size:12px; font-weight:700; color:#78716C;">{b.containerNumber}</span>
-            </div>
-          )}
-          {b.weightKg && (
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style={ROW_LABEL}><Icon name={ICONS.cargo} size={13} style="color:#78716C;" />Weight</span>
-              <span style={ROW_VALUE}>{b.weightKg.toLocaleString()} kg</span>
-            </div>
-          )}
-          {b.volumeCbm && (
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style={ROW_LABEL}><Icon name={ICONS.layers} size={13} style="color:#78716C;" />Volume</span>
-              <span style={ROW_VALUE}>{b.volumeCbm} CBM</span>
-            </div>
-          )}
-          {b.packageCount && (
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style={ROW_LABEL + " padding-left:19px;"}>Packages</span>
-              <span style={ROW_VALUE}>{b.packageCount} pkgs</span>
-            </div>
-          )}
-          {b.palletCount !== undefined && b.palletCount > 0 && (
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style={ROW_LABEL + " padding-left:19px;"}>Pallets</span>
-              <span style={ROW_VALUE}>{b.palletCount} × {b.palletType}</span>
-            </div>
-          )}
-        </div>
-      </section>
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(28,25,23,0.35)', backdropFilter: 'blur(4px)' }}
+      />
 
-      {/* CHEP warning */}
-      {b.palletType === 'chep' && (
-        <div style="background:rgba(251,191,36,0.07); border:1px solid rgba(251,191,36,0.20); border-radius:10px; padding:12px 16px; display:flex; align-items:flex-start; gap:10px;">
-          <Icon name={ICONS.warning} size={16} style="color:#FBBF24; flex-shrink:0; margin-top:1px;" />
-          <div>
-            <p style="font-size:13px; font-weight:600; color:#FBBF24; margin-bottom:2px;">CHEP Pallet Exchange</p>
-            <p style="font-size:12px; color:rgba(251,191,36,0.65);">
-              {b.palletCount} CHEP pallet{(b.palletCount || 0) > 1 ? 's' : ''} must be exchanged at collection.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Panel */}
+      <div style={{ position: 'fixed', right: 0, top: 0, height: '100%', width: 480, zIndex: 50, background: '#FFFFFF', borderLeft: '1px solid rgba(0,0,0,0.08)', boxShadow: '-8px 0 40px rgba(0,0,0,0.12)', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
 
-      {/* ICS */}
-      {b.icsStatus && (
-        <section>
-          <p style={SECTION_LABEL}>ICS Status</p>
-          <div style={PANEL_STYLE + " display:flex; align-items:center; justify-content:space-between;"}>
-            <span class={`inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border ${ICS_BADGE_CLASS[b.icsStatus]}`}>
-              {ICS_LABEL[b.icsStatus]}
+        {/* ── Sticky header ── */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px 10px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF', flexShrink: 0, gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <span
+              style={{ fontFamily: 'ui-monospace,monospace', fontSize: 13, fontWeight: 700, color: '#FC6514', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', flexShrink: 0 }}
+              title="Click to copy"
+              onClick={() => navigator.clipboard.writeText(b.referenceNumber).then(() => toast('Reference copied', 'info')).catch(() => {})}
+            >
+              {b.referenceNumber}
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.45 }}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             </span>
-            <div style="display:flex; align-items:center; gap:10px;">
-              <button
-                type="button"
-                style="font-size:11px; color:#FC6514; background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:4px;"
-                hx-post={`/reception/bookings/${b.id}/refresh-ics`}
-                hx-target="#slide-over-content"
-                hx-swap="innerHTML"
-              >
-                <Icon name={ICONS.refresh} size={12} />
-                Refresh ICS
-              </button>
-              <span style="color:rgba(0,0,0,0.12);">|</span>
-              <a href="https://ics.abf.gov.au" target="_blank" style="font-size:11px; color:#FC6514; text-decoration:none; display:flex; align-items:center; gap:4px;">
-                Open in ICS portal
-                <Icon name={ICONS.arrowRight} size={12} />
-              </a>
-            </div>
+            <span style={{ ...STATUS_BADGE[b.status] ?? STATUS_BADGE.scheduled, fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 9999, whiteSpace: 'nowrap' }}>
+              {STATUS_LABEL[b.status] ?? b.status}
+            </span>
           </div>
-          {b.icsLastCheckedAt && (
-            <p style="font-size:11px; color:#A8A29E; margin-top:5px;">
-              Last checked: {new Date(b.icsLastCheckedAt).toLocaleString('en-AU')}
-            </p>
-          )}
-        </section>
-      )}
-
-      {/* Charges */}
-      {b.totalAmount && (
-        <section>
-          <p style={SECTION_LABEL}>Charges</p>
-          <div style="display:flex; flex-direction:column; gap:7px; font-size:13px;">
-            {b.storageCharge !== undefined && b.storageCharge > 0 && (
-              <div style="display:flex; justify-content:space-between; color:#78716C;">
-                <span>Storage ({b.storageDays} days)</span>
-                <span>${b.storageCharge.toFixed(2)}</span>
-              </div>
-            )}
-            {b.shrinkWrapCharge !== undefined && b.shrinkWrapCharge > 0 && (
-              <div style="display:flex; justify-content:space-between; color:#78716C;">
-                <span>Shrink wrap</span>
-                <span>${b.shrinkWrapCharge.toFixed(2)}</span>
-              </div>
-            )}
-            {b.slotFee !== undefined && (
-              <div style="display:flex; justify-content:space-between; color:#78716C;">
-                <span>Slot fee</span>
-                <span>${b.slotFee.toFixed(2)}</span>
-              </div>
-            )}
-            {b.gstAmount !== undefined && (
-              <div style="display:flex; justify-content:space-between; font-size:12px; color:#A8A29E; padding-top:6px; border-top:1px solid rgba(0,0,0,0.07);">
-                <span>GST (10%)</span>
-                <span>${b.gstAmount.toFixed(2)}</span>
-              </div>
-            )}
-            <div style="display:flex; justify-content:space-between; font-weight:700; color:#1C1917; padding-top:6px; border-top:1px solid rgba(0,0,0,0.09);">
-              <span>Total</span>
-              <span style="color:#FC6514;">${b.totalAmount.toFixed(2)}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; font-size:12px; color:#A8A29E;">
-              <span>{b.paymentMethod?.toUpperCase() || '—'}</span>
-              <span style={b.paymentStatus === 'paid' ? 'color:#22C55E; font-weight:500;' : 'color:#FBBF24; font-weight:500;'}>
-                {b.paymentStatus === 'paid' ? 'Paid' : b.paymentStatus === 'pending_eft' ? 'EFT Pending' : b.paymentStatus}
-              </span>
-            </div>
-          </div>
-
-          {b.paymentStatus === 'pending_eft' && (
-            <div style="margin-top:12px;">
-              <button
-                type="button"
-                style="width:100%; background:rgba(252,101,20,0.15); color:#FC6514; border:1px solid rgba(252,101,20,0.30); border-radius:8px; padding:8px 16px; font-size:12px; font-weight:600; cursor:pointer;"
-                hx-post={`/reception/bookings/${b.id}/mark-eft-paid`}
-                hx-target="#slide-over-content"
-                hx-swap="innerHTML"
-              >
-                Mark EFT as Paid
-              </button>
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* Identity check */}
-      <section>
-        <p style={SECTION_LABEL}>Identity Check</p>
-        <div style={PANEL_STYLE + " display:flex; align-items:center; gap:10px;"}>
-          <span style="display:inline-flex; align-items:center; gap:5px; border:1px solid rgba(34,197,94,0.22); font-size:11px; font-weight:600; padding:4px 10px; border-radius:9999px; background:rgba(34,197,94,0.10); color:#22C55E;">
-            <Icon name={ICONS.check} size={11} />
-            Name Matched
-          </span>
-          <span style="font-size:11px; color:#A8A29E;">Driver licence verified at kiosk</span>
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s' }}
+            onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.10)')}
+            onMouseOut={e  => (e.currentTarget.style.background = 'rgba(0,0,0,0.05)')}
+          >
+            <Icon name={ICONS.close} size={16} />
+          </button>
         </div>
-      </section>
 
-      {/* Timeline */}
-      <section>
-        <p style={SECTION_LABEL}>Timeline</p>
-        <div style={PANEL_STYLE + " display:flex; flex-direction:column; gap:8px; font-size:12px;"}>
-          <div style="display:flex; justify-content:space-between;">
-            <span style={ROW_LABEL}><Icon name={ICONS.document} size={13} style="color:#78716C;" />Booking Created</span>
-            <span style="font-size:11px; font-weight:500; color:#78716C;">{new Date(b.createdAt).toLocaleString('en-AU')}</span>
-          </div>
-          {b.paymentStatus === 'paid' && (
-            <div style="display:flex; justify-content:space-between;">
-              <span style={ROW_LABEL}><Icon name={ICONS.check} size={13} style="color:#22C55E;" />Payment Received</span>
-              <span style="font-size:11px; font-weight:500; color:#78716C;">{new Date(b.createdAt).toLocaleString('en-AU')}</span>
-            </div>
-          )}
-          {b.checkedInAt && (
-            <div style="display:flex; justify-content:space-between;">
-              <span style={ROW_LABEL}><Icon name={ICONS.userCheck} size={13} style="color:#FBBF24;" />Checked In</span>
-              <span style="font-size:11px; font-weight:500; color:#78716C;">{new Date(b.checkedInAt).toLocaleString('en-AU')}</span>
-            </div>
-          )}
-          {b.completedAt && (
-            <div style="display:flex; justify-content:space-between;">
-              <span style={ROW_LABEL}><Icon name={ICONS.checkSquare} size={13} style="color:#22C55E;" />Completed</span>
-              <span style="font-size:11px; font-weight:500; color:#78716C;">{new Date(b.completedAt).toLocaleString('en-AU')}</span>
-            </div>
-          )}
-        </div>
-      </section>
-    </div>
+        {/* ── Body ── */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 20, background: '#F5F4F3' }}>
 
-    {/* Action buttons */}
-    <div style="flex-shrink:0; padding:16px 20px; display:flex; flex-direction:column; gap:8px; border-top:1px solid rgba(0,0,0,0.07); background:#FFFFFF;">
-      {b.status === 'scheduled' && (
-        <button
-          type="button"
-          class="btn-success"
-          style="width:100%; justify-content:center;"
-          hx-post={`/reception/bookings/${b.id}/check-in`}
-          hx-target="#slide-over-content"
-          hx-swap="innerHTML"
-        >
-          <Icon name={ICONS.userCheck} size={16} />
-          Check In Visitor
-        </button>
-      )}
-
-      {b.status === 'checked_in' && (
-        <button
-          type="button"
-          class="btn-primary"
-          style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; font-size:13px; font-weight:600; padding:12px 20px; border:none; cursor:pointer;"
-          x-on:click="confirmModal = true"
-        >
-          <Icon name={ICONS.checkSquare} size={18} />
-          Mark Complete
-        </button>
-      )}
-
-      {b.status === 'scheduled' && (
-        <button
-          type="button"
-          class="btn-primary-white"
-          style="width:100%; justify-content:center;"
-          x-on:click="rescheduleModal = true"
-        >
-          <Icon name={ICONS.calendar} size={15} />
-          Reschedule
-        </button>
-      )}
-      {(b.status === 'scheduled' || b.status === 'checked_in') && (
-        <button
-          type="button"
-          class="btn-primary-white"
-          style="width:100%; justify-content:center;"
-          x-on:click="cancelModal = true"
-        >
-          <Icon name={ICONS.close} size={15} />
-          Cancel Booking
-        </button>
-      )}
-    </div>
-
-    {/* Reschedule modal */}
-    <template x-teleport="body">
-      <div x-show="rescheduleModal" x-cloak style="position:fixed; inset:0; z-index:9999;">
-        <div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(6px);"></div>
-        <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:16px;">
-          <div style="background:#FFFFFF; border-radius:16px; box-shadow:0 24px 64px rgba(0,0,0,0.28); max-width:400px; width:100%; padding:24px; position:relative;">
-            <h3 style="font-size:17px; font-weight:700; color:#1C1917; margin-bottom:6px;">Reschedule Booking</h3>
-            <p style="font-size:13px; color:#78716C; margin-bottom:20px; line-height:1.5;">
-              Change the slot for <strong style="color:#1C1917; font-family:ui-monospace,monospace;">{b.referenceNumber}</strong>. The visitor will need to be notified separately.
-            </p>
-            <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:20px;">
-              <div>
-                <label style="display:block; font-size:11px; font-weight:700; color:#78716C; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">New Date</label>
-                <input type="date" id={`reschedule-date-${b.id}`} name="newDate" x-model="newDate" style="width:100%; padding:10px 14px; font-size:14px; color:#1C1917; background:#EBEBEA; border:1px solid rgba(0,0,0,0.10); border-radius:10px; outline:none; box-sizing:border-box;" onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
-              </div>
-              <div>
-                <label style="display:block; font-size:11px; font-weight:700; color:#78716C; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">New Start Time</label>
-                <input type="time" id={`reschedule-time-${b.id}`} name="newStart" x-model="newStart" style="width:100%; padding:10px 14px; font-size:14px; color:#1C1917; background:#EBEBEA; border:1px solid rgba(0,0,0,0.10); border-radius:10px; outline:none; box-sizing:border-box;" onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
-              </div>
-            </div>
-            <div style="display:flex; gap:10px;">
-              <button type="button" class="btn-ghost" style="flex:1; justify-content:center;" x-on:click="rescheduleModal = false">Cancel</button>
-              <button type="button" class="btn-primary" style="flex:1; justify-content:center; white-space:nowrap;"
-                hx-post={`/reception/bookings/${b.id}/reschedule`}
-                hx-target="#slide-over-content"
-                hx-swap="innerHTML"
-                hx-include={`#reschedule-date-${b.id},#reschedule-time-${b.id}`}
-                x-on:click="rescheduleModal = false"
-              >
-                <Icon name={ICONS.calendar} size={14} />Confirm Reschedule
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </template>
-
-    {/* Cancel confirmation modal */}
-    <template x-teleport="body">
-      <div x-show="cancelModal" x-cloak style="position:fixed; inset:0; z-index:9999;">
-        <div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(6px);"></div>
-        <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:16px;">
-          <div style="background:#FFFFFF; border-radius:16px; box-shadow:0 24px 64px rgba(0,0,0,0.28); max-width:380px; width:100%; padding:24px; position:relative;">
-            <h3 style="font-size:17px; font-weight:700; color:#1C1917; margin-bottom:6px;">Cancel this booking?</h3>
-            <p style="font-size:13px; color:#78716C; margin-bottom:20px; line-height:1.5;">
-              You are cancelling <strong style="color:#1C1917; font-family:ui-monospace,monospace;">{b.referenceNumber}</strong> for <strong style="color:#1C1917;">{b.driverName}</strong>. This cannot be undone.
-            </p>
-            <div style="display:flex; gap:10px;">
-              <button type="button" class="btn-primary-white" style="flex:1; justify-content:center;" x-on:click="cancelModal = false">Keep Booking</button>
-              <button type="button" class="btn-danger" style="flex:1; justify-content:center;"
-                hx-post={`/reception/bookings/${b.id}/cancel`}
-                hx-target="#slide-over-content"
-                hx-swap="innerHTML"
-                x-on:click="cancelModal = false"
-              >
-                <Icon name={ICONS.close} size={14} />Confirm Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </template>
-
-    {/* Mark Complete confirmation modal */}
-    <template x-teleport="body">
-      <div x-show="confirmModal" x-cloak style="position:fixed; inset:0; z-index:9999;">
-        <div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(6px);"></div>
-        <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:16px;">
-          <div style="background:#FFFFFF; border-radius:16px; box-shadow:0 24px 64px rgba(0,0,0,0.28); max-width:420px; width:100%; padding:24px; position:relative;">
-            <h3 style="font-size:17px; font-weight:700; color:#1C1917; margin-bottom:6px;">Complete this job?</h3>
-            <p style="font-size:13px; color:#78716C; margin-bottom:20px; line-height:1.5;">
-              Marking <strong style="color:#1C1917;">{b.driverName}</strong>'s visit as complete. This action is final.
-            </p>
-            <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
-              {['Driver identity verified','Documents checked','Cargo released'].map((item) => (
-                <div key={item} style="display:flex; align-items:center; gap:10px; font-size:13px; color:#1C1917;">
-                  <span style="width:20px; height:20px; border-radius:9999px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.22);">
-                    <Icon name={ICONS.check} size={11} style="color:#22C55E;" />
-                  </span>
-                  {item}
+          {/* Driver */}
+          <section>
+            <p style={SL}>Driver / Visitor</p>
+            <div style={{ ...PANEL, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { label: 'Driver', value: b.driverName,             icon: ICONS.user  },
+                { label: 'Phone',  value: b.driverPhone || '—',     icon: ICONS.phone },
+                { label: 'Guest',  value: b.guestName || b.driverName, icon: ICONS.users },
+              ].map(row => (
+                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={RL}><Icon name={row.icon} size={13} style={{ color: '#78716C' }} />{row.label}</span>
+                  <span style={RV}>{row.value}</span>
                 </div>
               ))}
             </div>
-            <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
-              <div>
-                <label style="display:block; font-size:11px; font-weight:600; color:rgba(0,0,0,0.40); letter-spacing:0.07em; text-transform:uppercase; margin-bottom:6px;">Completion Notes (optional)</label>
-                <textarea id={`complete-notes-${b.id}`} name="completionNotes" rows={2} x-model="completionNotes" placeholder="Any notes for records..." class="wizard-field" style="width:100%; padding:10px 14px; font-size:13px; resize:none; box-sizing:border-box;"></textarea>
+          </section>
+
+          {/* Slot */}
+          <section>
+            <p style={SL}>Slot</p>
+            <div style={{ ...PANEL, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {[
+                { label: 'Date',      value: b.slotDate,           icon: ICONS.calendar },
+                { label: 'Time',      value: `${b.slotStartTime} – ${b.slotEndTime}`, icon: ICONS.clock },
+                { label: 'Service',   value: b.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off', icon: null },
+                { label: 'Load Type', value: (b.loadType ?? '').toUpperCase(), icon: null },
+              ].map(row => (
+                <div key={row.label}>
+                  <p style={{ fontSize: 10, color: '#78716C', marginBottom: 3 }}>{row.label}</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    {row.icon && <Icon name={row.icon} size={13} style={{ color: '#78716C' }} />}
+                    {row.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Shipment */}
+          {(b.houseBillNumber || b.containerNumber || b.weightKg || b.volumeCbm) && (
+            <section>
+              <p style={SL}>Shipment</p>
+              <div style={{ ...PANEL, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {b.houseBillNumber  && <Row label="HBL"       value={b.houseBillNumber}  icon={ICONS.document}  mono />}
+                {b.containerNumber  && <Row label="Container" value={b.containerNumber}   icon={ICONS.container} mono />}
+                {b.weightKg         && <Row label="Weight"    value={`${b.weightKg.toLocaleString()} kg`} icon={ICONS.cargo} />}
+                {b.volumeCbm        && <Row label="Volume"    value={`${b.volumeCbm} CBM`} icon={ICONS.layers} />}
+                {b.packageCount     && <Row label="Packages"  value={`${b.packageCount} pkgs`} />}
+                {(b.palletCount ?? 0) > 0 && <Row label="Pallets" value={`${b.palletCount} × ${b.palletType}`} />}
               </div>
+            </section>
+          )}
+
+          {/* CHEP warning */}
+          {b.palletType === 'chep' && (
+            <div style={{ background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.20)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <Icon name={ICONS.warning} size={16} style={{ color: '#FBBF24', flexShrink: 0, marginTop: 1 }} />
               <div>
-                <label style="display:block; font-size:11px; font-weight:600; color:rgba(0,0,0,0.40); letter-spacing:0.07em; text-transform:uppercase; margin-bottom:6px;">Notify Guest by Email (optional)</label>
-                <input id={`complete-email-${b.id}`} name="guestEmail" type="email" x-model="guestEmail" placeholder="guest@example.com" class="wizard-field" style="width:100%; box-sizing:border-box;" />
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#B45309', marginBottom: 2 }}>CHEP Pallet Exchange</p>
+                <p style={{ fontSize: 12, color: 'rgba(180,83,9,0.75)' }}>{b.palletCount} CHEP pallet{(b.palletCount ?? 0) > 1 ? 's' : ''} must be exchanged at collection.</p>
               </div>
             </div>
-            <div style="display:flex; gap:10px;">
-              <button type="button" class="btn-danger-outline" style="flex:1; justify-content:center;" x-on:click="confirmModal = false">Cancel</button>
-              <button type="button" class="btn-primary" style="flex:1; justify-content:center;"
-                hx-post={`/reception/bookings/${b.id}/complete`}
-                hx-target="#slide-over-content"
-                hx-swap="innerHTML"
-                hx-include={`#complete-notes-${b.id},#complete-email-${b.id}`}
-                x-on:click="confirmModal = false"
-              >
-                <Icon name={ICONS.check} size={16} />Confirm Complete
-              </button>
+          )}
+
+          {/* ICS */}
+          {b.icsStatus && (
+            <section>
+              <p style={SL}>ICS Status</p>
+              <div style={{ ...PANEL, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 9999, ...Object.fromEntries(icsStyle.split(';').filter(Boolean).map(s => { const [k, ...v] = s.split(':'); return [k.trim().replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase()), v.join(':').trim()] })) } as any}>
+                  {ICS_LABEL[b.icsStatus] ?? b.icsStatus}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <button
+                    onClick={() => act('ics', () => refreshIcsStatus(b.id), 'ICS status refreshed', 'info')}
+                    disabled={loading === 'ics'}
+                    style={{ fontSize: 11, color: '#FC6514', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                  >
+                    <Icon name={ICONS.refresh} size={12} />
+                    {loading === 'ics' ? 'Refreshing…' : 'Refresh ICS'}
+                  </button>
+                  <span style={{ color: 'rgba(0,0,0,0.12)' }}>|</span>
+                  <a href="https://ics.abf.gov.au" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#FC6514', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    Open in ICS portal <Icon name={ICONS.arrowRight} size={12} />
+                  </a>
+                </div>
+              </div>
+              {b.icsLastCheckedAt && (
+                <p style={{ fontSize: 11, color: '#A8A29E', marginTop: 5 }}>Last checked: {fmtDateTime(b.icsLastCheckedAt)}</p>
+              )}
+            </section>
+          )}
+
+          {/* Charges */}
+          {b.totalAmount && (
+            <section>
+              <p style={SL}>Charges</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: 13 }}>
+                {(b.storageCharge ?? 0) > 0     && <ChargeRow label={`Storage (${b.storageDays} days)`} val={b.storageCharge!} />}
+                {(b.shrinkWrapCharge ?? 0) > 0  && <ChargeRow label="Shrink wrap" val={b.shrinkWrapCharge!} />}
+                {b.slotFee !== undefined          && <ChargeRow label="Slot fee"    val={b.slotFee} />}
+                {b.gstAmount !== undefined && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#A8A29E', paddingTop: 6, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+                    <span>GST (10%)</span><span>${b.gstAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#1C1917', paddingTop: 6, borderTop: '1px solid rgba(0,0,0,0.09)' }}>
+                  <span>Total</span><span style={{ color: '#FC6514' }}>${b.totalAmount.toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#A8A29E' }}>
+                  <span>{(b.paymentMethod ?? '—').toUpperCase()}</span>
+                  <span style={{ color: b.paymentStatus === 'paid' ? '#22C55E' : '#FBBF24', fontWeight: 500 }}>
+                    {b.paymentStatus === 'paid' ? 'Paid' : b.paymentStatus === 'pending_eft' ? 'EFT Pending' : b.paymentStatus}
+                  </span>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Timeline */}
+          <section>
+            <p style={SL}>Timeline</p>
+            <div style={{ ...PANEL, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={RL}><Icon name={ICONS.document} size={13} style={{ color: '#78716C' }} />Created</span>
+                <span style={{ fontSize: 11, fontWeight: 500, color: '#78716C' }}>{fmtDateTime(b.createdAt)}</span>
+              </div>
+              {b.checkedInAt && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={RL}><Icon name={ICONS.userCheck} size={13} style={{ color: '#FBBF24' }} />Checked In</span>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: '#78716C' }}>{fmtDateTime(b.checkedInAt)}</span>
+                </div>
+              )}
+              {b.completedAt && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={RL}><Icon name={ICONS.checkSquare} size={13} style={{ color: '#22C55E' }} />Completed</span>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: '#78716C' }}>{fmtDateTime(b.completedAt)}</span>
+                </div>
+              )}
             </div>
-          </div>
+          </section>
+        </div>
+
+        {/* ── Action footer ── */}
+        <div style={{ flexShrink: 0, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF' }}>
+          {b.status === 'scheduled' && (
+            <ActionBtn color="green" loading={loading === 'checkin'} onClick={() => act('checkin', () => checkInBooking(b.id), `✓ ${b.driverName} checked in`, 'success')}>
+              <Icon name={ICONS.userCheck} size={16} /> Check In Visitor
+            </ActionBtn>
+          )}
+          {b.status === 'checked_in' && (
+            <ActionBtn color="orange" loading={loading === 'complete'} onClick={() => setConfirmModal(true)}>
+              <Icon name={ICONS.checkSquare} size={16} /> Mark Complete
+            </ActionBtn>
+          )}
+          {(b.status === 'scheduled') && (
+            <ActionBtn color="ghost" onClick={() => setRescheduleModal(true)}>
+              <Icon name={ICONS.calendar} size={15} /> Reschedule
+            </ActionBtn>
+          )}
+          {b.status === 'scheduled' && (
+            <ActionBtn color="danger" onClick={() => setCancelModal(true)}>
+              <Icon name={ICONS.close} size={15} /> Cancel Booking
+            </ActionBtn>
+          )}
         </div>
       </div>
-    </template>
-  </div>
-)
+
+      {/* ── Reschedule modal ── */}
+      {rescheduleModal && (
+        <Modal onClose={() => setRescheduleModal(false)}>
+          <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1C1917', marginBottom: 6 }}>Reschedule Booking</h3>
+          <p style={{ fontSize: 13, color: '#78716C', marginBottom: 20, lineHeight: 1.5 }}>
+            Change the slot for <strong style={{ color: '#1C1917', fontFamily: 'ui-monospace,monospace' }}>{b.referenceNumber}</strong>.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>New Date</label>
+              <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} style={fieldStyle} onFocus={focus} onBlur={blur} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>New Start Time</label>
+              <input type="time" value={newStart} onChange={e => setNewStart(e.target.value)} style={fieldStyle} onFocus={focus} onBlur={blur} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <ActionBtn color="ghost" onClick={() => setRescheduleModal(false)}>Cancel</ActionBtn>
+            <ActionBtn color="orange" loading={loading === 'reschedule'} onClick={async () => {
+              if (!newDate || !newStart) return
+              const endH = String(parseInt(newStart.split(':')[0]) + 1).padStart(2, '0')
+              const newEnd = `${endH}:${newStart.split(':')[1]}`
+              await act('reschedule', () => rescheduleBooking(b.id, newDate, newStart, newEnd), `Rescheduled to ${newDate} at ${newStart}`, 'success')
+              setRescheduleModal(false)
+            }}>
+              <Icon name={ICONS.calendar} size={14} /> Confirm Reschedule
+            </ActionBtn>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Cancel modal ── */}
+      {cancelModal && (
+        <Modal onClose={() => setCancelModal(false)}>
+          <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1C1917', marginBottom: 6 }}>Cancel this booking?</h3>
+          <p style={{ fontSize: 13, color: '#78716C', marginBottom: 20, lineHeight: 1.5 }}>
+            Cancelling <strong style={{ fontFamily: 'ui-monospace,monospace', color: '#1C1917' }}>{b.referenceNumber}</strong> for <strong style={{ color: '#1C1917' }}>{b.driverName}</strong>. This cannot be undone.
+          </p>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <ActionBtn color="ghost" onClick={() => setCancelModal(false)}>Keep Booking</ActionBtn>
+            <ActionBtn color="danger" loading={loading === 'cancel'} onClick={async () => {
+              await act('cancel', () => cancelBooking(b.id), `Booking ${b.referenceNumber} cancelled`, 'info')
+              setCancelModal(false)
+            }}>
+              <Icon name={ICONS.close} size={14} /> Confirm Cancel
+            </ActionBtn>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Complete modal ── */}
+      {confirmModal && (
+        <Modal onClose={() => setConfirmModal(false)}>
+          <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1C1917', marginBottom: 6 }}>Complete this job?</h3>
+          <p style={{ fontSize: 13, color: '#78716C', marginBottom: 20, lineHeight: 1.5 }}>
+            Marking <strong style={{ color: '#1C1917' }}>{b.driverName}</strong>'s visit as complete. This action is final.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+            {['Driver identity verified', 'Documents checked', 'Cargo released'].map(item => (
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#1C1917' }}>
+                <span style={{ width: 20, height: 20, borderRadius: 9999, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.22)' }}>
+                  <Icon name={ICONS.check} size={11} style={{ color: '#22C55E' }} />
+                </span>
+                {item}
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'rgba(0,0,0,0.40)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 6 }}>Completion Notes (optional)</label>
+              <textarea rows={2} value={completionNotes} onChange={e => setCompletionNotes(e.target.value)} placeholder="Any notes for records..." style={{ ...fieldStyle, resize: 'none' }} onFocus={focus} onBlur={blur} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <ActionBtn color="ghost" onClick={() => setConfirmModal(false)}>Cancel</ActionBtn>
+            <ActionBtn color="orange" loading={loading === 'complete'} onClick={async () => {
+              await act('complete', () => completeBooking(b.id, completionNotes || undefined), `✓ ${b.driverName}'s visit completed`, 'success')
+              setConfirmModal(false)
+            }}>
+              <Icon name={ICONS.check} size={16} /> Confirm Complete
+            </ActionBtn>
+          </div>
+        </Modal>
+      )}
+    </>
+  )
+}
+
+/* ── Small helper components ── */
+
+function Row({ label, value, icon, mono }: { label: string; value: string; icon?: string; mono?: boolean }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#78716C' }}>
+        {icon && <Icon name={icon} size={13} style={{ color: '#78716C' }} />}
+        {label}
+      </span>
+      <span style={{ fontFamily: mono ? 'ui-monospace,monospace' : undefined, fontSize: 12, fontWeight: 600, color: mono ? '#78716C' : '#1C1917' }}>{value}</span>
+    </div>
+  )
+}
+
+function ChargeRow({ label, val }: { label: string; val: number }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#78716C' }}>
+      <span>{label}</span><span>${val.toFixed(2)}</span>
+    </div>
+  )
+}
+
+function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={onClose} />
+      <div style={{ position: 'relative', background: '#FFFFFF', borderRadius: 16, boxShadow: '0 24px 64px rgba(0,0,0,0.28)', maxWidth: 420, width: '100%', padding: 24 }}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function ActionBtn({ color, onClick, loading, children }: { color: 'orange' | 'green' | 'ghost' | 'danger'; onClick: () => void; loading?: boolean; children: React.ReactNode }) {
+  const styles: Record<string, React.CSSProperties> = {
+    orange: { background: 'linear-gradient(135deg,#FF7A2A,#E85A0A)', color: '#fff', border: 'none', boxShadow: '0 2px 8px rgba(252,101,20,0.30)' },
+    green:  { background: 'linear-gradient(135deg,#22C55E,#16A34A)', color: '#fff', border: 'none', boxShadow: '0 2px 8px rgba(34,197,94,0.30)' },
+    ghost:  { background: '#fff', color: '#374151', border: '1.5px solid #e5e7eb' },
+    danger: { background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.25)' },
+  }
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 13, fontWeight: 600, borderRadius: 10, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...styles[color] }}
+    >
+      {children}
+    </button>
+  )
+}

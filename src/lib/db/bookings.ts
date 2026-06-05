@@ -1,8 +1,5 @@
 import { supabaseAdmin as supabase, DEFAULT_TENANT_ID } from '../supabase'
-
-// 15 s abort signal — prevents any single DB call from blocking indefinitely.
-// AbortSignal.timeout() is natively available in Node.js 20+.
-const sig = () => AbortSignal.timeout(15_000)
+import { todaySydney } from '../time'
 import type {
   Booking, BookingStatus, ServiceType, LoadType,
   PalletType, IcsStatus, DashboardStats,
@@ -53,8 +50,19 @@ function rowToBooking(row: BookingRow): Booking {
     checkedInAt:        row.checked_in_at ?? undefined,
     completedAt:        row.completed_at ?? undefined,
     completionNotes:    row.completion_notes ?? undefined,
+    // Extended fields (cast via any — columns added after type generation)
+    containerSize:      (row as any).container_size      ?? undefined,
+    entryNumber:        (row as any).entry_number        ?? undefined,
+    purpose:            (row as any).purpose             ?? undefined,
+    consolidator:       (row as any).consolidator        ?? undefined,
+    bookingReference:   (row as any).booking_reference   ?? undefined,
+    vehicleRegistration:(row as any).vehicle_registration ?? undefined,
+    bookingGroupId:     (row as any).booking_group_id    ?? undefined,
+    slotIndex:          (row as any).slot_index          ?? undefined,
+    groupReference:     (row as any).group_reference     ?? undefined,
     tenantId:           row.tenant_id,
     createdAt:          row.created_at,
+    updatedAt:          row.updated_at,
   }
 }
 
@@ -62,8 +70,7 @@ export async function getBookings(): Promise<Booking[]> {
   const { data, error } = await supabase
     .from('bookings')
     .select('*')
-    .order('slot_date', { ascending: false })
-    .order('slot_start_time', { ascending: true })
+    .order('created_at', { ascending: false })
   if (error) throw error
   return data.map(rowToBooking)
 }
@@ -74,8 +81,7 @@ export async function getBookingsByDateRange(from: string, to: string): Promise<
     .select('*')
     .gte('slot_date', from)
     .lte('slot_date', to)
-    .order('slot_date', { ascending: false })
-    .order('slot_start_time', { ascending: true })
+    .order('created_at', { ascending: false })
   if (error) throw error
   return data.map(rowToBooking)
 }
@@ -95,7 +101,20 @@ export async function getBookingByRef(ref: string): Promise<Booking | undefined>
     .from('bookings')
     .select('*')
     .eq('reference_number', ref)
-    .abortSignal(sig())
+    
+    .maybeSingle()
+  if (error) throw error
+  return data ? rowToBooking(data) : undefined
+}
+
+export async function getBookingByRego(rego: string): Promise<Booking | undefined> {
+  const { data, error } = await (supabase as any)
+    .from('bookings')
+    .select('*')
+    .eq('vehicle_registration', rego.toUpperCase())
+    .eq('status', 'scheduled')
+    .order('slot_date', { ascending: true })
+    .limit(1)
     .maybeSingle()
   if (error) throw error
   return data ? rowToBooking(data) : undefined
@@ -112,7 +131,7 @@ export async function findBooking(idOrRef: string): Promise<Booking | undefined>
 }
 
 export async function getTodayBookings(): Promise<Booking[]> {
-  const today = new Date().toISOString().split('T')[0]
+  const today = todaySydney()
   return getBookingsByDate(today)
 }
 
@@ -127,17 +146,33 @@ export async function getBookingsByDate(date: string): Promise<Booking[]> {
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const today = new Date().toISOString().split('T')[0]
-  const { data, error } = await supabase
+  const today = todaySydney()
+  
+  // All stats for the KPI tiles
+  const { data: bookings, error: bError } = await supabase
     .from('bookings')
     .select('status, ics_status')
     .eq('slot_date', today)
-  if (error) throw error
+    .neq('status', 'cancelled')
+  
+  if (bError) throw bError
+
+  // Recent activity feed (Tile 5)
+  const { data: recent, error: rError } = await supabase
+    .from('bookings')
+    .select('*')
+    .eq('slot_date', today)
+    .order('updated_at', { ascending: false })
+    .limit(5)
+
+  if (rError) throw rError
+
   return {
-    totalScheduled: data.filter(b => b.status === 'scheduled').length,
-    checkedIn:      data.filter(b => b.status === 'checked_in').length,
-    completed:      data.filter(b => b.status === 'completed').length,
-    held:           data.filter(b => b.ics_status === 'held').length,
+    todaysVisitors: (bookings ?? []).filter(b => ['scheduled', 'checked_in', 'completed'].includes(b.status!)).length,
+    checkedIn:      (bookings ?? []).filter(b => b.status === 'checked_in').length,
+    pending:        (bookings ?? []).filter(b => b.status === 'scheduled').length,
+    held:           (bookings ?? []).filter(b => b.ics_status === 'held').length,
+    recentVisitors: (recent ?? []).map(rowToBooking),
   }
 }
 
@@ -174,7 +209,7 @@ export async function getBookingsByUserId(userId: string): Promise<Booking[]> {
     .eq('user_id', userId)
     .order('slot_date', { ascending: false })
     .order('slot_start_time', { ascending: false })
-    .abortSignal(sig())
+    
   if (error) throw error
   return data.map(rowToBooking)
 }
@@ -206,15 +241,13 @@ export async function refreshIcsStatus(id: string): Promise<Booking | undefined>
   return data ? rowToBooking(data) : undefined
 }
 
-export async function cancelBooking(id: string): Promise<Booking | undefined> {
-  const { data, error } = await supabase
+export async function cancelBooking(id: string): Promise<void> {
+  const { error } = await supabase
     .from('bookings')
     .update({ status: 'cancelled' })
     .eq('id', id)
-    .select()
-    .maybeSingle()
+    .eq('status', 'scheduled')  // guard: only cancel scheduled bookings
   if (error) throw error
-  return data ? rowToBooking(data) : undefined
 }
 
 export interface CreateBookingInput {
@@ -247,12 +280,32 @@ export interface CreateBookingInput {
   paymentStatus?:    Booking['paymentStatus']
   icsStatus?:        IcsStatus
   tenantId:          string
+  container_size?:       string
+  entry_number?:         string
+  purpose?:              string
+  consolidator?:         string
+  booking_reference?:    string
+  vehicle_registration?: string
+  booking_group_id?:     string   // shared UUID across all slots in a multi-slot booking
+  slot_index?:           number   // 1-based position within the booking group
+  group_reference?:      string   // human-readable master ref (GLD-YYYY-XXXXX) shared across group
+  reference_number?:     string   // override generated ref (used when caller pre-generates slot refs)
+}
+
+export async function getBookingsByGroupRef(groupRef: string): Promise<Booking[]> {
+  const { data, error } = await (supabase as any)
+    .from('bookings')
+    .select('*')
+    .eq('group_reference', groupRef)
+    .order('slot_index', { ascending: true })
+  if (error) throw error
+  return (data ?? []).map(rowToBooking)
 }
 
 export async function createBooking(input: CreateBookingInput): Promise<Booking> {
   const year = new Date().getFullYear()
   const seq  = String(Math.floor(Math.random() * 90000) + 10000)
-  const ref  = `GLD-${year}-${seq}`
+  const ref  = input.reference_number ?? `GLD-${year}-${seq}`
 
   const { data, error } = await supabase
     .from('bookings')
@@ -288,9 +341,18 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
       ics_status:         input.icsStatus ?? null,
       tenant_id:          input.tenantId,
       user_id:            input.userId ?? null,
-    })
+      container_size:     input.container_size ?? null,
+      entry_number:       input.entry_number ?? null,
+      purpose:            input.purpose ?? null,
+      consolidator:          input.consolidator ?? null,
+      booking_reference:     input.booking_reference ?? null,
+      vehicle_registration:  input.vehicle_registration ?? null,
+      booking_group_id:      input.booking_group_id ?? null,
+      slot_index:            input.slot_index ?? null,
+      group_reference:       input.group_reference ?? null,
+    } as any)
     .select()
-    .abortSignal(sig())
+    
     .single()
   if (error) {
     console.error('[createBooking] Supabase insert error:', error.message, error.details, error.hint)

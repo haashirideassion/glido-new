@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --color-brand: #FC6514;
+  --color-brand-dark: #e0560f;
+}
+
+@layer base {
+  html {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Hide number input spin arrows globally */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type='number'] { -moz-appearance: textfield; }
+
+.section-dots {
+  background-image: radial-gradient(rgba(0,0,0,0.06) 1.5px, transparent 1.5px);
+  background-size: 28px 28px;
+}

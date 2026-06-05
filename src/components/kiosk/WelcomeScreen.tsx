@@ -1,52 +1,78 @@
-import { Icon, ICONS } from '../../lib/Icon'
+import { useEffect, useState } from 'react'
+import { GlidoLogo } from '@/lib/GlidoLogo'
+import { Icon, ICONS } from '@/lib/Icon'
+import { useKiosk } from '@/contexts/KioskContext'
+import { useTenantInfo } from '@/lib/useTenantInfo'
+import { getTenant } from '@/lib/db/tenants'
+import { DEFAULT_TENANT_ID } from '@/lib/supabase'
 
-export const WelcomeScreen = () => (
-  <div
-    class="h-full flex flex-col items-center justify-center px-8"
-    x-show="$store.kiosk.currentScreen === 'welcome'"
-  >
-    {/* Logo + name */}
-    <div class="mb-10 text-center">
-      <div class="w-24 h-24 bg-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-5 shadow-2xl">
-        <Icon name={ICONS.logo} size={56} class="text-white" />
+export function WelcomeScreen() {
+  const { state, startBookingLookup, startVisitingFlow } = useKiosk()
+  const tenant = useTenantInfo()
+  const [time,       setTime]       = useState('')
+  const [todayHours, setTodayHours] = useState('')
+
+  const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const
+
+  useEffect(() => {
+    getTenant(DEFAULT_TENANT_ID).then(t => {
+      const wh = t?.working_hours as Record<string, { open: string; close: string; enabled: boolean }> | null
+      if (!wh) return
+      const key = DAY_KEYS[new Date().getDay()]
+      const day = wh[key]
+      if (!day) return
+      setTodayHours(day.enabled ? `Open today: ${day.open} – ${day.close}` : 'Closed today')
+    }).catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const update = () => setTime(
+      new Date().toLocaleTimeString('en-AU', {
+        hour:     '2-digit',
+        minute:   '2-digit',
+        second:   '2-digit',
+        hour12:   false,
+        timeZone: 'Australia/Sydney',
+      })
+    )
+    update()
+    const id = setInterval(update, 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  if (state.currentScreen !== 'welcome') return null
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 32px' }}>
+      <div style={{ marginBottom: 40, textAlign: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+          {tenant?.logoUrl
+            ? <img src={tenant.logoUrl} alt={tenant.name || 'Logo'} style={{ maxHeight: 56, objectFit: 'contain', display: 'block' }} />
+            : <GlidoLogo height={56} />
+          }
+        </div>
+        <h1 style={{ fontSize: '3rem', fontWeight: 800, marginBottom: 8, color: '#1C1917' }}>{tenant?.name || 'Sydney CFS'}</h1>
+        <p style={{ fontSize: '1.25rem', color: '#78716C' }}>Container Freight Station</p>
+        <p style={{ fontSize: '1.5rem', fontFamily: 'ui-monospace,monospace', fontWeight: 600, marginTop: 12, color: '#1C1917', fontVariantNumeric: 'tabular-nums' }}>{time}</p>
       </div>
-      <h1 class="text-5xl font-extrabold text-white mb-2">Sydney CFS</h1>
-      <p class="text-xl text-slate-400">Container Freight Station</p>
-      {/* Live clock */}
-      <p
-        class="text-2xl font-mono font-semibold text-slate-300 mt-3"
-        x-data="{ time: '' }"
-        x-init="setInterval(() => time = new Date().toLocaleTimeString('en-AU'), 1000)"
-        x-text="time"
-      ></p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 448 }}>
+        <button className="kiosk-btn kiosk-btn-primary" style={{ width: '100%', borderRadius: 16 }} onClick={startBookingLookup}>
+          <Icon name={ICONS.qrCode} size={28} />
+          I have a booking — Pick Up or Drop Off
+        </button>
+        <button className="kiosk-btn kiosk-btn-secondary" style={{ width: '100%', borderRadius: 16 }} onClick={startVisitingFlow}>
+          <Icon name={ICONS.walkIn} size={28} />
+          I'm visiting someone
+        </button>
+      </div>
+
+      {todayHours && (
+        <div style={{ marginTop: 40, borderRadius: 16, padding: '12px 24px', textAlign: 'center', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.07)' }}>
+          <p style={{ fontSize: 14, color: '#78716C', fontWeight: 600 }}>{todayHours}</p>
+        </div>
+      )}
+      <p style={{ marginTop: 24, fontSize: 14, color: '#A8A29E' }}>Need help? Speak to our reception team.</p>
     </div>
-
-    {/* Main action buttons */}
-    <div class="flex flex-col gap-4 w-full max-w-md">
-      <button
-        type="button"
-        x-on:click="$store.kiosk.startBookingLookup()"
-        class="kiosk-btn w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl"
-      >
-        <Icon name={ICONS.qrCode} size={28} />
-        I have a booking — Pick Up or Drop Off
-      </button>
-
-      <button
-        type="button"
-        x-on:click="$store.kiosk.startVisitingFlow()"
-        class="kiosk-btn w-full bg-transparent border-2 border-slate-600 hover:border-slate-400 hover:bg-slate-800/50 active:scale-95 text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all"
-      >
-        <Icon name={ICONS.walkIn} size={28} />
-        I'm visiting someone / other purpose
-      </button>
-    </div>
-
-    {/* Hours */}
-    <div class="mt-10 bg-slate-800/60 border border-slate-700 rounded-2xl px-6 py-3 text-center">
-      <p class="text-slate-400 text-sm">CFS hours today: <span class="text-white font-semibold">06:00 – 18:00</span></p>
-    </div>
-
-    <p class="mt-6 text-slate-600 text-sm">Need help? Speak to our reception team.</p>
-  </div>
-)
+  )
+}

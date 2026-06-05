@@ -1,241 +1,325 @@
-import type { FC } from 'hono/jsx'
-import { Icon, ICONS } from '../lib/Icon'
-import { GlidoLogo } from '../lib/GlidoLogo'
+import { useEffect, useRef, useState } from 'react'
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { GlidoLogo } from '@/lib/GlidoLogo'
+import { Icon, ICONS } from '@/lib/Icon'
+import { useAuth } from '@/contexts/AuthContext'
+import { useTenantInfo } from '@/lib/useTenantInfo'
+import { supabase } from '@/lib/supabase'
 
-interface Props {
-  title?: string
-  plain?: boolean   /* skip white card — renders children directly on page bg */
-  user?: { firstName: string | null; email: string } | null
-  path?: string     /* current pathname for active nav highlight */
-  children: any
-}
+const NAV_LINKS = [
+  { to: '/',         label: 'Home',        icon: ICONS.home     },
+  { to: '/book',     label: 'Book a Slot', icon: ICONS.calendar },
+  { to: '/bookings', label: 'My Bookings', icon: ICONS.bookings },
+]
 
-export const PublicLayout: FC<Props> = ({ title = 'Glido', plain = false, user, path, children }) => {
+const FOOTER_COLS = [
+  { heading: 'Platform',   links: [{ label: 'Book a Visit', to: '/book' }, { label: 'My Bookings', to: '/bookings' }, { label: 'Kiosk', to: '/kiosk' }] },
+  { heading: 'Operations', links: [{ label: 'Reception', to: '/reception' }, { label: 'Dashboard', to: '/reception' }, { label: 'Reports', to: '/reception/reports' }] },
+  { heading: 'Company',    links: [{ label: 'Privacy', to: '#' }, { label: 'Terms', to: '#' }, { label: 'Contact', to: '#' }] },
+]
+
+export default function PublicLayout() {
+  const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const tenant = useTenantInfo()
+  const { user } = useAuth()
+  const navRef    = useRef<HTMLElement>(null)
+  const pillRef   = useRef<HTMLDivElement>(null)
+  const wrapRef   = useRef<HTMLElement>(null)
+  const hlRef     = useRef<HTMLDivElement>(null)
+  const loginRef  = useRef<HTMLAnchorElement>(null)
+
+  // Visitor account dropdown
+  const [visitorMenuOpen, setVisitorMenuOpen] = useState(false)
+  const visitorMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (visitorMenuRef.current && !visitorMenuRef.current.contains(e.target as Node)) {
+        setVisitorMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const handleSignOut = async () => {
+    setVisitorMenuOpen(false)
+    await supabase.auth.signOut()
+    navigate('/')
+  }
+
+  // Inject tenant brand colour as CSS custom properties
+  useEffect(() => {
+    const color = tenant?.primaryColor
+    if (!color || !/^#[0-9A-Fa-f]{6}$/.test(color)) return
+    const r = parseInt(color.slice(1, 3), 16)
+    const g = parseInt(color.slice(3, 5), 16)
+    const b = parseInt(color.slice(5, 7), 16)
+    document.documentElement.style.setProperty('--brand-color', color)
+    document.documentElement.style.setProperty('--brand-rgb', `${r},${g},${b}`)
+  }, [tenant?.primaryColor])
+
+  // Floating pill scroll effect + liquid nav highlight
+  useEffect(() => {
+    const nav  = navRef.current
+    const pill = pillRef.current
+    if (!nav || !pill) return
+
+    let pinned = false
+    const onScroll = () => {
+      const s = window.scrollY > 28
+      if (s === pinned) return
+      pinned = s
+      if (s) {
+        nav.style.padding = '10px 20px'
+        pill.style.maxWidth = '860px'
+        pill.style.margin = '0 auto'
+        pill.style.borderRadius = '20px'
+        pill.style.borderColor = 'rgba(255,255,255,0.28)'
+        pill.style.boxShadow = '0 1px 0 rgba(255,255,255,0.9) inset,0 4px 8px rgba(0,0,0,0.04),0 14px 36px rgba(0,0,0,0.11),0 0 0 1px rgba(0,0,0,0.05)'
+      } else {
+        nav.style.padding = '0'
+        pill.style.maxWidth = '100%'
+        pill.style.margin = '0'
+        pill.style.borderRadius = '0'
+        pill.style.borderColor = 'rgba(0,0,0,0.07)'
+        pill.style.boxShadow = 'none'
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+
+    // Liquid highlight
+    const wrap = wrapRef.current
+    const hl   = hlRef.current
+    const links = wrap?.querySelectorAll<HTMLElement>('.nav-link')
+    if (wrap && hl && links) {
+      const enter = (link: HTMLElement) => () => {
+        const lr = link.getBoundingClientRect()
+        const wr = wrap.getBoundingClientRect()
+        hl.style.opacity = '1'
+        hl.style.width  = lr.width  + 'px'
+        hl.style.height = lr.height + 'px'
+        hl.style.left   = (lr.left - wr.left) + 'px'
+        hl.style.top    = (lr.top  - wr.top)  + 'px'
+      }
+      const leave = () => { hl.style.opacity = '0' }
+      links.forEach(l => { l.addEventListener('mouseenter', enter(l)); l.addEventListener('mouseleave', leave) })
+    }
+
+    // Login button shadow depth
+    const login = loginRef.current
+    if (login) {
+      login.addEventListener('mouseenter', () => { login.style.boxShadow = '0 2px 6px rgba(0,0,0,0.07),0 8px 22px rgba(0,0,0,0.11),inset 0 1px 0 rgba(255,255,255,0.95)' })
+      login.addEventListener('mouseleave', () => { login.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.85)' })
+    }
+
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   return (
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>{title} — Glido CFS</title>
-        <link rel="icon" type="image/svg+xml" href="/public/favicon.svg" />
+    <>
+      {/* ── Nav ── */}
+      <header
+        ref={navRef}
+        style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, padding: 0, pointerEvents: 'none', transition: 'padding 0.5s cubic-bezier(0.16,1,0.3,1)' }}
+      >
+        <div
+          ref={pillRef}
+          style={{
+            pointerEvents: 'all',
+            maxWidth: '100%',
+            margin: 0,
+            background: 'rgba(255,255,255,0.88)',
+            backdropFilter: 'blur(20px) saturate(200%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(200%)',
+            border: '1px solid rgba(0,0,0,0.07)',
+            borderRadius: 0,
+            boxShadow: 'none',
+            transition: 'max-width 0.5s cubic-bezier(0.16,1,0.3,1),margin 0.5s cubic-bezier(0.16,1,0.3,1),border-radius 0.5s cubic-bezier(0.16,1,0.3,1),box-shadow 0.5s cubic-bezier(0.16,1,0.3,1)',
+          }}
+        >
+          <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
-        {/* Fonts */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+            <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0, opacity: 1, transition: 'opacity 0.15s ease' }}
+              onMouseOver={e => (e.currentTarget.style.opacity = '0.75')}
+              onMouseOut={e  => (e.currentTarget.style.opacity = '1')}
+            >
+              {tenant?.logoUrl
+                ? <img src={tenant.logoUrl} alt={tenant.name || 'Logo'} style={{ height: 40, maxHeight: 40, objectFit: 'contain', display: 'block' }} />
+                : <GlidoLogo height={21} onDark={false} />
+              }
+            </Link>
 
-        <link rel="stylesheet" href="/public/styles.css" />
-        <style>{`
-          [x-cloak]{display:none!important}
-          * { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
-        `}</style>
-        <script src="/public/alpine-init.js"></script>
-        <script src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js" defer></script>
-        <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" defer></script>
-        <script src="https://code.iconify.design/3/3.1.1/iconify.min.js" defer></script>
-
-        {/* ── Instant preloader ── */}
-        <script dangerouslySetInnerHTML={{ __html: `
-          (function(){
-            var D='#1C232C',O='#FF6610',O2='#FC6514';
-            var firstVisit = !sessionStorage.getItem('g-visited');
-            if (firstVisit) sessionStorage.setItem('g-visited','1');
-            var s=document.createElement('style');
-            s.textContent='#g-pl-overlay{position:fixed;inset:0;z-index:99998;background:#fff;pointer-events:none}'
-              +'#g-pl-bar{position:fixed;top:0;left:0;height:4px;width:0%;background:linear-gradient(90deg,'+O2+',#FF9500);box-shadow:0 0 10px rgba(252,101,20,0.5);z-index:100000}'
-              +(firstVisit ? '#g-pl-logo-wrap{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:99999;pointer-events:none}' : '');
-            document.head.appendChild(s);
-            if (!firstVisit) {
-              var bar=document.createElement('div');bar.id='g-pl-bar';
-              document.documentElement.appendChild(bar);
-              var raf=requestAnimationFrame;raf(function(){raf(function(){
-                bar.style.transition='width 0.3s ease';bar.style.width='80%';
-              });});
-              window.__gPlSafetyTimer=setTimeout(function(){
-                var b=document.getElementById('g-pl-bar');
-                if(b){b.style.transition='width 0.1s ease';b.style.width='100%';setTimeout(function(){b.style.transition='opacity 0.2s ease';b.style.opacity='0';setTimeout(function(){if(b&&b.parentNode)b.parentNode.removeChild(b);},220);},120);}
-              },4000);
-            } else {
-            var H=28,W=145;
-            var svg='<svg id="g-pl-logo-svg" viewBox="0 0 160 31" height="'+H+'" width="'+W+'" xmlns="http://www.w3.org/2000/svg" style="display:block">'
-              +'<path fill="'+D+'" d="m25.5 13c-1.2 0-2.5 0.6-3.4 1.6l-3 3.2 0.1 0.2h24.8l-0.8 3.1c-0.6 2.3-1.9 3.5-4.3 3.5h-23.6c-5.3 0-8.7-3.1-8.3-8.3s3.1-9.8 8.3-9.8h15.5c0.8 0 1.4-0.5 1.8-1.1l2-3.5-0.1-0.6h-19.3c-8.2 0-12.8 6.1-13.3 14-0.5 7.1 2.8 14.2 12.7 14.3h24.4c5.4 0 8.6-2.2 9.9-7.3l2.4-9.2-25.8-0.1z"/>'
-              +'<path fill="'+D+'" d="m60.9 1.3-6.3 21.2c-0.9 4.1 1.1 6.8 5.5 6.9h5.8l1.3-5h-4.6c-1.6 0-2.5-0.9-2-2.6l5.7-20.5h-5.4z"/>'
-              +'<path fill="'+D+'" d="m75.6 9.3-5.4 20.1h5.8l5.6-20.5h-5.5l-0.5 0.4z"/>'
-              +'<path fill="'+D+'" d="m116.5 1.4-5.3 19.1c-0.8 2.6-2.3 3.8-4.9 3.8h-12.4c-2.5 0-4.2-1.4-3.8-4.4 0.5-3.6 3-6 6.2-6h12c1 0 1.4-0.4 1.9-1.1l1.8-3.5v-0.4h-16c-5.9 0-11.2 3.9-12 10.7-0.6 5.8 2.4 9.7 9.3 9.7h13c5.6 0 9.1-1.9 10.6-7.7l5.7-20.3h-6l-0.1 0.1z"/>'
-              +'<path fill="'+D+'" d="m150.5 16c-0.4 0-0.4 0.2-0.6 0.5l-0.8 3.5c-0.6 2.7-2.6 4.4-4.7 4.4h-11.9c-2.7 0-4.6-1.5-4-4.8 0.5-3.3 2.8-5.7 6.3-5.7h12.2c0.7 0 1.2-0.3 1.6-1l1.8-3.6-0.2-0.4h-15.2c-6.3 0-11 3.4-12.2 9.8-1.1 6.1 1.4 10.6 8.7 10.7h13c5.9 0 9.1-3.1 10.2-7.8l1.3-5.5-5.5-0.1z"/>'
-              +'<path fill="'+O+'" d="m43.1 1.4c-1.5 0-2.6 0.3-3.5 1.4-0.7 0.7-2.9 3.4-2.8 3.6l0.2 0.1h13.6c1 0 1.5-0.4 2-1.1 0.6-0.8 2.4-3.7 2.3-4h-11.8z"/>'
-              +'<path fill="'+O2+'" d="m77.8 1.4-1.4 5.1h5.1c0.5 0 0.7-0.4 0.8-0.6l1.3-4.6h-5.8v0.1z"/>'
-              +'<path fill="'+O+'" d="m152.8 8.9c-0.2 0-0.2 0.1-0.3 0.2l-1.9 4.3 4 0.1c0.7 0 1-0.3 1.5-0.8 0.7-0.8 2.4-3.4 2.4-3.6l-0.1-0.2h-5.6z"/>'
-              +'</svg>';
-            var overlay=document.createElement('div');overlay.id='g-pl-overlay';
-            var bar=document.createElement('div');bar.id='g-pl-bar';
-            var wrap=document.createElement('div');wrap.id='g-pl-logo-wrap';wrap.innerHTML=svg;
-            document.documentElement.appendChild(overlay);
-            document.documentElement.appendChild(bar);
-            document.documentElement.appendChild(wrap);
-            var raf=requestAnimationFrame;raf(function(){raf(function(){
-              bar.style.transition='width 0.5s ease';bar.style.width='60%';
-            });});
-            function _safetyDismiss(){
-              var b=document.getElementById('g-pl-bar');
-              var o=document.getElementById('g-pl-overlay');
-              var w=document.getElementById('g-pl-logo-wrap');
-              if(b){b.style.transition='width 0.16s ease';b.style.width='100%';}
-              setTimeout(function(){
-                if(b){b.style.transition='opacity 0.3s ease';b.style.opacity='0';}
-                if(o){o.style.transition='opacity 0.4s ease';o.style.opacity='0';}
-                if(w){w.style.transition='opacity 0.4s ease';w.style.opacity='0';}
-                setTimeout(function(){
-                  [b,o,w].forEach(function(el){if(el&&el.parentNode)el.parentNode.removeChild(el);});
-                },450);
-              },200);
-            }
-            window.__gPlSafetyTimer=setTimeout(_safetyDismiss,5000);
-            }
-          })();
-        `}} />
-      </head>
-      <body class="min-h-screen font-sans antialiased" style="background:#f6f7f9; color:#1C1917;">
-
-        {/* ── Header ────────────────────────────────────────────────────── */}
-        {/*
-        ── OLD HEADER (commented out — revert if needed) ──────────────────────
-        <header class="sticky top-0 z-40" style="background:rgba(246,247,249,0.97); backdrop-filter:blur(16px) saturate(180%); -webkit-backdrop-filter:blur(16px) saturate(180%); border-bottom:1px solid rgba(0,0,0,0.07);">
-          <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-            <a href="/" class="flex items-center glido-logo-anchor" style="text-decoration:none;">
-              <GlidoLogo height={20} onDark={false} />
-            </a>
-            <nav class="hidden sm:flex items-center gap-1">
-              {[
-                { href: '/',         label: 'Home',        icon: ICONS.home      },
-                { href: '/book',     label: 'Book a Slot', icon: ICONS.calendar  },
-                { href: '/bookings', label: 'My Bookings', icon: ICONS.bookings  },
-              ].map(l => (
-                <a key={l.href} href={l.href}
-                  style="display:inline-flex; align-items:center; gap:5px; padding:7px 12px; border-radius:8px; font-size:13px; font-weight:500; color:#78716C; text-decoration:none; transition:all 0.15s ease;"
-                  onmouseover="this.style.color='#1C1917'; this.style.background='rgba(0,0,0,0.05)';"
-                  onmouseout="this.style.color='#78716C'; this.style.background='transparent';"
+            <nav
+              ref={wrapRef}
+              style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 2, padding: 4, background: 'rgba(0,0,0,0.045)', borderRadius: 12 }}
+            >
+              <div
+                ref={hlRef}
+                style={{
+                  position: 'absolute', borderRadius: 8, background: '#fff',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.10),0 0 0 1px rgba(0,0,0,0.06)',
+                  opacity: 0, pointerEvents: 'none', zIndex: 0,
+                  transition: 'opacity 0.2s ease,width 0.25s cubic-bezier(0.16,1,0.3,1),height 0.25s cubic-bezier(0.16,1,0.3,1),left 0.25s cubic-bezier(0.16,1,0.3,1),top 0.25s cubic-bezier(0.16,1,0.3,1)',
+                }}
+              />
+              {NAV_LINKS.map(l => (
+                <Link
+                  key={l.to}
+                  to={l.to === '/book' && !user ? '/visitor-login?redirect=/book' : l.to}
+                  className="nav-link"
+                  style={{
+                    position: 'relative', zIndex: 1,
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    padding: '7px 13px', borderRadius: 8,
+                    fontSize: 13, fontWeight: 500,
+                    color: pathname === l.to ? '#1C1917' : '#78716C',
+                    textDecoration: 'none',
+                    transition: 'color 0.15s ease,transform 0.22s cubic-bezier(0.16,1,0.3,1)',
+                    userSelect: 'none',
+                  }}
                 >
-                  <Icon name={l.icon} size={14} style="opacity:0.7;" />
+                  <Icon name={l.icon} size={14} style={{ opacity: 0.65 }} />
                   {l.label}
-                </a>
+                </Link>
               ))}
             </nav>
-            {user ? (
-              <div style="display:inline-flex; align-items:center; gap:8px;">
-                <span style="font-size:12px; font-weight:500; color:#78716C;">{user.firstName ?? user.email}</span>
-                <a href="/logout" style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; font-size:12px; font-weight:600; color:#1C1917; background:#F5F4F3; border:1px solid rgba(0,0,0,0.10); border-radius:9999px; text-decoration:none; transition:all 0.15s ease;"
-                  onmouseover="this.style.background='#EBEBEA'; this.style.borderColor='rgba(0,0,0,0.18)';"
-                  onmouseout="this.style.background='#F5F4F3'; this.style.borderColor='rgba(0,0,0,0.10)';">
-                  <Icon name={ICONS.logout} size={13} style="opacity:0.6;" /> Log out
-                </a>
-              </div>
-            ) : (
-              <a href="/login" style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; font-size:12px; font-weight:600; color:#1C1917; background:#F5F4F3; border:1px solid rgba(0,0,0,0.10); border-radius:9999px; text-decoration:none; transition:all 0.15s ease;"
-                onmouseover="this.style.background='#EBEBEA'; this.style.borderColor='rgba(0,0,0,0.18)';"
-                onmouseout="this.style.background='#F5F4F3'; this.style.borderColor='rgba(0,0,0,0.10)';">
-                <Icon name={ICONS.users} size={13} style="opacity:0.6;" /> Login
-              </a>
-            )}
-          </div>
-        </header>
-        ── END OLD HEADER ──────────────────────────────────────────────────── */}
 
-        {/* ── NEW HEADER ─────────────────────────────────────────────────── */}
-        <header style="position:sticky; top:0; z-index:40; background:#FFFFFF; border-bottom:1px solid rgba(0,0,0,0.07);">
-          <div style="max-width:1280px; margin:0 auto; padding:0 40px; height:72px; display:flex; align-items:center; justify-content:space-between;">
-
-            {/* Logo */}
-            <a href="/" style="text-decoration:none; display:inline-flex; align-items:center; flex-shrink:0;">
-              <GlidoLogo height={24} onDark={false} />
-            </a>
-
-            {/* Nav — no icons, generous gap */}
-            <nav style="display:flex; align-items:center; gap:48px;">
-              {([
-                { href: '/',         label: 'Home'        },
-                { href: '/book',     label: 'Book a Slot' },
-                { href: '/bookings', label: 'My Bookings' },
-              ] as { href: string; label: string }[]).map(l => {
-                const active = path === l.href
-                return (
-                  <a
-                    key={l.href}
-                    href={l.href}
-                    style={`font-size:15px; font-weight:${active ? '600' : '400'}; color:${active ? '#FC6514' : '#1C1917'}; text-decoration:none; transition:color 0.15s ease;`}
-                    onmouseover={!active ? "this.style.color='#FC6514';" : undefined}
-                    onmouseout={!active  ? "this.style.color='#1C1917';" : undefined}
-                  >
-                    {l.label}
-                  </a>
-                )
-              })}
-            </nav>
-
-            {/* Right CTA */}
-            {user ? (
-              <div style="display:inline-flex; align-items:center; gap:12px; flex-shrink:0;">
-                <span style="font-size:13px; font-weight:500; color:#78716C;">
-                  {user.firstName ?? user.email}
-                </span>
-                <a
-                  href="/logout"
-                  style="display:inline-flex; align-items:center; gap:6px; padding:10px 22px; font-size:14px; font-weight:600; color:#FFFFFF; background:#FC6514; border-radius:9999px; text-decoration:none; transition:background 0.15s ease;"
-                  onmouseover="this.style.background='#e55a10';"
-                  onmouseout="this.style.background='#FC6514';"
-                >
-                  Log out
-                </a>
-              </div>
-            ) : (
-              <a
-                href="/contact"
-                style="display:inline-flex; align-items:center; padding:10px 28px; font-size:14px; font-weight:600; color:#FFFFFF; background:#FC6514; border-radius:9999px; text-decoration:none; flex-shrink:0; transition:background 0.15s ease; box-shadow:0 2px 8px rgba(252,101,20,0.28);"
-                onmouseover="this.style.background='#e55a10';"
-                onmouseout="this.style.background='#FC6514';"
+            {user && (user.role === 'reception_staff' || user.role === 'reception_admin') ? (
+              // Reception staff landed on a public page — point them back
+              <Link
+                to="/reception"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 13, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.22)', borderRadius: 9999, textDecoration: 'none', flexShrink: 0, transition: 'all 0.14s ease' }}
+                onMouseOver={e => { e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.13)'; e.currentTarget.style.borderColor = 'rgba(var(--brand-rgb),0.38)' }}
+                onMouseOut={e  => { e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.07)'; e.currentTarget.style.borderColor = 'rgba(var(--brand-rgb),0.22)' }}
               >
-                Contact Us
-              </a>
-            )}
-
-          </div>
-        </header>
-
-        {/* ── Main content ───────────────────────────────────────────── */}
-        {plain
-          ? <main style="min-height:calc(100vh - 56px - 64px);">{children}</main>
-          : (
-            <main style="padding:12px; min-height:calc(100vh - 56px - 64px); box-sizing:border-box;">
-              <div style="background:#FFFFFF; border-radius:20px; min-height:calc(100vh - 56px - 64px - 24px); box-shadow:0 1px 4px rgba(0,0,0,0.04), 0 6px 28px rgba(0,0,0,0.07);">
-                {children}
-              </div>
-            </main>
-          )
-        }
-
-        {/* ── Footer ────────────────────────────────────────────────────── */}
-        <footer style="border-top:1px solid rgba(0,0,0,0.07); padding:24px; margin-top:0; background:#f6f7f9;">
-          <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3" style="font-size:12px; color:#A8A29E;">
-            <span>© 2026 Glido CFS · Sydney Container Freight Station</span>
-            <div style="display:flex; gap:20px;">
-              {['Privacy', 'Terms', 'Contact'].map(l => (
-                <a
-                  key={l}
-                  href="#"
-                  style="color:#A8A29E; text-decoration:none; transition:color 0.15s ease;"
-                  onmouseover="this.style.color='#57534E';"
-                  onmouseout="this.style.color='#A8A29E';"
+                Go to Reception →
+              </Link>
+            ) : user ? (
+              // Logged-in visitor — dropdown
+              <div ref={visitorMenuRef} style={{ position: 'relative', flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => setVisitorMenuOpen(v => !v)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 13, fontWeight: 600, color: '#1C1917', background: 'linear-gradient(160deg,#F9F8F7 0%,#EEEDEC 100%)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 9999, cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.85)', fontFamily: 'inherit' }}
                 >
-                  {l}
-                </a>
-              ))}
-            </div>
+                  <Icon name={ICONS.user} size={13} style={{ opacity: 0.55 }} />
+                  {user.firstName ?? 'My Account'}
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.40, transition: 'transform 0.15s ease', transform: visitorMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0 }}>
+                    <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+
+                {visitorMenuOpen && (
+                  <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 200, minWidth: 160, background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 12, boxShadow: '0 8px 28px rgba(0,0,0,0.11),0 2px 6px rgba(0,0,0,0.06)', padding: 5 }}>
+                    <Link
+                      to="/bookings"
+                      onClick={() => setVisitorMenuOpen(false)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: '#1C1917', textDecoration: 'none', transition: 'background 0.12s ease' }}
+                      onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.04)')}
+                      onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <Icon name={ICONS.bookings} size={14} style={{ opacity: 0.55, flexShrink: 0 }} />
+                      My Bookings
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 10px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', transition: 'background 0.12s ease' }}
+                      onMouseOver={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.07)')}
+                      onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <Icon name={ICONS.arrowLeft} size={14} style={{ opacity: 0.70, flexShrink: 0 }} />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Not logged in
+              <Link
+                ref={loginRef}
+                to="/visitor-login"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 13, fontWeight: 600, color: '#1C1917', background: 'linear-gradient(160deg,#F9F8F7 0%,#EEEDEC 100%)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 9999, textDecoration: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.85)', flexShrink: 0, overflow: 'hidden', position: 'relative' }}
+              >
+                <Icon name={ICONS.users} size={13} style={{ opacity: 0.55 }} />
+                Login
+              </Link>
+            )}
           </div>
-        </footer>
-        <script src="/public/transitions.js"></script>
-      </body>
-    </html>
+        </div>
+      </header>
+
+      {/* ── Page content ── */}
+      <main style={{ paddingTop: 60 }}>
+        <Outlet />
+      </main>
+
+      {/* ── Footer ── */}
+      <footer style={{ borderTop: '1px solid #f0f0f0', background: '#fff', padding: '64px 24px 32px' }}>
+        <div className="max-w-6xl mx-auto">
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 48, marginBottom: 48 }} className="footer-grid">
+
+            <div>
+              <div className="flex items-center mb-4">
+                <GlidoLogo height={20} onDark={false} />
+              </div>
+              <p style={{ fontSize: 13, color: '#78716C', lineHeight: 1.7, maxWidth: 220 }}>
+                Streamlining container freight station operations — from booking to bay door.
+              </p>
+              <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+                {[ICONS.email, ICONS.ship].map(icon => (
+                  <a
+                    key={icon}
+                    href="#"
+                    style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s ease' }}
+                    onMouseOver={e => (e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.12)')}
+                    onMouseOut={e  => (e.currentTarget.style.background = 'rgba(0,0,0,0.05)')}
+                  >
+                    <Icon name={icon} size={14} style={{ color: '#78716C' }} />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {FOOTER_COLS.map(col => (
+              <div key={col.heading}>
+                <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#A8A29E', marginBottom: 16 }}>{col.heading}</p>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {col.links.map(l => (
+                    <li key={l.label}>
+                      <Link
+                        to={l.to}
+                        style={{ fontSize: 13, color: '#78716C', textDecoration: 'none', transition: 'color 0.15s ease' }}
+                        onMouseOver={e => (e.currentTarget.style.color = '#1C1917')}
+                        onMouseOut={e  => (e.currentTarget.style.color = '#78716C')}
+                      >
+                        {l.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ paddingTop: 24, borderTop: '1px solid rgba(0,0,0,0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <span style={{ fontSize: 12, color: '#A8A29E' }}>© 2026 {tenant?.name || 'Glido CFS'}. All rights reserved.</span>
+            <span style={{ fontSize: 12, color: '#A8A29E' }}>{tenant?.name || 'Sydney Container Freight Station'} · Mon–Fri 06:00–18:00</span>
+          </div>
+        </div>
+      </footer>
+
+      <style>{`
+        @media (max-width:768px) { .footer-grid { grid-template-columns:1fr 1fr!important; gap:32px!important; } }
+        @media (max-width:480px) { .footer-grid { grid-template-columns:1fr!important; } }
+        .nav-link:hover { color:#1C1917!important; transform:translateY(-1.5px); }
+        .nav-link:active { color:#1C1917!important; transform:translateY(0) scale(0.96); }
+        @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
+      `}</style>
+    </>
   )
 }

@@ -1,0 +1,1658 @@
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { usePageTitle } from '@/lib/usePageTitle'
+import { getTenant, updateTenant } from '@/lib/db/tenants'
+import { supabase, DEFAULT_TENANT_ID } from '@/lib/supabase'
+import { toast } from '@/lib/toast'
+import { CustomSelect } from '@/components/ui/CustomSelect'
+import { Icon, ICONS } from '@/lib/Icon'
+import { fmtDateTime } from '@/lib/time'
+import { useReceptionAuth } from '@/contexts/ReceptionAuthContext'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface DayHours { enabled: boolean; open: string; close: string }
+
+interface WorkingHoursState {
+  mon: DayHours; tue: DayHours; wed: DayHours; thu: DayHours
+  fri: DayHours; sat: DayHours; sun: DayHours
+}
+
+interface SlotPeriod { enabled: boolean; label: string; start: string; end: string }
+interface SlotPeriodsState { morning: SlotPeriod; afternoon: SlotPeriod; evening: SlotPeriod }
+
+interface PricingState {
+  storageRate:    string
+  shrinkWrapRate: string
+  slotFeePickup:  string
+  slotFeeDropoff: string
+  fclFreeDays:    string
+  lclFreeDays:    string
+}
+
+const DEFAULT_PRICING: PricingState = {
+  storageRate:    '8.50',
+  shrinkWrapRate: '12.00',
+  slotFeePickup:  '5.00',
+  slotFeeDropoff: '5.00',
+  fclFreeDays:    '7',
+  lclFreeDays:    '3',
+}
+
+interface SlotConfigState {
+  slotDuration:       string
+  maxBookingsPerSlot: string
+  advanceBookingDays: string
+  sameDayCutoff:      string
+  holdDuration:       string
+}
+
+const DEFAULT_SLOT_CONFIG: SlotConfigState = {
+  slotDuration:       '60',
+  maxBookingsPerSlot: '5',
+  advanceBookingDays: '30',
+  sameDayCutoff:      '08:00',
+  holdDuration:       '10',
+}
+
+interface CargowiseState {
+  apiUrl:          string
+  apiKey:          string
+  tenantCode:      string
+  refreshInterval: string
+}
+
+const DEFAULT_CARGOWISE: CargowiseState = {
+  apiUrl: '', apiKey: '', tenantCode: '', refreshInterval: '30',
+}
+
+interface SmtpState {
+  host:        string
+  port:        string
+  username:    string
+  password:    string
+  fromAddress: string
+  fromName:    string
+}
+
+const DEFAULT_SMTP: SmtpState = {
+  host: '', port: '587', username: '', password: '', fromAddress: '', fromName: '',
+}
+
+interface DocRequirement {
+  id:        string
+  name:      string
+  required:  boolean
+  fileTypes: string[]   // e.g. ['PDF', 'JPG']
+  appliesTo: string[]   // e.g. ['pickup_lcl', 'dropoff_fcl']
+}
+
+const PREDEFINED_DOCS = [
+  'Delivery Order', 'Biosecurity Direction', 'Interim Receipt',
+  'Booking Confirmation', 'Packing List', 'Cartage Advice',
+  'Dangerous Goods Declaration', 'Driver Licence',
+  'Vehicle Registration', 'Container Details',
+]
+
+const APPLIES_TO_OPTIONS = [
+  { key: 'pickup_lcl',  label: 'Pickup + LCL'  },
+  { key: 'dropoff_lcl', label: 'Dropoff + LCL' },
+  { key: 'pickup_fcl',  label: 'Pickup + FCL'  },
+  { key: 'dropoff_fcl', label: 'Dropoff + FCL' },
+]
+
+const FILE_TYPE_OPTIONS = ['PDF', 'JPG', 'PNG', 'DOCX']
+
+// Pre-populated defaults derived from the combo mapping spec
+const COMBO_DEFAULTS: DocRequirement[] = [
+  { id: 'cd1', name: 'Delivery Order',             required: true,  fileTypes: ['PDF'], appliesTo: ['pickup_lcl', 'pickup_fcl', 'dropoff_fcl'] },
+  { id: 'cd2', name: 'Biosecurity Direction',       required: false, fileTypes: ['PDF'], appliesTo: ['pickup_lcl', 'dropoff_fcl'] },
+  { id: 'cd3', name: 'Interim Receipt',             required: true,  fileTypes: ['PDF'], appliesTo: ['dropoff_lcl'] },
+  { id: 'cd4', name: 'Booking Confirmation',        required: true,  fileTypes: ['PDF'], appliesTo: ['dropoff_lcl'] },
+  { id: 'cd5', name: 'Packing List',                required: false, fileTypes: ['PDF'], appliesTo: ['dropoff_lcl'] },
+  { id: 'cd6', name: 'Cartage Advice',              required: true,  fileTypes: ['PDF'], appliesTo: ['pickup_fcl', 'dropoff_fcl'] },
+  { id: 'cd7', name: 'Dangerous Goods Declaration', required: false, fileTypes: ['PDF'], appliesTo: ['pickup_fcl', 'dropoff_fcl'] },
+]
+
+interface StaffUser {
+  id:            string
+  email:         string
+  first_name:    string | null
+  last_name:     string | null
+  role:          string
+  is_active:     boolean
+  last_login_at: string | null
+  created_at:    string
+}
+
+const DEFAULT_DOC_REQUIREMENTS: DocRequirement[] = COMBO_DEFAULTS
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const TABS = ['General', 'Working Hours', 'Slot Config', 'Pricing', 'Payment', 'Integrations', 'Document Requirements', 'User Management']
+
+const LABEL: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 700, color: '#78716C', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 8 }
+const INPUT: React.CSSProperties = { width: '100%', padding: '11px 14px', fontSize: 14, color: '#1C1917', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 10, outline: 'none', transition: 'border-color 0.15s ease, box-shadow 0.15s ease', boxSizing: 'border-box' }
+const CARD: React.CSSProperties  = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)', marginBottom: 20 }
+const SAVE: React.CSSProperties  = { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', background: 'linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22),0 4px 14px rgba(252,101,20,0.40)', marginTop: 20, transition: 'box-shadow 0.15s ease' }
+
+// 30-min increments 00:00 → 23:30
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = Math.floor(i / 2), m = i % 2 === 0 ? '00' : '30'
+  return `${String(h).padStart(2, '0')}:${m}`
+})
+
+const DAYS: { key: keyof WorkingHoursState; label: string }[] = [
+  { key: 'mon', label: 'Monday'    },
+  { key: 'tue', label: 'Tuesday'   },
+  { key: 'wed', label: 'Wednesday' },
+  { key: 'thu', label: 'Thursday'  },
+  { key: 'fri', label: 'Friday'    },
+  { key: 'sat', label: 'Saturday'  },
+  { key: 'sun', label: 'Sunday'    },
+]
+
+const PERIODS: { key: keyof SlotPeriodsState; defaultLabel: string }[] = [
+  { key: 'morning',   defaultLabel: 'Morning'   },
+  { key: 'afternoon', defaultLabel: 'Afternoon' },
+  { key: 'evening',   defaultLabel: 'Evening'   },
+]
+
+const DEFAULT_HOURS: WorkingHoursState = {
+  mon: { enabled: true,  open: '07:00', close: '18:00' },
+  tue: { enabled: true,  open: '07:00', close: '18:00' },
+  wed: { enabled: true,  open: '07:00', close: '18:00' },
+  thu: { enabled: true,  open: '07:00', close: '18:00' },
+  fri: { enabled: true,  open: '07:00', close: '18:00' },
+  sat: { enabled: false, open: '07:00', close: '18:00' },
+  sun: { enabled: false, open: '07:00', close: '18:00' },
+}
+
+const DEFAULT_PERIODS: SlotPeriodsState = {
+  morning:   { enabled: true,  label: 'Morning',   start: '06:00', end: '12:00' },
+  afternoon: { enabled: true,  label: 'Afternoon', start: '12:00', end: '17:00' },
+  evening:   { enabled: false, label: 'Evening',   start: '17:00', end: '20:00' },
+}
+
+// ─── Helper components ────────────────────────────────────────────────────────
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div><label style={LABEL}>{label}</label>{children}</div>
+}
+
+function FocusInput({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input {...props} style={{ ...INPUT, ...props.style as React.CSSProperties }}
+      onFocus={e => { e.target.style.borderColor = 'rgba(252,101,20,0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(252,101,20,0.12)' }}
+      onBlur={e  => { e.target.style.borderColor = 'rgba(0,0,0,0.10)'; e.target.style.boxShadow = 'none' }}
+    />
+  )
+}
+
+function FocusSelect({ children, disabled, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select {...props} disabled={disabled}
+      style={{ ...INPUT, opacity: disabled ? 0.45 : 1, cursor: disabled ? 'not-allowed' : 'default' }}
+      onFocus={e => { if (!disabled) { e.target.style.borderColor = 'rgba(252,101,20,0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(252,101,20,0.12)' } }}
+      onBlur={e  => { e.target.style.borderColor = 'rgba(0,0,0,0.10)'; e.target.style.boxShadow = 'none' }}
+    >
+      {children}
+    </select>
+  )
+}
+
+function SectionHead({ title, desc }: { title: string; desc?: string }) {
+  return (
+    <div style={{ marginBottom: 20 }}>
+      <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.02em', marginBottom: desc ? 4 : 0 }}>{title}</h3>
+      {desc && <p style={{ fontSize: 13, color: '#78716C' }}>{desc}</p>}
+    </div>
+  )
+}
+
+function SaveBtn({ loading, dirty }: { loading?: boolean; dirty?: boolean }) {
+  const disabled = loading || !dirty
+  return (
+    <button type="submit" disabled={disabled} style={{ ...SAVE, opacity: disabled ? 0.4 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}>
+      {loading ? 'Saving…' : 'Save changes'}
+    </button>
+  )
+}
+
+function Skeleton() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {DAYS.map(d => (
+        <div key={d.key} style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr 80px', gap: 16, alignItems: 'center' }}>
+          <div style={{ height: 14, width: 80, borderRadius: 6, background: 'rgba(0,0,0,0.07)' }} />
+          <div style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />
+          <div style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />
+          <div style={{ height: 16, width: 60, borderRadius: 6, background: 'rgba(0,0,0,0.06)' }} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export default function SettingsPage() {
+  usePageTitle('Glido | Settings')
+  const { isAdmin, isSuperAdmin, userId: currentUserId } = useReceptionAuth()
+
+  // ── Visible tabs — hide User Management from reception_staff ─────────────
+  const visibleTabs = TABS.filter(t => t !== 'User Management' || isAdmin)
+
+  // ── Hash ↔ tab mapping ────────────────────────────────────────────────────
+  const HASH_TO_TAB: Record<string, string> = {
+    '#general':      'General',
+    '#working-hours':'Working Hours',
+    '#slot-config':  'Slot Config',
+    '#pricing':      'Pricing',
+    '#payment':      'Payment',
+    '#integrations':        'Integrations',
+    '#doc-requirements':    'Document Requirements',
+    '#user-management':     'User Management',
+  }
+  const TAB_TO_HASH: Record<string, string> = Object.fromEntries(
+    Object.entries(HASH_TO_TAB).map(([h, t]) => [t, h])
+  )
+
+  const tabFromHash = () => HASH_TO_TAB[window.location.hash] ?? 'General'
+
+  const [tab, setTab] = useState<string>(tabFromHash)
+  const [saved, setSaved] = useState(false)
+
+  // Sync tab when the hash changes (back/forward navigation)
+  useEffect(() => {
+    const onHashChange = () => setTab(tabFromHash())
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // General state
+  const [general,         setGeneral]         = useState({ name: '', address: '', logoUrl: '', primaryColor: '#FC6514', timezone: 'Australia/Sydney', contactEmail: '', contactPhone: '' })
+  const [generalLoading,  setGeneralLoading]  = useState(true)
+  const [generalSaving,   setGeneralSaving]   = useState(false)
+  const [logoUploading,   setLogoUploading]   = useState(false)
+
+  // Payment state
+  const [eft,             setEft]             = useState({ bankName: '', accountName: '', bsb: '', accountNumber: '' })
+  const [stripe,          setStripe]          = useState({ publishableKey: '', secretKey: '' })
+  const [compay,          setCompay]          = useState({ clientNumber: '' })
+  const [requirePayment,  setRequirePayment]  = useState(false)
+  const [paymentLoading,  setPaymentLoading]  = useState(true)
+  const [eftSaving,       setEftSaving]       = useState(false)
+  const [stripeSaving,    setStripeSaving]    = useState(false)
+  const [compaySaving,    setCompaySaving]    = useState(false)
+  const [showSecretKey,   setShowSecretKey]   = useState(false)
+
+  // Pricing state
+  const [pricing,        setPricing]        = useState<PricingState>(DEFAULT_PRICING)
+  const [pricingLoading, setPricingLoading] = useState(true)
+  const [pricingSaving,  setPricingSaving]  = useState(false)
+
+  // Slot Config state
+  const [slotConfig,        setSlotConfig]        = useState<SlotConfigState>(DEFAULT_SLOT_CONFIG)
+  const [slotConfigLoading, setSlotConfigLoading] = useState(true)
+  const [slotConfigSaving,  setSlotConfigSaving]  = useState(false)
+
+  // Integrations state
+  const [cargowise,            setCargowise]            = useState<CargowiseState>(DEFAULT_CARGOWISE)
+  const [smtp,                 setSmtp]                 = useState<SmtpState>(DEFAULT_SMTP)
+  const [integrationsLoading,  setIntegrationsLoading]  = useState(true)
+  const [cargowiseSaving,      setCargowiseSaving]      = useState(false)
+  const [smtpSaving,           setSmtpSaving]           = useState(false)
+  const [showCwApiKey,         setShowCwApiKey]         = useState(false)
+  const [showSmtpPassword,     setShowSmtpPassword]     = useState(false)
+
+  // Document Requirements state
+  const [docRequirements, setDocRequirements] = useState<DocRequirement[]>(DEFAULT_DOC_REQUIREMENTS)
+  const [docLoading,      setDocLoading]      = useState(true)
+  const [docSaving,       setDocSaving]       = useState(false)
+  const [customInputIds,  setCustomInputIds]  = useState<Set<string>>(new Set())
+
+  // User Management state
+  const [staffUsers,      setStaffUsers]      = useState<StaffUser[]>([])
+  const [usersLoading,    setUsersLoading]    = useState(false)
+  const [showInviteForm,  setShowInviteForm]  = useState(false)
+  const [inviteSending,   setInviteSending]   = useState(false)
+  const [invite,          setInvite]          = useState({ firstName: '', lastName: '', email: '', role: 'reception_staff' })
+
+  // Working Hours state
+  const [whLoading,  setWhLoading]  = useState(true)
+  const [whSaving,   setWhSaving]   = useState(false)
+  const [workingHours, setWorkingHours] = useState<WorkingHoursState>(DEFAULT_HOURS)
+  const [slotPeriods,  setSlotPeriods]  = useState<SlotPeriodsState>(DEFAULT_PERIODS)
+
+  // ── Dirty flags — true when user has unsaved changes ───────────────────────
+  const [generalDirty,     setGeneralDirty]     = useState(false)
+  const [whDirty,          setWhDirty]          = useState(false)
+  const [slotConfigDirty,  setSlotConfigDirty]  = useState(false)
+  const [pricingDirty,     setPricingDirty]     = useState(false)
+  const [eftDirty,         setEftDirty]         = useState(false)
+  const [stripeDirty,      setStripeDirty]      = useState(false)
+  const [compayDirty,      setCompayDirty]      = useState(false)
+  const [cargowiseDirty,   setCargowiseDirty]   = useState(false)
+  const [smtpDirty,        setSmtpDirty]        = useState(false)
+  const [docDirty,         setDocDirty]         = useState(false)
+
+  // Load general settings on mount
+  useEffect(() => {
+    getTenant(DEFAULT_TENANT_ID)
+      .then(tenant => {
+        if (!tenant) return
+        setGeneral({
+          name:         tenant.name              ?? '',
+          address:      tenant.address           ?? '',
+          logoUrl:      tenant.logo_url          ?? '',
+          primaryColor: tenant.primary_color     ?? '#FC6514',
+          timezone:     tenant.timezone          ?? 'Australia/Sydney',
+          contactEmail: tenant.contact_email     ?? '',
+          contactPhone: tenant.contact_phone     ?? '',
+        })
+      })
+      .catch(() => { /* use defaults */ })
+      .finally(() => setGeneralLoading(false))
+  }, [])
+
+  const saveGeneral = async () => {
+    setGeneralSaving(true)
+    try {
+      await updateTenant(DEFAULT_TENANT_ID, {
+        name:          general.name,
+        address:       general.address    || null,
+        logo_url:      general.logoUrl    || null,
+        primary_color: general.primaryColor || null,
+        timezone:      general.timezone   || null,
+        contact_email: general.contactEmail || null,
+        contact_phone: general.contactPhone || null,
+      })
+      toast('General settings saved', 'success')
+      setGeneralDirty(false)
+    } catch (err: any) {
+      toast(err?.message ?? 'Failed to save general settings', 'error')
+    } finally {
+      setGeneralSaving(false)
+    }
+  }
+
+  const uploadLogo = async (file: File) => {
+    setLogoUploading(true)
+    try {
+      const { supabase } = await import('@/lib/supabase')
+      const ext  = file.name.split('.').pop()
+      const path = `logos/${DEFAULT_TENANT_ID}/logo.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from('tenant-assets')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (upErr) throw upErr
+      const { data } = supabase.storage.from('tenant-assets').getPublicUrl(path)
+      setGeneral(g => ({ ...g, logoUrl: data.publicUrl }))
+      toast('Logo uploaded', 'success')
+      setGeneralDirty(true)
+    } catch (err: any) {
+      toast(err?.message ?? 'Logo upload failed', 'error')
+    } finally {
+      setLogoUploading(false)
+    }
+  }
+
+  // Load tenant data on mount
+  useEffect(() => {
+    getTenant(DEFAULT_TENANT_ID)
+      .then(tenant => {
+        if (!tenant) return
+
+        // Populate working hours
+        const wh = tenant.working_hours as unknown as WorkingHoursState | null
+        if (wh && typeof wh === 'object') {
+          setWorkingHours({
+            mon: { ...DEFAULT_HOURS.mon, ...wh.mon },
+            tue: { ...DEFAULT_HOURS.tue, ...wh.tue },
+            wed: { ...DEFAULT_HOURS.wed, ...wh.wed },
+            thu: { ...DEFAULT_HOURS.thu, ...wh.thu },
+            fri: { ...DEFAULT_HOURS.fri, ...wh.fri },
+            sat: { ...DEFAULT_HOURS.sat, ...wh.sat },
+            sun: { ...DEFAULT_HOURS.sun, ...wh.sun },
+          })
+
+          // Slot periods stored inside working_hours JSON under "periods" key
+          const periods = (wh as any).periods as SlotPeriodsState | undefined
+          if (periods && typeof periods === 'object') {
+            setSlotPeriods({
+              morning:   { ...DEFAULT_PERIODS.morning,   ...periods.morning   },
+              afternoon: { ...DEFAULT_PERIODS.afternoon, ...periods.afternoon },
+              evening:   { ...DEFAULT_PERIODS.evening,   ...periods.evening   },
+            })
+          }
+        }
+      })
+      .catch(() => { /* use defaults */ })
+      .finally(() => setWhLoading(false))
+  }, [])
+
+  // Load payment settings on mount
+  useEffect(() => {
+    getTenant(DEFAULT_TENANT_ID)
+      .then(tenant => {
+        if (!tenant) return
+        setEft({
+          bankName:      tenant.eft_bank_name      ?? '',
+          accountName:   tenant.eft_account_name   ?? '',
+          bsb:           tenant.eft_bsb            ?? '',
+          accountNumber: tenant.eft_account_number ?? '',
+        })
+        setStripe({
+          publishableKey: tenant.stripe_public_key ?? '',
+          secretKey:      tenant.stripe_secret_key ?? '',
+        })
+        setRequirePayment(tenant.require_payment_to_confirm ?? false)
+        setCompay({ clientNumber: (tenant as any).compay_client_number ?? '' })
+      })
+      .catch(() => { /* use defaults */ })
+      .finally(() => setPaymentLoading(false))
+  }, [])
+
+  const saveEft = async () => {
+    setEftSaving(true)
+    try {
+      await updateTenant(DEFAULT_TENANT_ID, {
+        eft_bank_name:      eft.bankName      || null,
+        eft_account_name:   eft.accountName   || null,
+        eft_bsb:            eft.bsb           || null,
+        eft_account_number: eft.accountNumber || null,
+      })
+      toast('EFT details saved', 'success')
+      setEftDirty(false)
+    } catch (err: any) {
+      toast(err?.message ?? 'Failed to save EFT details', 'error')
+    } finally {
+      setEftSaving(false)
+    }
+  }
+
+  const saveStripe = async () => {
+    setStripeSaving(true)
+    try {
+      await updateTenant(DEFAULT_TENANT_ID, {
+        stripe_public_key: stripe.publishableKey || null,
+        stripe_secret_key: stripe.secretKey      || null,
+      })
+      toast('Stripe settings saved', 'success')
+      setStripeDirty(false)
+    } catch (err: any) {
+      toast(err?.message ?? 'Failed to save Stripe settings', 'error')
+    } finally {
+      setStripeSaving(false)
+    }
+  }
+
+  const saveCompay = async () => {
+    setCompaySaving(true)
+    try {
+      await updateTenant(DEFAULT_TENANT_ID, { compay_client_number: compay.clientNumber || null } as any)
+      toast('ComPay settings saved', 'success')
+      setCompayDirty(false)
+    } catch (err: any) {
+      toast(err?.message ?? 'Failed to save ComPay settings', 'error')
+    } finally {
+      setCompaySaving(false)
+    }
+  }
+
+  const toggleRequirePayment = async (val: boolean) => {
+    setRequirePayment(val)
+    try {
+      await updateTenant(DEFAULT_TENANT_ID, { require_payment_to_confirm: val })
+      toast('Payment preference updated', 'success')
+    } catch (err: any) {
+      toast(err?.message ?? 'Failed to update payment preference', 'error')
+      setRequirePayment(!val) // revert on failure
+    }
+  }
+
+  // Load pricing on mount (separate effect so Working Hours and Pricing load independently)
+  useEffect(() => {
+    getTenant(DEFAULT_TENANT_ID)
+      .then(tenant => {
+        if (!tenant) return
+        // Real DB columns
+        const p: PricingState = {
+          storageRate:    String(tenant.storage_rate_per_cbm    ?? DEFAULT_PRICING.storageRate),
+          shrinkWrapRate: String(tenant.shrink_wrap_rate_per_pallet ?? DEFAULT_PRICING.shrinkWrapRate),
+          slotFeePickup:  String(tenant.slot_fee_pickup         ?? DEFAULT_PRICING.slotFeePickup),
+          slotFeeDropoff: String(tenant.slot_fee_dropoff        ?? DEFAULT_PRICING.slotFeeDropoff),
+          // fcl/lcl free days stored inside working_hours JSON under "pricing" key
+          fclFreeDays:    String((tenant.working_hours as any)?.pricing?.fcl_free_days ?? DEFAULT_PRICING.fclFreeDays),
+          lclFreeDays:    String((tenant.working_hours as any)?.pricing?.lcl_free_days ?? DEFAULT_PRICING.lclFreeDays),
+        }
+        setPricing(p)
+      })
+      .catch(() => { /* use defaults */ })
+      .finally(() => setPricingLoading(false))
+  }, [])
+
+  // Pricing save handler
+  const savePricing = async () => {
+    setPricingSaving(true)
+    try {
+      // Fetch current working_hours so we don't overwrite it
+      const tenant = await getTenant(DEFAULT_TENANT_ID)
+      const existingWh = (tenant?.working_hours as any) ?? {}
+      const updatedWh  = {
+        ...existingWh,
+        pricing: { fcl_free_days: Number(pricing.fclFreeDays), lcl_free_days: Number(pricing.lclFreeDays) },
+      }
+      await updateTenant(DEFAULT_TENANT_ID, {
+        storage_rate_per_cbm:        Number(pricing.storageRate),
+        shrink_wrap_rate_per_pallet: Number(pricing.shrinkWrapRate),
+        slot_fee_pickup:             Number(pricing.slotFeePickup),
+        slot_fee_dropoff:            Number(pricing.slotFeeDropoff),
+        working_hours:               updatedWh,
+      })
+      toast('Pricing saved', 'success')
+      setPricingDirty(false)
+    } catch (err: any) {
+      toast(err?.message ?? 'Failed to save pricing', 'error')
+    } finally {
+      setPricingSaving(false)
+    }
+  }
+
+  // Load slot config on mount
+  useEffect(() => {
+    getTenant(DEFAULT_TENANT_ID)
+      .then(tenant => {
+        if (!tenant) return
+        setSlotConfig({
+          slotDuration:       String(tenant.slot_duration_min      ?? DEFAULT_SLOT_CONFIG.slotDuration),
+          maxBookingsPerSlot: String(tenant.max_bookings_per_slot  ?? DEFAULT_SLOT_CONFIG.maxBookingsPerSlot),
+          advanceBookingDays: String(tenant.advance_booking_days   ?? DEFAULT_SLOT_CONFIG.advanceBookingDays),
+          sameDayCutoff:      tenant.same_day_cutoff_time          ?? '',
+          holdDuration:       String(tenant.slot_hold_duration_min ?? DEFAULT_SLOT_CONFIG.holdDuration),
+        })
+      })
+      .catch(() => { /* use defaults */ })
+      .finally(() => setSlotConfigLoading(false))
+  }, [])
+
+  // Slot Config save handler
+  const saveSlotConfig = async () => {
+    setSlotConfigSaving(true)
+    try {
+      await updateTenant(DEFAULT_TENANT_ID, {
+        slot_duration_min:      Number(slotConfig.slotDuration),
+        max_bookings_per_slot:  Number(slotConfig.maxBookingsPerSlot),
+        advance_booking_days:   Number(slotConfig.advanceBookingDays),
+        // same_day_cutoff_time: slotConfig.sameDayCutoff || null,
+        slot_hold_duration_min: Number(slotConfig.holdDuration),
+      })
+      toast('Slot configuration saved', 'success')
+      setSlotConfigDirty(false)
+    } catch (err: any) {
+      toast(err?.message ?? 'Failed to save slot configuration', 'error')
+    } finally {
+      setSlotConfigSaving(false)
+    }
+  }
+
+  // Load integrations on mount
+  useEffect(() => {
+    getTenant(DEFAULT_TENANT_ID)
+      .then(tenant => {
+        if (!tenant) return
+        const t = tenant as any
+        setCargowise({
+          apiUrl:          t.cargowise_api_url          ?? DEFAULT_CARGOWISE.apiUrl,
+          apiKey:          t.cargowise_api_key          ?? DEFAULT_CARGOWISE.apiKey,
+          tenantCode:      t.cargowise_tenant_code      ?? DEFAULT_CARGOWISE.tenantCode,
+          refreshInterval: String(t.cargowise_refresh_interval ?? DEFAULT_CARGOWISE.refreshInterval),
+        })
+        setSmtp({
+          host:        t.smtp_host         ?? DEFAULT_SMTP.host,
+          port:        String(t.smtp_port  ?? DEFAULT_SMTP.port),
+          username:    t.smtp_username     ?? DEFAULT_SMTP.username,
+          password:    t.smtp_password     ?? DEFAULT_SMTP.password,
+          fromAddress: t.smtp_from_address ?? DEFAULT_SMTP.fromAddress,
+          fromName:    t.smtp_from_name    ?? DEFAULT_SMTP.fromName,
+        })
+      })
+      .catch(() => { /* use defaults */ })
+      .finally(() => setIntegrationsLoading(false))
+  }, [])
+
+  // CargoWise save handler
+  const saveCargowise = async () => {
+    setCargowiseSaving(true)
+    try {
+      await updateTenant(DEFAULT_TENANT_ID, {
+        cargowise_api_url:          cargowise.apiUrl          || null,
+        cargowise_api_key:          cargowise.apiKey          || null,
+        cargowise_tenant_code:      cargowise.tenantCode      || null,
+        cargowise_refresh_interval: cargowise.refreshInterval ? Number(cargowise.refreshInterval) : null,
+      } as any)
+      toast('CargoWise settings saved', 'success')
+      setCargowiseDirty(false)
+    } catch (err: any) {
+      toast(err?.message ?? 'Failed to save CargoWise settings', 'error')
+    } finally {
+      setCargowiseSaving(false)
+    }
+  }
+
+  // SMTP save handler
+  const saveSmtp = async () => {
+    setSmtpSaving(true)
+    try {
+      await updateTenant(DEFAULT_TENANT_ID, {
+        smtp_host:         smtp.host         || null,
+        smtp_port:         smtp.port         ? Number(smtp.port) : null,
+        smtp_username:     smtp.username     || null,
+        smtp_password:     smtp.password     || null,
+        smtp_from_address: smtp.fromAddress  || null,
+        smtp_from_name:    smtp.fromName     || null,
+      } as any)
+      toast('Email settings saved', 'success')
+      setSmtpDirty(false)
+    } catch (err: any) {
+      toast(err?.message ?? 'Failed to save email settings', 'error')
+    } finally {
+      setSmtpSaving(false)
+    }
+  }
+
+  // Load document requirements on mount; pre-populate with combo defaults if empty
+  useEffect(() => {
+    getTenant(DEFAULT_TENANT_ID)
+      .then(tenant => {
+        if (!tenant) return
+        const raw = tenant.required_documents
+        if (Array.isArray(raw) && raw.length > 0) {
+          // Migrate legacy string fileTypes to array
+          const migrated = (raw as unknown as any[]).map(d => ({
+            ...d,
+            fileTypes: Array.isArray(d.fileTypes) ? d.fileTypes : (d.fileTypes ? d.fileTypes.split(',').map((s: string) => s.trim()).filter(Boolean) : []),
+            appliesTo: Array.isArray(d.appliesTo) ? d.appliesTo : [],
+          })) as DocRequirement[]
+          setDocRequirements(migrated)
+        }
+        // else: keep COMBO_DEFAULTS pre-populated
+      })
+      .catch(() => { /* use defaults */ })
+      .finally(() => setDocLoading(false))
+  }, [])
+
+  // Document requirements save handler
+  const saveDocRequirements = async () => {
+    setDocSaving(true)
+    try {
+      await updateTenant(DEFAULT_TENANT_ID, { required_documents: docRequirements as any })
+      toast('Document requirements saved', 'success')
+      setDocDirty(false)
+    } catch (err: any) {
+      toast(err?.message ?? 'Failed to save document requirements', 'error')
+    } finally {
+      setDocSaving(false)
+    }
+  }
+
+  const addDocRow = () => {
+    const newId = String(Date.now())
+    setDocRequirements(prev => [
+      ...prev,
+      { id: newId, name: '', required: false, fileTypes: [], appliesTo: [] },
+    ])
+    setCustomInputIds(prev => new Set([...prev, newId]))
+    setDocDirty(true)
+  }
+
+  const updateDoc = (id: string, field: keyof DocRequirement, value: string | boolean | string[]) => {
+    setDocRequirements(prev => prev.map(d => d.id === id ? { ...d, [field]: value } : d))
+    setDocDirty(true)
+  }
+
+  const toggleDocArray = (id: string, field: 'fileTypes' | 'appliesTo', val: string) =>
+    setDocRequirements(prev => prev.map(d => {
+      if (d.id !== id) return d
+      const arr = d[field] as string[]
+      return { ...d, [field]: arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val] }
+    }))
+
+  const removeDoc = (id: string) => {
+    setDocRequirements(prev => prev.filter(d => d.id !== id))
+    setCustomInputIds(prev => { const s = new Set(prev); s.delete(id); return s })
+    setDocDirty(true)
+  }
+
+  // ── User Management ───────────────────────────────────────────────────────────
+  const loadStaffUsers = useCallback(async () => {
+    setUsersLoading(true)
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('*')
+        .in('role', ['reception_staff', 'reception_admin', 'super_admin'])
+        .order('created_at', { ascending: false })
+      const staff = (data ?? []) as StaffUser[]
+      setStaffUsers(staff)
+    } catch { /* noop */ } finally {
+      setUsersLoading(false)
+    }
+  }, [])
+
+  // Load staff users once when the User Management tab is opened.
+  // Guarded by a ref so re-renders (e.g. role updates, toasts) never re-fetch;
+  // resets when leaving the tab so re-opening pulls fresh data.
+  const usersLoadedRef = useRef(false)
+  useEffect(() => {
+    if (tab === 'User Management' && isAdmin) {
+      if (!usersLoadedRef.current) {
+        usersLoadedRef.current = true
+        loadStaffUsers()
+      }
+    } else {
+      usersLoadedRef.current = false
+    }
+  }, [tab, isAdmin, loadStaffUsers])
+
+  const updateRole = async (userId: string, newRole: string) => {
+    try {
+      await supabase.from('users').update({ role: newRole }).eq('id', userId)
+      toast('Role updated', 'success')
+      setStaffUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u))
+    } catch (err: any) {
+      toast(err?.message ?? 'Failed to update role', 'error')
+    }
+  }
+
+  const toggleActive = async (userId: string, currentStatus: boolean) => {
+    try {
+      await supabase.from('users').update({ is_active: !currentStatus }).eq('id', userId)
+      toast(!currentStatus ? 'User activated' : 'User deactivated', 'success')
+      await loadStaffUsers()
+    } catch (err: any) {
+      toast(err?.message ?? 'Failed to update user status', 'error')
+    }
+  }
+
+  const sendInvite = async () => {
+    if (!invite.email.trim()) { toast('Email is required', 'error'); return }
+    setInviteSending(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { toast('Not authenticated', 'error'); return }
+      const res = await fetch(
+        'https://lnknynjqxyfvtjpnaljc.supabase.co/functions/v1/invite-user',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            email:     invite.email.trim(),
+            role:      invite.role,
+            firstName: invite.firstName.trim() || undefined,
+            lastName:  invite.lastName.trim()  || undefined,
+          }),
+        }
+      )
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Invite failed')
+      toast(`Invite sent to ${invite.email.trim()}`, 'success')
+      setShowInviteForm(false)
+      setInvite({ firstName: '', lastName: '', email: '', role: 'reception_staff' })
+      await loadStaffUsers()
+    } catch (err: any) {
+      toast(err?.message ?? 'Failed to send invite', 'error')
+    } finally {
+      setInviteSending(false)
+    }
+  }
+
+  // Working Hours save handler
+  const saveWorkingHours = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setWhSaving(true)
+    try {
+      const payload = { ...workingHours, periods: slotPeriods }
+      await updateTenant(DEFAULT_TENANT_ID, { working_hours: payload as any })
+      toast('Working hours saved', 'success')
+      setWhDirty(false)
+    } catch (err: any) {
+      toast(err?.message ?? 'Failed to save working hours', 'error')
+    } finally {
+      setWhSaving(false)
+    }
+  }
+
+  // Day field updater
+  const setDay = (day: keyof WorkingHoursState, field: keyof DayHours, value: string | boolean) => {
+    setWorkingHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }))
+    setWhDirty(true)
+  }
+
+  // Period field updater
+  const setPeriod = (period: keyof SlotPeriodsState, field: keyof SlotPeriod, value: string | boolean) => {
+    setSlotPeriods(prev => ({ ...prev, [period]: { ...prev[period], [field]: value } }))
+    setWhDirty(true)
+  }
+
+  // Fake save for non-wired tabs
+  const fakeSave = (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaved(true)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  return (
+    <div>
+      {/* Tab switcher */}
+      <div style={{ display: 'flex', gap: 2, background: 'rgba(0,0,0,0.04)', borderRadius: 12, padding: 4, marginBottom: 24, width: '100%' }}>
+        {visibleTabs.map(t => (
+          <button key={t} onClick={() => { setTab(t); window.location.hash = TAB_TO_HASH[t] ?? '' }} style={{
+            flex: 1, padding: '8px 16px', borderRadius: 9, fontSize: 13, fontWeight: tab === t ? 600 : 500,
+            border: 'none', cursor: 'pointer', transition: 'all 0.15s ease', whiteSpace: 'nowrap', textAlign: 'center',
+            background: tab === t ? '#FFFFFF' : 'transparent',
+            color: tab === t ? '#1C1917' : '#78716C',
+            boxShadow: tab === t ? '0 1px 3px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.05)' : 'none',
+          }}>{t}</button>
+        ))}
+      </div>
+
+      {/* ── Working Hours tab ── */}
+      {tab === 'Working Hours' && (
+        <form onSubmit={saveWorkingHours}>
+          {/* Operating Hours card */}
+          <div style={CARD}>
+            <SectionHead title="Operating Hours" desc="Set when your facility accepts visitor bookings." />
+            {whLoading ? <Skeleton /> : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {DAYS.map(({ key, label }) => {
+                  const day = workingHours[key]
+                  return (
+                    <div key={key} style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr 90px', gap: 16, alignItems: 'center' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: day.enabled ? '#1C1917' : '#A8A29E' }}>{label}</span>
+
+                      <Field label="Open">
+                        <FocusSelect
+                          value={day.open}
+                          disabled={!day.enabled}
+                          onChange={e => setDay(key, 'open', e.target.value)}
+                        >
+                          {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                        </FocusSelect>
+                      </Field>
+
+                      <Field label="Close">
+                        <FocusSelect
+                          value={day.close}
+                          disabled={!day.enabled}
+                          onChange={e => setDay(key, 'close', e.target.value)}
+                        >
+                          {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                        </FocusSelect>
+                      </Field>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 18 }}>
+                        <input
+                          type="checkbox"
+                          checked={day.enabled}
+                          onChange={e => setDay(key, 'enabled', e.target.checked)}
+                          style={{ accentColor: '#FC6514', width: 16, height: 16, cursor: 'pointer' }}
+                        />
+                        <span style={{ fontSize: 12, color: '#78716C' }}>Open</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Slot Periods card */}
+          <div style={CARD}>
+            <SectionHead title="Slot Periods" desc="Define which parts of the day are available for bookings." />
+            {whLoading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {[0,1,2].map(i => (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 1fr 1fr', gap: 16, alignItems: 'center' }}>
+                    <div style={{ height: 16, width: 16, borderRadius: 4, background: 'rgba(0,0,0,0.07)' }} />
+                    <div style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />
+                    <div style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />
+                    <div style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Header row */}
+                <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 1fr 1fr', gap: 16, alignItems: 'center' }}>
+                  <div />
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#A8A29E', letterSpacing: '0.09em', textTransform: 'uppercase' }}>Label</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#A8A29E', letterSpacing: '0.09em', textTransform: 'uppercase' }}>Start</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#A8A29E', letterSpacing: '0.09em', textTransform: 'uppercase' }}>End</span>
+                </div>
+
+                {PERIODS.map(({ key, defaultLabel }) => {
+                  const p = slotPeriods[key]
+                  return (
+                    <div key={key} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 1fr 1fr', gap: 16, alignItems: 'center', opacity: p.enabled ? 1 : 0.5, transition: 'opacity 0.15s ease' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={p.enabled}
+                          onChange={e => setPeriod(key, 'enabled', e.target.checked)}
+                          style={{ accentColor: '#FC6514', width: 16, height: 16, cursor: 'pointer' }}
+                        />
+                      </div>
+
+                      <FocusInput
+                        type="text"
+                        value={p.label}
+                        disabled={!p.enabled}
+                        placeholder={defaultLabel}
+                        onChange={e => setPeriod(key, 'label', e.target.value)}
+                        style={{ ...INPUT, opacity: p.enabled ? 1 : 0.6, cursor: p.enabled ? 'text' : 'not-allowed' }}
+                      />
+
+                      <FocusSelect
+                        value={p.start}
+                        disabled={!p.enabled}
+                        onChange={e => setPeriod(key, 'start', e.target.value)}
+                      >
+                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                      </FocusSelect>
+
+                      <FocusSelect
+                        value={p.end}
+                        disabled={!p.enabled}
+                        onChange={e => setPeriod(key, 'end', e.target.value)}
+                      >
+                        {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                      </FocusSelect>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          <SaveBtn loading={whSaving} dirty={whDirty} />
+        </form>
+      )}
+
+      {/* ── All other tabs — unchanged, with fake save ── */}
+      {tab !== 'Working Hours' && (
+        <form onSubmit={fakeSave}>
+          {saved && (
+            <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.22)', borderRadius: 12, padding: '12px 18px', marginBottom: 20, fontSize: 14, color: '#16A34A', fontWeight: 500 }}>
+              ✓ Settings saved successfully.
+            </div>
+          )}
+
+          {/* General */}
+          {tab === 'General' && (
+            <div>
+              {/* Facility Details */}
+              <div style={CARD}>
+                <SectionHead title="Facility Details" desc="Basic information about your Container Freight Station." />
+                {generalLoading ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    {[0,1,2,3,4,5].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <Field label="CFS Name *">
+                      <FocusInput type="text" value={general.name} onChange={e => { setGeneral(g => ({ ...g, name: e.target.value })); setGeneralDirty(true) }} placeholder="Sydney CFS Terminal" />
+                    </Field>
+                    <Field label="Timezone">
+                      <FocusSelect value={general.timezone} onChange={e => { setGeneral(g => ({ ...g, timezone: e.target.value })); setGeneralDirty(true) }}>
+                        <option value="Australia/Sydney">Australia/Sydney</option>
+                        <option value="Australia/Melbourne">Australia/Melbourne</option>
+                        <option value="Australia/Brisbane">Australia/Brisbane</option>
+                        <option value="Australia/Perth">Australia/Perth</option>
+                        <option value="Asia/Kolkata">Asia/Kolkata</option>
+                      </FocusSelect>
+                    </Field>
+                    <Field label="Contact Email">
+                      <FocusInput type="email" value={general.contactEmail} onChange={e => { setGeneral(g => ({ ...g, contactEmail: e.target.value })); setGeneralDirty(true) }} placeholder="ops@cfs.com.au" />
+                    </Field>
+                    <Field label="Contact Phone">
+                      <FocusInput type="tel" value={general.contactPhone} onChange={e => { setGeneral(g => ({ ...g, contactPhone: e.target.value })); setGeneralDirty(true) }} placeholder="+61 2 1234 5678" />
+                    </Field>
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <Field label="CFS Address">
+                        <textarea value={general.address} onChange={e => { setGeneral(g => ({ ...g, address: e.target.value })); setGeneralDirty(true) }} placeholder="1 Cargo Way, Port Botany NSW 2036" rows={2}
+                          style={{ ...INPUT, resize: 'none' }}
+                          onFocus={e => { e.target.style.borderColor = 'rgba(252,101,20,0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(252,101,20,0.12)' }}
+                          onBlur={e  => { e.target.style.borderColor = 'rgba(0,0,0,0.10)'; e.target.style.boxShadow = 'none' }}
+                        />
+                      </Field>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Branding */}
+              <div style={CARD}>
+                <SectionHead title="Branding" desc="Logo and colour scheme shown on the visitor portal." />
+                {generalLoading ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    {[0,1].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <Field label="Logo">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        {general.logoUrl && (
+                          <img src={general.logoUrl} alt="Logo" style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 8, border: '1px solid rgba(0,0,0,0.08)', background: '#f9fafb', flexShrink: 0 }} />
+                        )}
+                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', fontSize: 13, fontWeight: 600, color: '#374151', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 10, cursor: logoUploading ? 'not-allowed' : 'pointer', opacity: logoUploading ? 0.6 : 1 }}>
+                          {logoUploading ? 'Uploading…' : 'Upload Logo'}
+                          <input type="file" accept="image/*" style={{ display: 'none' }} disabled={logoUploading} onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f) }} />
+                        </label>
+                      </div>
+                    </Field>
+                    <Field label="Brand Colour">
+                      <FocusInput type="color" value={general.primaryColor} onChange={e => { setGeneral(g => ({ ...g, primaryColor: e.target.value })); setGeneralDirty(true) }} style={{ ...INPUT, height: 48, padding: '4px 8px', cursor: 'pointer' }} />
+                    </Field>
+                  </div>
+                )}
+              </div>
+
+              <button type="button" onClick={saveGeneral} disabled={generalSaving || !generalDirty} style={{ ...SAVE, opacity: (generalSaving || !generalDirty) ? 0.4 : 1, cursor: (generalSaving || !generalDirty) ? 'not-allowed' : 'pointer' }}>
+                {generalSaving ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+          )}
+
+          {/* Slot Config */}
+          {tab === 'Slot Config' && (
+            <div style={CARD}>
+              <SectionHead title="Slot Configuration" desc="Control how booking slots are structured and managed." />
+              {slotConfigLoading ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                  {[0,1,2,3,4].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                  <Field label="Slot Duration (minutes)">
+                    <CustomSelect
+                      placeholder="Select duration"
+                      value={slotConfig.slotDuration}
+                      onChange={v => { setSlotConfig(s => ({ ...s, slotDuration: v })); setSlotConfigDirty(true) }}
+                      options={[
+                        { value: '15',  label: '15 minutes' },
+                        { value: '30',  label: '30 minutes' },
+                        { value: '60',  label: '60 minutes' },
+                        { value: '120', label: '120 minutes' },
+                      ]}
+                    />
+                  </Field>
+                  <Field label="Max Bookings Per Slot">
+                    <FocusInput type="number" min="1" max="999" value={slotConfig.maxBookingsPerSlot}
+                      onChange={e => { setSlotConfig(s => ({ ...s, maxBookingsPerSlot: e.target.value })); setSlotConfigDirty(true) }} />
+                  </Field>
+                  <Field label="Advance Booking Window (days)">
+                    <FocusInput type="number" min="1" max="90" value={slotConfig.advanceBookingDays}
+                      onChange={e => { setSlotConfig(s => ({ ...s, advanceBookingDays: e.target.value })); setSlotConfigDirty(true) }} />
+                  </Field>
+                  {/* <Field label="Same-day Cutoff Time">
+                    <CustomSelect
+                      placeholder="No cutoff — allow any time"
+                      value={slotConfig.sameDayCutoff}
+                      onChange={v => { setSlotConfig(s => ({ ...s, sameDayCutoff: v })); setSlotConfigDirty(true) }}
+                      options={TIME_OPTIONS.map(t => ({ value: t, label: t }))}
+                    />
+                  </Field> */}
+                  <Field label="Slot Hold Duration (minutes)">
+                    <FocusInput type="number" min="5" max="30" value={slotConfig.holdDuration}
+                      onChange={e => { setSlotConfig(s => ({ ...s, holdDuration: e.target.value })); setSlotConfigDirty(true) }} />
+                  </Field>
+                </div>
+              )}
+              <button type="button" onClick={saveSlotConfig} disabled={slotConfigSaving || !slotConfigDirty} style={{ ...SAVE, opacity: (slotConfigSaving || !slotConfigDirty) ? 0.4 : 1, cursor: (slotConfigSaving || !slotConfigDirty) ? 'not-allowed' : 'pointer' }}>
+                {slotConfigSaving ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+          )}
+
+          {/* Pricing */}
+          {tab === 'Pricing' && (
+            <div>
+              {/* Storage Charges */}
+              <div style={CARD}>
+                <SectionHead title="Storage Charges" desc="Rates applied to LCL pickups with stored cargo." />
+                {pricingLoading ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    {[0,1,2,3].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <Field label="Storage Rate ($/CBM/day)">
+                      <FocusInput type="number" step="0.01" min="0" value={pricing.storageRate}
+                        onChange={e => { setPricing(p => ({ ...p, storageRate: e.target.value })); setPricingDirty(true) }} />
+                    </Field>
+                    <Field label="Shrink Wrap ($/pallet)">
+                      <FocusInput type="number" step="0.01" min="0" value={pricing.shrinkWrapRate}
+                        onChange={e => { setPricing(p => ({ ...p, shrinkWrapRate: e.target.value })); setPricingDirty(true) }} />
+                    </Field>
+                    <Field label="Slot Fee — Pickup ($)">
+                      <FocusInput type="number" step="0.01" min="0" value={pricing.slotFeePickup}
+                        onChange={e => { setPricing(p => ({ ...p, slotFeePickup: e.target.value })); setPricingDirty(true) }} />
+                    </Field>
+                    <Field label="Slot Fee — Drop Off ($)">
+                      <FocusInput type="number" step="0.01" min="0" value={pricing.slotFeeDropoff}
+                        onChange={e => { setPricing(p => ({ ...p, slotFeeDropoff: e.target.value })); setPricingDirty(true) }} />
+                    </Field>
+                  </div>
+                )}
+              </div>
+
+              {/* Free Storage Period */}
+              <div style={CARD}>
+                <SectionHead title="Free Storage Period" desc="Days of free storage before charges begin." />
+                {pricingLoading ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    {[0,1].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <Field label="FCL Free Days">
+                      <FocusInput type="number" min="0" value={pricing.fclFreeDays}
+                        onChange={e => { setPricing(p => ({ ...p, fclFreeDays: e.target.value })); setPricingDirty(true) }} />
+                    </Field>
+                    <Field label="LCL Free Days">
+                      <FocusInput type="number" min="0" value={pricing.lclFreeDays}
+                        onChange={e => { setPricing(p => ({ ...p, lclFreeDays: e.target.value })); setPricingDirty(true) }} />
+                    </Field>
+                  </div>
+                )}
+              </div>
+
+              <button type="button" onClick={savePricing} disabled={pricingSaving || !pricingDirty} style={{ ...SAVE, opacity: (pricingSaving || !pricingDirty) ? 0.4 : 1, cursor: (pricingSaving || !pricingDirty) ? 'not-allowed' : 'pointer' }}>
+                {pricingSaving ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+          )}
+
+          {/* Payment */}
+          {tab === 'Payment' && (
+            <div>
+              {/* EFT */}
+              <div style={CARD}>
+                <SectionHead title="Bank Transfer (EFT)" desc="Account details displayed to visitors choosing EFT payment." />
+                {paymentLoading ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    {[0,1,2,3].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <Field label="Bank Name">
+                      <FocusInput type="text" value={eft.bankName} onChange={e => { setEft(v => ({ ...v, bankName: e.target.value })); setEftDirty(true) }} placeholder="e.g. Commonwealth Bank" />
+                    </Field>
+                    <Field label="Account Name">
+                      <FocusInput type="text" value={eft.accountName} onChange={e => { setEft(v => ({ ...v, accountName: e.target.value })); setEftDirty(true) }} placeholder="e.g. Glido CFS Pty Ltd" />
+                    </Field>
+                    <Field label="BSB">
+                      <FocusInput type="text" value={eft.bsb} onChange={e => { setEft(v => ({ ...v, bsb: e.target.value })); setEftDirty(true) }} placeholder="e.g. 062-000" />
+                    </Field>
+                    <Field label="Account Number">
+                      <FocusInput type="text" value={eft.accountNumber} onChange={e => { setEft(v => ({ ...v, accountNumber: e.target.value })); setEftDirty(true) }} placeholder="e.g. 1234 5678" />
+                    </Field>
+                  </div>
+                )}
+                <button type="button" onClick={saveEft} disabled={eftSaving || !eftDirty} style={{ ...SAVE, opacity: (eftSaving || !eftDirty) ? 0.4 : 1, cursor: (eftSaving || !eftDirty) ? 'not-allowed' : 'pointer' }}>
+                  {eftSaving ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+
+              {/* Stripe */}
+              <div style={CARD}>
+                <SectionHead title="Stripe (Card Payments)" desc="Configure your Stripe account for card payment processing." />
+                {paymentLoading ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {[0,1].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    <Field label="Stripe Publishable Key">
+                      <FocusInput type="text" value={stripe.publishableKey} onChange={e => { setStripe(v => ({ ...v, publishableKey: e.target.value })); setStripeDirty(true) }} placeholder="pk_live_…" />
+                    </Field>
+                    <Field label="Stripe Secret Key">
+                      <div style={{ position: 'relative' }}>
+                        <FocusInput
+                          type={showSecretKey ? 'text' : 'password'}
+                          value={stripe.secretKey}
+                          onChange={e => { setStripe(v => ({ ...v, secretKey: e.target.value })); setStripeDirty(true) }}
+                          placeholder="sk_live_…"
+                          style={{ paddingRight: 44 }}
+                        />
+                        <button type="button" onClick={() => setShowSecretKey(v => !v)}
+                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#78716C', fontWeight: 500, fontFamily: 'inherit' }}>
+                          {showSecretKey ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
+                    </Field>
+                  </div>
+                )}
+                <button type="button" onClick={saveStripe} disabled={stripeSaving || !stripeDirty} style={{ ...SAVE, opacity: (stripeSaving || !stripeDirty) ? 0.4 : 1, cursor: (stripeSaving || !stripeDirty) ? 'not-allowed' : 'pointer' }}>
+                  {stripeSaving ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+
+              {/* ComPay */}
+              <div style={CARD}>
+                <SectionHead title="ComPay (Port Community Payments)" desc="ComPay is used by the port community for freight and storage payments." />
+                <Field label="ComPay Client Number">
+                  <FocusInput type="text" value={compay.clientNumber}
+                    onChange={e => { setCompay(v => ({ ...v, clientNumber: e.target.value })); setCompayDirty(true) }}
+                    placeholder="e.g. 123456" />
+                </Field>
+                <button type="button" onClick={saveCompay} disabled={compaySaving || !compayDirty}
+                  style={{ ...SAVE, opacity: (compaySaving || !compayDirty) ? 0.4 : 1, cursor: (compaySaving || !compayDirty) ? 'not-allowed' : 'pointer' }}>
+                  {compaySaving ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+
+              {/* Require payment toggle */}
+              <div style={{ ...CARD, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20 }}>
+                <div>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: '#1C1917', marginBottom: 3 }}>Require payment to confirm booking</p>
+                  <p style={{ fontSize: 13, color: '#78716C' }}>When enabled, visitors must complete payment before their slot is confirmed.</p>
+                </div>
+                {paymentLoading ? (
+                  <div style={{ width: 44, height: 24, borderRadius: 9999, background: 'rgba(0,0,0,0.08)', flexShrink: 0 }} />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => toggleRequirePayment(!requirePayment)}
+                    style={{
+                      width: 44, height: 24, borderRadius: 9999, flexShrink: 0, border: 'none', cursor: 'pointer',
+                      background: requirePayment ? 'linear-gradient(135deg,#FF7A2A,#E85A0A)' : 'rgba(0,0,0,0.15)',
+                      position: 'relative', transition: 'background 0.2s ease',
+                    }}
+                  >
+                    <span style={{
+                      position: 'absolute', top: 3, left: requirePayment ? 23 : 3, width: 18, height: 18,
+                      borderRadius: 9999, background: '#fff', transition: 'left 0.2s ease',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.20)',
+                    }} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Integrations */}
+          {tab === 'Integrations' && (
+            <div>
+              {/* CargoWise */}
+              <div style={CARD}>
+                <SectionHead title="CargoWise API (ICS)" desc="Enables automatic customs clearance status checks." />
+                {integrationsLoading ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    {[0,1,2,3].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <Field label="API Endpoint">
+                      <FocusInput type="url" value={cargowise.apiUrl} placeholder="https://cw1.cargowise.com/api/…"
+                        onChange={e => { setCargowise(v => ({ ...v, apiUrl: e.target.value })); setCargowiseDirty(true) }} />
+                    </Field>
+                    <Field label="API Key">
+                      <div style={{ position: 'relative' }}>
+                        <FocusInput
+                          type={showCwApiKey ? 'text' : 'password'}
+                          value={cargowise.apiKey}
+                          placeholder="Your CargoWise API key"
+                          onChange={e => { setCargowise(v => ({ ...v, apiKey: e.target.value })); setCargowiseDirty(true) }}
+                          style={{ paddingRight: 44 }}
+                        />
+                        <button type="button" onClick={() => setShowCwApiKey(v => !v)}
+                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#78716C', fontWeight: 500, fontFamily: 'inherit' }}>
+                          {showCwApiKey ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
+                    </Field>
+                    <Field label="Tenant Code">
+                      <FocusInput type="text" value={cargowise.tenantCode} placeholder="SYDCFS"
+                        onChange={e => { setCargowise(v => ({ ...v, tenantCode: e.target.value })); setCargowiseDirty(true) }} />
+                    </Field>
+                    <Field label="Refresh Interval (min)">
+                      <FocusInput type="number" value={cargowise.refreshInterval} min="5" max="1440"
+                        onChange={e => { setCargowise(v => ({ ...v, refreshInterval: e.target.value })); setCargowiseDirty(true) }} />
+                    </Field>
+                  </div>
+                )}
+                <button type="button" onClick={saveCargowise} disabled={cargowiseSaving || !cargowiseDirty} style={{ ...SAVE, opacity: (cargowiseSaving || !cargowiseDirty) ? 0.4 : 1, cursor: (cargowiseSaving || !cargowiseDirty) ? 'not-allowed' : 'pointer' }}>
+                  {cargowiseSaving ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+
+              {/* SMTP */}
+              <div style={CARD}>
+                <SectionHead title="Email (SMTP)" desc="Used for booking confirmations and notifications." />
+                {integrationsLoading ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    {[0,1,2,3,4,5].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <Field label="SMTP Host">
+                      <FocusInput type="text" value={smtp.host} placeholder="smtp.mailgun.org"
+                        onChange={e => { setSmtp(v => ({ ...v, host: e.target.value })); setSmtpDirty(true) }} />
+                    </Field>
+                    <Field label="SMTP Port">
+                      <FocusInput type="number" value={smtp.port} min="1" max="65535"
+                        onChange={e => { setSmtp(v => ({ ...v, port: e.target.value })); setSmtpDirty(true) }} />
+                    </Field>
+                    <Field label="Username">
+                      <FocusInput type="text" value={smtp.username} placeholder="postmaster@mg.cfs.com.au"
+                        onChange={e => { setSmtp(v => ({ ...v, username: e.target.value })); setSmtpDirty(true) }} />
+                    </Field>
+                    <Field label="Password">
+                      <div style={{ position: 'relative' }}>
+                        <FocusInput
+                          type={showSmtpPassword ? 'text' : 'password'}
+                          value={smtp.password}
+                          placeholder="•••••••••"
+                          onChange={e => { setSmtp(v => ({ ...v, password: e.target.value })); setSmtpDirty(true) }}
+                          style={{ paddingRight: 44 }}
+                        />
+                        <button type="button" onClick={() => setShowSmtpPassword(v => !v)}
+                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#78716C', fontWeight: 500, fontFamily: 'inherit' }}>
+                          {showSmtpPassword ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
+                    </Field>
+                    <Field label="From Address">
+                      <FocusInput type="email" value={smtp.fromAddress} placeholder="bookings@cfs.com.au"
+                        onChange={e => { setSmtp(v => ({ ...v, fromAddress: e.target.value })); setSmtpDirty(true) }} />
+                    </Field>
+                    <Field label="From Name">
+                      <FocusInput type="text" value={smtp.fromName} placeholder="Sydney CFS"
+                        onChange={e => { setSmtp(v => ({ ...v, fromName: e.target.value })); setSmtpDirty(true) }} />
+                    </Field>
+                  </div>
+                )}
+                <button type="button" onClick={saveSmtp} disabled={smtpSaving || !smtpDirty} style={{ ...SAVE, opacity: (smtpSaving || !smtpDirty) ? 0.4 : 1, cursor: (smtpSaving || !smtpDirty) ? 'not-allowed' : 'pointer' }}>
+                  {smtpSaving ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Document Requirements */}
+          {tab === 'Document Requirements' && (
+            <div style={CARD}>
+              <SectionHead title="Document Requirements" desc="Configure which documents are required per service + cargo type combination." />
+              {docLoading ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+                  {[0,1,2].map(i => <div key={i} style={{ height: 200, borderRadius: 12, background: 'rgba(0,0,0,0.06)' }} />)}
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+                    {docRequirements.map(doc => {
+                      // Custom mode: either user explicitly clicked "+ Add Custom", or the loaded name isn't in the predefined list
+                      const isCustom = customInputIds.has(doc.id) || (!PREDEFINED_DOCS.includes(doc.name) && doc.name !== '')
+                      return (
+                        <div key={doc.id} style={{ background: '#F9F9F8', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column', gap: 12, minHeight: 260, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+
+                          {/* Name dropdown + Required + Delete in one row */}
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+                              <CustomSelect
+                                placeholder="Select document..."
+                                value={isCustom ? '__custom__' : doc.name}
+                                onChange={v => {
+                                  if (v === '__custom__') {
+                                    setCustomInputIds(prev => new Set([...prev, doc.id]))
+                                    if (!isCustom) updateDoc(doc.id, 'name', '')
+                                  } else {
+                                    setCustomInputIds(prev => { const s = new Set(prev); s.delete(doc.id); return s })
+                                    updateDoc(doc.id, 'name', v)
+                                  }
+                                }}
+                                options={[
+                                  { value: 'Delivery Order',             label: 'Delivery Order' },
+                                  { value: 'Biosecurity Direction',      label: 'Biosecurity Direction' },
+                                  { value: 'Interim Receipt',            label: 'Interim Receipt' },
+                                  { value: 'Booking Confirmation',       label: 'Booking Confirmation' },
+                                  { value: 'Packing List',               label: 'Packing List' },
+                                  { value: 'Cartage Advice',             label: 'Cartage Advice' },
+                                  { value: 'Dangerous Goods Declaration',label: 'Dangerous Goods Declaration' },
+                                  { value: 'Driver Licence',             label: 'Driver Licence' },
+                                  { value: 'Vehicle Registration',       label: 'Vehicle Registration' },
+                                  { value: 'Container Details',          label: 'Container Details' },
+                                  { value: '__custom__',                 label: '+ Add Custom Document' },
+                                ]}
+                              />
+                              {isCustom && (
+                                <FocusInput
+                                  type="text"
+                                  value={doc.name}
+                                  placeholder="Custom document name"
+                                  onChange={e => updateDoc(doc.id, 'name', e.target.value)}
+                                />
+                              )}
+                            </div>
+                            {/* Required + Delete stacked or side by side */}
+                            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                              <button type="button" onClick={() => updateDoc(doc.id, 'required', !doc.required)}
+                                style={{ height: 36, padding: '0 10px', borderRadius: 8, border: '1px solid rgba(0,0,0,0.10)', background: doc.required ? 'rgba(252,101,20,0.08)' : '#F7F6F5', color: doc.required ? '#FC6514' : '#78716C', fontWeight: 600, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+                                {doc.required ? 'Required' : 'Optional'}
+                              </button>
+                              <button type="button" onClick={() => removeDoc(doc.id)}
+                                style={{ height: 36, width: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid rgba(239,68,68,0.20)', background: 'rgba(239,68,68,0.05)', color: '#EF4444', cursor: 'pointer', transition: 'background 0.15s', flexShrink: 0 }}
+                                onMouseOver={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.12)')}
+                                onMouseOut={e  => (e.currentTarget.style.background = 'rgba(239,68,68,0.05)')}>
+                                <Icon name={ICONS.trash} size={13} />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* File Types */}
+                          <div>
+                            <span style={{ ...LABEL, marginBottom: 6 }}>File Types</span>
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                              {FILE_TYPE_OPTIONS.map(ft => {
+                                const on = doc.fileTypes.includes(ft)
+                                return (
+                                  <button key={ft} type="button" onClick={() => toggleDocArray(doc.id, 'fileTypes', ft)}
+                                    style={{ padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 9999, border: `1px solid ${on ? 'rgba(252,101,20,0.35)' : 'rgba(0,0,0,0.12)'}`, background: on ? 'rgba(252,101,20,0.08)' : '#FAFAF9', color: on ? '#FC6514' : '#78716C', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.13s' }}>
+                                    {ft}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Applies To */}
+                          <div>
+                            <span style={{ ...LABEL, marginBottom: 6 }}>Applies To</span>
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                              {APPLIES_TO_OPTIONS.map(opt => {
+                                const on = doc.appliesTo.includes(opt.key)
+                                return (
+                                  <button key={opt.key} type="button" onClick={() => toggleDocArray(doc.id, 'appliesTo', opt.key)}
+                                    style={{ padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 9999, border: `1px solid ${on ? 'rgba(252,101,20,0.35)' : 'rgba(0,0,0,0.12)'}`, background: on ? 'rgba(252,101,20,0.08)' : '#FAFAF9', color: on ? '#FC6514' : '#78716C', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.13s', whiteSpace: 'nowrap' }}>
+                                    {opt.label}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                </>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24 }}>
+                <button type="button" onClick={addDocRow}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: '#FC6514', background: 'rgba(252,101,20,0.06)', border: '1px solid rgba(252,101,20,0.22)', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
+                  onMouseOver={e => (e.currentTarget.style.background = 'rgba(252,101,20,0.10)')}
+                  onMouseOut={e  => (e.currentTarget.style.background = 'rgba(252,101,20,0.06)')}>
+                  <Icon name={ICONS.add} size={14} />
+                  Add Document Type
+                </button>
+                <button type="button" onClick={saveDocRequirements} disabled={docSaving || !docDirty} style={{ ...SAVE, marginTop: 0, opacity: (docSaving || !docDirty) ? 0.4 : 1, cursor: (docSaving || !docDirty) ? 'not-allowed' : 'pointer' }}>
+                  {docSaving ? 'Saving…' : 'Save changes'}
+                </button>
+              </div>
+            </div>
+          )}
+          {/* User Management */}
+          {tab === 'User Management' && (() => {
+            return (
+              <div>
+                {/* Invite section — admins and super_admins only */}
+                {isAdmin && (
+                <div style={CARD}>
+                  <SectionHead title="Invite Staff Member" desc="Send an invitation email to a new reception team member." />
+
+                  {!showInviteForm ? (
+                    <button type="button" onClick={() => setShowInviteForm(true)}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#FC6514', background: 'rgba(252,101,20,0.07)', border: '1px solid rgba(252,101,20,0.25)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <Icon name={ICONS.add} size={14} />
+                      Invite Staff Member
+                    </button>
+                  ) : (
+                    <div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                        <div>
+                          <label style={LABEL}>First Name</label>
+                          <FocusInput type="text" placeholder="Jane" value={invite.firstName}
+                            onChange={e => setInvite(v => ({ ...v, firstName: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label style={LABEL}>Last Name</label>
+                          <FocusInput type="text" placeholder="Smith" value={invite.lastName}
+                            onChange={e => setInvite(v => ({ ...v, lastName: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label style={LABEL}>Email *</label>
+                          <FocusInput type="email" placeholder="jane@example.com" value={invite.email}
+                            onChange={e => setInvite(v => ({ ...v, email: e.target.value }))} />
+                        </div>
+                        <div>
+                          <label style={LABEL}>Role</label>
+                          <CustomSelect
+                            placeholder="Select role"
+                            value={invite.role}
+                            onChange={v => setInvite(inv => ({ ...inv, role: v }))}
+                            options={[
+                              { value: 'reception_staff', label: 'Reception Staff' },
+                              { value: 'reception_admin', label: 'Reception Admin' },
+                            ]}
+                          />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 10 }}>
+                        <button type="button" onClick={sendInvite} disabled={inviteSending}
+                          style={{ ...SAVE, marginTop: 0, opacity: inviteSending ? 0.7 : 1, cursor: inviteSending ? 'not-allowed' : 'pointer' }}>
+                          {inviteSending ? 'Sending…' : 'Send Invite'}
+                        </button>
+                        <button type="button" onClick={() => { setShowInviteForm(false); setInvite({ firstName: '', lastName: '', email: '', role: 'reception_staff' }) }}
+                          style={{ marginTop: 0, padding: '11px 20px', fontSize: 13, fontWeight: 600, color: '#78716C', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                )} {/* end isAdmin invite section */}
+
+                {/* User list */}
+                <div style={CARD}>
+                  <SectionHead title="System Users" desc="View and manage all users with system access." />
+                  {usersLoading ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {[0,1,2].map(i => <div key={i} style={{ height: 52, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                    </div>
+                  ) : staffUsers.length === 0 ? (
+                    <p style={{ fontSize: 14, color: '#A8A29E', margin: 0 }}>No staff members found.</p>
+                  ) : (
+                    <div style={{ overflowX: 'visible', overflow: 'visible' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                        <thead>
+                          <tr style={{ background: '#F7F6F5', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+                            {['Name', 'Email', 'Role', 'Status', 'Last Login', 'Actions'].map(h => (
+                              <th key={h} style={{ textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {staffUsers.map(u => {
+                            const name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email
+                            const ROLE_BADGE: Record<string, { label: string; bg: string; color: string }> = {
+                              super_admin:      { label: 'Super Admin', bg: '#F5F3FF', color: '#7C3AED' },
+                              reception_admin:  { label: 'Admin',       bg: '#EFF6FF', color: '#2563EB' },
+                              reception_staff:  { label: 'Staff',       bg: '#F3F4F6', color: '#6B7280' },
+                            }
+                            const badge = ROLE_BADGE[u.role] ?? { label: u.role, bg: '#F3F4F6', color: '#6B7280' }
+                            const BadgeEl = (
+                              <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 10, background: badge.bg, color: badge.color }}>
+                                {badge.label}
+                              </span>
+                            )
+                            return (
+                              <tr key={u.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                                <td style={{ padding: '12px 14px', fontWeight: 600, color: '#1C1917', whiteSpace: 'nowrap' }}>{name}</td>
+                                <td style={{ padding: '12px 14px', color: '#78716C' }}>{u.email}</td>
+                                <td style={{ padding: '12px 14px', position: 'relative', zIndex: 10 }}>
+                                  {u.role === 'super_admin' ? (
+                                    // super_admin rows show badge only — role is immutable
+                                    <span title="Super admin role cannot be changed.">{BadgeEl}</span>
+                                  ) : isSuperAdmin && u.id === currentUserId ? (
+                                    // own row for super_admin (fallback — already caught above)
+                                    BadgeEl
+                                  ) : (
+                                    <CustomSelect
+                                      placeholder="Select role"
+                                      value={u.role}
+                                      onChange={v => updateRole(u.id, v)}
+                                      width={170}
+                                      options={[
+                                        { value: 'reception_staff', label: 'Reception Staff' },
+                                        { value: 'reception_admin', label: 'Reception Admin' },
+                                      ]}
+                                    />
+                                  )}
+                                </td>
+                                <td style={{ padding: '12px 14px' }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 9999, fontSize: 12, fontWeight: 600, background: u.is_active ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.10)', color: u.is_active ? '#16A34A' : '#DC2626', border: `1px solid ${u.is_active ? 'rgba(34,197,94,0.22)' : 'rgba(239,68,68,0.22)'}` }}>
+                                    {u.is_active ? 'Active' : 'Inactive'}
+                                  </span>
+                                </td>
+                                <td style={{ padding: '12px 14px', color: '#78716C', whiteSpace: 'nowrap' }}>
+                                  {u.last_login_at ? fmtDateTime(u.last_login_at) : 'Never'}
+                                </td>
+                                <td style={{ padding: '12px 14px' }}>
+                                  <button type="button" onClick={() => toggleActive(u.id, u.is_active)}
+                                    style={{ padding: '6px 14px', fontSize: 12, fontWeight: 600, borderRadius: 8, border: `1px solid ${u.is_active ? 'rgba(239,68,68,0.22)' : 'rgba(34,197,94,0.22)'}`, background: u.is_active ? 'rgba(239,68,68,0.06)' : 'rgba(34,197,94,0.06)', color: u.is_active ? '#DC2626' : '#16A34A', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                                    {u.is_active ? 'Deactivate' : 'Activate'}
+                                  </button>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })()}
+        </form>
+      )}
+    </div>
+  )
+}

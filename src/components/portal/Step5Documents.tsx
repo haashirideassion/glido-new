@@ -1,282 +1,688 @@
-import { Icon, ICONS } from '../../lib/Icon'
+import { useState } from 'react'
+import { useWizard } from '@/contexts/WizardContext'
+import type { SlotConfig } from '@/contexts/WizardContext'
+import { Icon, ICONS } from '@/lib/Icon'
+import { CustomSelect } from '@/components/ui/CustomSelect'
+import { lookupShipment, lookupShipmentByContainer } from '@/lib/db/cfs-shipments'
+import { DEFAULT_TENANT_ID } from '@/lib/supabase'
 
-const FL = "display:block; font-size:10px; font-weight:700; color:#78716C; letter-spacing:0.09em; text-transform:uppercase; margin-bottom:6px;"
-const ROW = "display:grid; grid-template-columns:1fr 1fr; gap:20px;"
-const COL = "display:flex; flex-direction:column; gap:0;"
-const MB = "margin-bottom:28px;"
-const ICS_BADGE_BIND = "{ background: $store.wizard.shipmentData?.icsStatus === 'cleared' ? 'rgba(34,197,94,0.12)' : $store.wizard.shipmentData?.icsStatus === 'held' ? 'rgba(239,68,68,0.12)' : $store.wizard.shipmentData?.icsStatus === 'examination' ? 'rgba(251,191,36,0.10)' : 'rgba(0,0,0,0.04)', color: $store.wizard.shipmentData?.icsStatus === 'cleared' ? '#22C55E' : $store.wizard.shipmentData?.icsStatus === 'held' ? '#EF4444' : $store.wizard.shipmentData?.icsStatus === 'examination' ? '#FBBF24' : '#78716C', borderColor: $store.wizard.shipmentData?.icsStatus === 'cleared' ? 'rgba(34,197,94,0.22)' : $store.wizard.shipmentData?.icsStatus === 'held' ? 'rgba(239,68,68,0.22)' : $store.wizard.shipmentData?.icsStatus === 'examination' ? 'rgba(251,191,36,0.22)' : 'rgba(0,0,0,0.10)' }"
+const FL: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 700, color: '#78716C', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 6 }
+const ROW: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }
 
-export const Step5Documents = () => (
-  <div x-show="$store.wizard.currentStep === 5" x-cloak>
+const ICS_MAP: Record<string, { bg: string; color: string; border: string; label: string }> = {
+  cleared:     { bg: 'rgba(34,197,94,0.12)',  color: '#22C55E', border: 'rgba(34,197,94,0.22)',  label: 'Cleared'  },
+  held:        { bg: 'rgba(239,68,68,0.12)',  color: '#EF4444', border: 'rgba(239,68,68,0.22)',  label: 'Held'     },
+  examination: { bg: 'rgba(251,191,36,0.10)', color: '#FBBF24', border: 'rgba(251,191,36,0.22)', label: 'On Hold'  },
+  pending:     { bg: 'rgba(0,0,0,0.04)',      color: '#78716C', border: 'rgba(0,0,0,0.10)',      label: 'Pending'  },
+}
 
-    {/* Heading */}
-    <h2 style="font-size:22px; font-weight:700; color:#1C1917; letter-spacing:-0.03em; line-height:1.2; margin:0 0 8px;">Shipment details</h2>
-    <p style="font-size:14px; color:#78716C; line-height:1.5; margin:0 0 36px;">Enter your HBL or container reference. ICS clearance status is checked automatically.</p>
+const CONTAINER_SIZES = [
+  '', '20ft Standard', '40ft Standard', '40ft High Cube', '45ft High Cube',
+]
 
-    {/* ─── LCL Pickup ─── */}
-    <div x-show="$store.wizard.isPickupLcl">
+const PURPOSES = [
+  '', 'Delivery to Consignee', 'Customs Examination', 'Transfer to Another Depot', 'Return to Shipper',
+]
 
-      <div style={ROW + " margin-bottom:24px;"}>
-        <div>
-          <label style={FL}>House Bill Number <span style="color:#EF4444;">*</span></label>
-          <input type="text" x-model="$store.wizard.houseBillNumber" placeholder="e.g. SYHMSCU001847" class="wizard-field" style="text-transform:uppercase; letter-spacing:0.04em;" />
-        </div>
-        <div>
-          <label style={FL}>Container Number <span style="color:#EF4444;">*</span></label>
-          <input type="text" x-model="$store.wizard.containerNumber" placeholder="e.g. MSCU1234567" class="wizard-field" style="text-transform:uppercase; letter-spacing:0.04em;" />
+export function Step5Documents() {
+  const { state, dispatch } = useWizard()
+  const [touched, setTouch] = useState<Record<string, boolean>>({})
+
+  const set = (f: keyof typeof state, v: string) => dispatch({ type: 'SET', field: f as any, value: v })
+  const touch = (f: string) => setTouch(p => ({ ...p, [f]: true }))
+
+  const multi = state.slotCount > 1
+
+  const isPickupLcl  = state.serviceType === 'pickup'  && state.loadType === 'lcl'
+  const isPickupFcl  = state.serviceType === 'pickup'  && state.loadType === 'fcl'
+  const isDropoffLcl = state.serviceType === 'dropoff' && state.loadType === 'lcl'
+  const isDropoffFcl = state.serviceType === 'dropoff' && state.loadType === 'fcl'
+
+  // ── Shipment lookup ────────────────────────────────────────────────────────
+  const fetchLcl = async () => {
+    if (!state.hbl.trim()) return
+    dispatch({ type: 'SET_SHIPMENT', data: null, loading: true, error: null, fetched: false })
+    try {
+      const data = await lookupShipment(DEFAULT_TENANT_ID, state.hbl.trim())
+      dispatch({ type: 'SET_SHIPMENT', data: data ?? null, loading: false, error: data ? null : 'HBL not found.', fetched: true })
+      if (data?.containerNumber) dispatch({ type: 'SET', field: 'containerNumber', value: data.containerNumber })
+    } catch {
+      dispatch({ type: 'SET_SHIPMENT', data: null, loading: false, error: 'Lookup failed.', fetched: false })
+    }
+  }
+
+  const fetchFcl = async () => {
+    if (!state.containerNumber.trim()) return
+    dispatch({ type: 'SET_SHIPMENT', data: null, loading: true, error: null, fetched: false })
+    try {
+      const data = await lookupShipmentByContainer(DEFAULT_TENANT_ID, state.containerNumber.trim())
+      const result = data ?? { id: '', hbl: '', containerNumber: state.containerNumber.trim(), icsStatus: 'unavailable', readyForCollection: false }
+      dispatch({ type: 'SET_SHIPMENT', data: result, loading: false, error: data ? null : 'Container not found in CFS records — ICS status unavailable.', fetched: true })
+    } catch {
+      dispatch({ type: 'SET_SHIPMENT', data: null, loading: false, error: 'Lookup failed. Enter details manually.', fetched: false })
+    }
+  }
+
+  const sd        = state.shipmentData
+  const icsBadge  = ICS_MAP[sd?.icsStatus ?? ''] ?? ICS_MAP.pending
+  const showChep  = sd?.palletType === 'chep'
+  const showHeld  = sd?.icsStatus === 'held'
+
+  // Multi-slot: render per-slot sections + shared driver fields
+  if (multi) {
+    const setSlot = (slotIndex: number) => (f: string, v: string) =>
+      dispatch({ type: 'SET_SLOT_DETAIL', slotIndex, field: f, value: v })
+    return (
+      <div>
+        <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: '0 0 8px' }}>Load Information</h2>
+        <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.5, margin: '0 0 28px' }}>Enter shipment details for each booking slot.</p>
+
+        {state.slotConfigs.map((cfg, i) => (
+          <div key={cfg.index} style={{ marginBottom: 32, padding: 20, background: '#F9F9F8', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: '#78716C', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 16 }}>
+              Slot {cfg.index} — {cfg.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {(cfg.loadType ?? '').toUpperCase()}
+              {cfg.selectedSlotLabel && <span style={{ fontWeight: 400, marginLeft: 8, textTransform: 'none', letterSpacing: 0 }}>{cfg.selectedDate} {cfg.selectedSlotLabel}</span>}
+            </p>
+            <SlotDetailFields
+              cfg={cfg}
+              set={setSlot(cfg.index)}
+              touched={touched}
+              touch={touch}
+              touchPrefix={`s${i}_`}
+              slotIndex={cfg.index}
+            />
+          </div>
+        ))}
+
+        {/* Shared driver fields */}
+        <div style={{ marginTop: 8 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#78716C', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 12 }}>Driver / Visitor Details</p>
+          <DriverFields state={state} set={set} touch={touch} touched={touched} />
         </div>
       </div>
+    )
+  }
 
-      <div style="margin-bottom:32px;">
-        <button
-          type="button"
-          x-on:click="$store.wizard.fetchShipmentDetails()"
-          {...{"x-bind:disabled": "$store.wizard.houseBillNumber.trim().length < 4 || $store.wizard.shipmentFetching"}}
-          class="btn-dark" style="padding:10px 18px; font-size:13px; display:inline-flex; align-items:center; gap:8px; cursor:pointer;"
-        >
-          <span x-show="!$store.wizard.shipmentFetching"><Icon name={ICONS.search} size={16} /></span>
-          <span x-show="$store.wizard.shipmentFetching" style="width:16px; height:16px; border:2px solid rgba(255,255,255,0.25); border-top-color:white; border-radius:9999px; animation:spin 0.7s linear infinite; display:inline-block;"></span>
-          <span x-text="$store.wizard.shipmentFetching ? 'Looking up...' : 'Look Up Shipment'">Look Up Shipment</span>
-        </button>
-      </div>
+  return (
+    <div>
+      <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: '0 0 8px' }}>Load Information</h2>
+      <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.5, margin: '0 0 36px' }}>
+        {isPickupLcl  && 'Enter your container and house bill details. ICS clearance status is checked automatically.'}
+        {isPickupFcl  && 'Enter your container number and size. ICS clearance status is checked automatically.'}
+        {isDropoffLcl && 'Enter your booking and customs details for this LCL drop-off.'}
+        {isDropoffFcl && 'Enter your container details and customs information for this FCL drop-off.'}
+      </p>
 
-      {/* Fetched data */}
-      <div x-show="$store.wizard.shipmentFetched && $store.wizard.shipmentData">
-
-        {/* ICS status */}
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:24px;">
-          <span style="font-size:13px; font-weight:600; color:#78716C;">ICS Status:</span>
-          <span
-            style="display:inline-flex; align-items:center; font-size:11px; font-weight:600; padding:3px 10px; border-radius:9999px; border:1px solid transparent;"
-            {...{"x-bind:style": ICS_BADGE_BIND}}
-            x-text="{'cleared':'Cleared','held':'Held','examination':'On Hold','pending':'Pending'}[$store.wizard.shipmentData?.icsStatus] || 'Unknown'"
-          ></span>
+      {/* ══════════════════════════════════════════════════════
+          1. PICKUP + LCL
+          Fields: Container Number (req), HBL Number (req)
+      ══════════════════════════════════════════════════════ */}
+      {isPickupLcl && (
+        <div>
+          <div style={{ ...ROW, marginBottom: 24 }}>
+            <FField label="Container Number" required error={touched.containerNumber && !state.containerNumber.trim()}>
+              <input
+                type="text" className="wizard-field"
+                value={state.containerNumber}
+                onChange={e => set('containerNumber', e.target.value.toUpperCase())}
+                onBlur={() => touch('containerNumber')}
+                placeholder="e.g. MSCU1234567"
+                style={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}
+              />
+            </FField>
+            <FField label="House Bill of Lading #" required error={touched.hbl && !state.hbl.trim()}>
+              <input
+                type="text" className="wizard-field"
+                value={state.hbl}
+                onChange={e => set('hbl', e.target.value.toUpperCase())}
+                onBlur={() => touch('hbl')}
+                placeholder="e.g. SYHMSCU001847"
+                style={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}
+              />
+            </FField>
+          </div>
+          <div style={{ marginBottom: 32 }}>
+            <button type="button" className="btn-dark" onClick={fetchLcl} disabled={state.hbl.trim().length < 4 || state.shipmentLoading}>
+              {state.shipmentLoading ? <Spinner /> : <Icon name={ICONS.search} size={16} />}
+              {state.shipmentLoading ? 'Looking up...' : 'Look Up Shipment'}
+            </button>
+          </div>
+          {state.shipmentFetched && sd && (
+            <ShipmentCard sd={sd} icsBadge={icsBadge} showHeld={showHeld} showChep={showChep} />
+          )}
+          <DriverFields state={state} set={set} touch={touch} touched={touched} />
         </div>
+      )}
 
-        {/* ICS held warning */}
-        <div x-show="$store.wizard.showIcsHeld" style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.22); border-radius:8px; padding:14px 16px; display:flex; align-items:flex-start; gap:12px; margin-bottom:24px;">
-          <Icon name={ICONS.warning} size={18} style="color:#EF4444; flex-shrink:0; margin-top:1px;" />
+      {/* ══════════════════════════════════════════════════════
+          2. DROPOFF + LCL
+          Fields: Booking Reference # (req), Consolidator (req),
+                  Entry Number (req), Purpose (req dropdown)
+      ══════════════════════════════════════════════════════ */}
+      {isDropoffLcl && (
+        <div>
+          <div style={{ ...ROW, marginBottom: 24 }}>
+            <FField label="Booking Reference #" required error={touched.bookingReference && !state.bookingReference.trim()}>
+              <input
+                type="text" className="wizard-field"
+                value={state.bookingReference}
+                onChange={e => set('bookingReference', e.target.value)}
+                onBlur={() => touch('bookingReference')}
+                placeholder="e.g. BK-2026-00142"
+              />
+            </FField>
+            <FField label="Consolidator / Freight Forwarder" required error={touched.consolidator && !state.consolidator.trim()}>
+              <input
+                type="text" className="wizard-field"
+                value={state.consolidator}
+                onChange={e => set('consolidator', e.target.value)}
+                onBlur={() => touch('consolidator')}
+                placeholder="e.g. Kuehne + Nagel"
+              />
+            </FField>
+          </div>
+          <div style={{ ...ROW, marginBottom: 24 }}>
+            <FField label="Customs Entry #" required error={touched.entryNumber && !state.entryNumber.trim()}>
+              <input
+                type="text" className="wizard-field"
+                value={state.entryNumber}
+                onChange={e => set('entryNumber', e.target.value.toUpperCase())}
+                onBlur={() => touch('entryNumber')}
+                placeholder="e.g. CE2026100142"
+                style={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}
+              />
+            </FField>
+            <FField label="Purpose" required error={touched.purpose && !state.purpose.trim()}>
+              <CustomSelect
+                placeholder="Select purpose…"
+                value={state.purpose}
+                onChange={v => set('purpose', v)}
+                onBlur={() => touch('purpose')}
+                options={PURPOSES.filter(Boolean).map(p => ({ value: p, label: p }))}
+              />
+            </FField>
+          </div>
+          <DriverFields state={state} set={set} touch={touch} touched={touched} />
+          <p style={{ fontSize: 12, color: '#78716C', display: 'flex', alignItems: 'center', gap: 6, margin: '16px 0 0' }}>
+            <Icon name={ICONS.info} size={13} style={{ flexShrink: 0 }} />
+            Drop-off does not incur storage charges. No ICS check required.
+          </p>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════
+          3. PICKUP + FCL
+          Fields: Container Number (req), Container Size (req dropdown)
+      ══════════════════════════════════════════════════════ */}
+      {isPickupFcl && (
+        <div>
+          <div style={{ ...ROW, marginBottom: 24 }}>
+            <FField label="Container Number" required error={touched.containerNumber && !state.containerNumber.trim()}>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <input
+                  type="text" className="wizard-field"
+                  value={state.containerNumber}
+                  onChange={e => set('containerNumber', e.target.value.toUpperCase())}
+                  onBlur={() => touch('containerNumber')}
+                  placeholder="e.g. MSCU1234567"
+                  style={{ flex: 1, textTransform: 'uppercase', letterSpacing: '0.04em' }}
+                />
+                <button type="button" className="btn-dark" onClick={fetchFcl} disabled={state.containerNumber.trim().length < 4 || state.shipmentLoading} style={{ flexShrink: 0 }}>
+                  {state.shipmentLoading ? <Spinner /> : null}
+                  Look Up
+                </button>
+              </div>
+            </FField>
+            <FField label="Container Size" required error={touched.containerSize && !state.containerSize.trim()}>
+              <CustomSelect
+                placeholder="Select size…"
+                value={state.containerSize}
+                onChange={v => set('containerSize', v)}
+                onBlur={() => touch('containerSize')}
+                options={CONTAINER_SIZES.filter(Boolean).map(s => ({ value: s, label: s }))}
+              />
+            </FField>
+          </div>
+          {state.shipmentFetched && sd && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#78716C' }}>ICS Status:</span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 9999, border: '1px solid transparent', background: icsBadge.bg, color: icsBadge.color, borderColor: icsBadge.border }}>
+                  {icsBadge.label}
+                </span>
+              </div>
+              {state.shipmentError && (
+                <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 12, color: '#B45309', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Icon name={ICONS.info} size={14} style={{ color: '#B45309', flexShrink: 0 }} />
+                  {state.shipmentError}
+                </div>
+              )}
+              <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+                <p style={{ ...FL, marginBottom: 16 }}>Container details</p>
+                <div style={ROW}>
+                  {[['Gross Weight', sd.weightKg ? `${sd.weightKg} kg` : '—'], ['Volume', sd.volumeCbm ? `${sd.volumeCbm} CBM` : '—']].map(([l, v]) => (
+                    <div key={l} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '12px 14px' }}>
+                      <p style={{ fontSize: 10, color: '#78716C', margin: '0 0 4px' }}>{l}</p>
+                      <p style={{ fontWeight: 600, color: '#1C1917', fontSize: 13, margin: 0 }}>{v}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          <DriverFields state={state} set={set} touch={touch} touched={touched} />
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════
+          4. DROPOFF + FCL
+          Fields: Container Number (req), Container Size (req dropdown),
+                  Entry Number (req), Purpose (req dropdown)
+      ══════════════════════════════════════════════════════ */}
+      {isDropoffFcl && (
+        <div>
+          <div style={{ ...ROW, marginBottom: 24 }}>
+            <FField label="Container Number" required error={touched.containerNumber && !state.containerNumber.trim()}>
+              <input
+                type="text" className="wizard-field"
+                value={state.containerNumber}
+                onChange={e => set('containerNumber', e.target.value.toUpperCase())}
+                onBlur={() => touch('containerNumber')}
+                placeholder="e.g. MSCU1234567"
+                style={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}
+              />
+            </FField>
+            <FField label="Container Size" required error={touched.containerSize && !state.containerSize.trim()}>
+              <CustomSelect
+                placeholder="Select size…"
+                value={state.containerSize}
+                onChange={v => set('containerSize', v)}
+                onBlur={() => touch('containerSize')}
+                options={CONTAINER_SIZES.filter(Boolean).map(s => ({ value: s, label: s }))}
+              />
+            </FField>
+          </div>
+          <div style={{ ...ROW, marginBottom: 24 }}>
+            <FField label="Customs Entry #" required error={touched.entryNumber && !state.entryNumber.trim()}>
+              <input
+                type="text" className="wizard-field"
+                value={state.entryNumber}
+                onChange={e => set('entryNumber', e.target.value.toUpperCase())}
+                onBlur={() => touch('entryNumber')}
+                placeholder="e.g. CE2026100142"
+                style={{ textTransform: 'uppercase', letterSpacing: '0.04em' }}
+              />
+            </FField>
+            <FField label="Purpose" required error={touched.purpose && !state.purpose.trim()}>
+              <CustomSelect
+                placeholder="Select purpose…"
+                value={state.purpose}
+                onChange={v => set('purpose', v)}
+                onBlur={() => touch('purpose')}
+                options={PURPOSES.filter(Boolean).map(p => ({ value: p, label: p }))}
+              />
+            </FField>
+          </div>
+          <DriverFields state={state} set={set} touch={touch} touched={touched} />
+          <p style={{ fontSize: 12, color: '#78716C', display: 'flex', alignItems: 'center', gap: 6, margin: '16px 0 0' }}>
+            <Icon name={ICONS.info} size={13} style={{ flexShrink: 0 }} />
+            Drop-off does not incur storage charges. No ICS check required.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Field wrapper with inline validation ─────────────────────────────────────
+
+function FField({ label, required, error, children }: { label: string; required?: boolean; error?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label style={{ ...FL, color: error ? '#EF4444' : '#78716C' }}>
+        {label}{required && <span style={{ color: '#EF4444', marginLeft: 4 }}>*</span>}
+      </label>
+      {children}
+      {error && <p style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>This field is required</p>}
+    </div>
+  )
+}
+
+// ─── Driver fields ────────────────────────────────────────────────────────────
+
+function DriverFields({ state, set, touch, touched }: { state: any; set: (f: any, v: string) => void; touch: (f: string) => void; touched: Record<string, boolean> }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 8 }}>
+      <FField label="Driver Name" required error={touched.driverName && !state.driverName.trim()}>
+        <input
+          type="text" className="wizard-field"
+          value={state.driverName}
+          onChange={e => set('driverName', e.target.value)}
+          onBlur={() => touch('driverName')}
+          placeholder="Person physically visiting"
+        />
+      </FField>
+      <FField label="Driver Phone">
+        <input
+          type="tel" className="wizard-field"
+          value={state.driverPhone}
+          onChange={e => set('driverPhone', e.target.value)}
+          placeholder="+61 4XX XXX XXX"
+        />
+      </FField>
+      <FField label="Vehicle Registration" required error={touched.vehicleRegistration && !(state.vehicleRegistration ?? '').trim()}>
+        <input
+          type="text" className="wizard-field"
+          value={state.vehicleRegistration ?? ''}
+          onChange={e => set('vehicleRegistration', e.target.value.toUpperCase())}
+          onBlur={() => touch('vehicleRegistration')}
+          placeholder="e.g. ABC123"
+          style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}
+        />
+      </FField>
+    </div>
+  )
+}
+
+// ─── Shipment card (LCL pickup) ───────────────────────────────────────────────
+
+function ShipmentCard({ sd, icsBadge, showHeld, showChep }: any) {
+  const charges = sd ? (() => {
+    const storageDays = sd.storageStartDate ? Math.max(1, Math.ceil((Date.now() - new Date(sd.storageStartDate).getTime()) / 86400000)) : 0
+    const storageCharge = sd.volumeCbm ? sd.volumeCbm * 8.5 * storageDays : 0
+    const shrinkWrap = sd.palletCount ? sd.palletCount * 12 : 0
+    const subtotal = storageCharge + shrinkWrap + 5
+    const gst = subtotal * 0.1
+    return { storageCharge, shrinkWrap, subtotal, gst, total: subtotal + gst }
+  })() : null
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#78716C' }}>ICS Status:</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 9999, border: `1px solid ${icsBadge.border}`, background: icsBadge.bg, color: icsBadge.color }}>{icsBadge.label}</span>
+      </div>
+      {showHeld && (
+        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 24 }}>
+          <Icon name={ICONS.warning} size={18} style={{ color: '#EF4444', flexShrink: 0, marginTop: 1 }} />
           <div>
-            <p style="font-weight:600; color:#EF4444; font-size:13px; margin:0 0 4px;">ICS Hold Detected</p>
-            <p style="font-size:12px; color:rgba(239,68,68,0.70); line-height:1.5; margin:0;">This shipment is currently held by Australian Border Force. You cannot collect until the hold is lifted. Contact your freight forwarder.</p>
+            <p style={{ fontWeight: 600, color: '#EF4444', fontSize: 13, margin: '0 0 4px' }}>ICS Hold Detected</p>
+            <p style={{ fontSize: 12, color: 'rgba(239,68,68,0.70)', lineHeight: 1.5, margin: 0 }}>This shipment is held by Australian Border Force. Contact your freight forwarder.</p>
           </div>
         </div>
+      )}
+      {showChep && (
+        <div style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.25)', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 24 }}>
+          <Icon name={ICONS.warning} size={18} style={{ color: '#D97706', flexShrink: 0, marginTop: 1 }} />
+          <div>
+            <p style={{ fontWeight: 600, color: '#B45309', fontSize: 13, margin: '0 0 4px' }}>CHEP Pallet Exchange Required</p>
+            <p style={{ fontSize: 12, color: '#92400E', lineHeight: 1.5, margin: 0 }}>Bring the same number of empty CHEP pallets to exchange at collection.</p>
+          </div>
+        </div>
+      )}
+      <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 24 }}>
+        <p style={{ fontSize: 10, fontWeight: 700, color: '#78716C', letterSpacing: '0.09em', textTransform: 'uppercase', margin: '0 0 16px' }}>Auto-populated from CFS records</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+          {[['Weight', sd.weightKg ? sd.weightKg + ' kg' : '—'], ['Volume', sd.volumeCbm ? sd.volumeCbm + ' CBM' : '—'], ['Packages', sd.packageCount || '—'], ['Pallets', sd.palletCount ? `${sd.palletCount} × ${sd.palletType}` : '—'], ['Storage from', sd.storageStartDate || '—'], ['Days in store', '—']].map(([l, v]) => (
+            <div key={l} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '12px 14px' }}>
+              <p style={{ fontSize: 10, color: '#78716C', margin: '0 0 4px' }}>{l}</p>
+              <p style={{ fontWeight: 600, color: '#1C1917', fontSize: 13, margin: 0 }}>{String(v)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      {charges && charges.total > 5.5 && (
+        <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 32 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', margin: '0 0 16px' }}>Estimated Charges</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
+            {charges.storageCharge > 0 && <ChargeRow label="Storage" val={`$${charges.storageCharge.toFixed(2)}`} />}
+            {charges.shrinkWrap   > 0 && <ChargeRow label="Shrink wrap" val={`$${charges.shrinkWrap.toFixed(2)}`} />}
+            <ChargeRow label="Slot fee" val="$5.00" />
+            <div style={{ height: 1, background: 'rgba(0,0,0,0.07)', margin: '2px 0' }} />
+            <ChargeRow label="Subtotal" val={`$${charges.subtotal.toFixed(2)}`} bold />
+            <ChargeRow label="GST (10%)" val={`$${charges.gst.toFixed(2)}`} small />
+            <div style={{ height: 1, background: 'rgba(0,0,0,0.07)', margin: '2px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#1C1917', fontSize: 15 }}>
+              <span>Total</span><span style={{ color: '#FC6514' }}>${charges.total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
-        {/* Auto-populated card */}
-        <div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px; padding:20px; margin-bottom:24px;">
-          <p style="font-size:10px; font-weight:700; color:#78716C; letter-spacing:0.09em; text-transform:uppercase; margin:0 0 16px;">Auto-populated from CFS records</p>
-          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
-            {[
-              { label: 'Weight',        xtext: `$store.wizard.shipmentData?.weightKg ? $store.wizard.shipmentData.weightKg + ' kg' : '—'` },
-              { label: 'Volume',        xtext: `$store.wizard.shipmentData?.volumeCbm ? $store.wizard.shipmentData.volumeCbm + ' CBM' : '—'` },
-              { label: 'Packages',      xtext: `$store.wizard.shipmentData?.packageCount || '—'` },
-              { label: 'Pallets',       xtext: `$store.wizard.shipmentData?.palletCount ? $store.wizard.shipmentData.palletCount + ' × ' + $store.wizard.shipmentData.palletType : '—'` },
-              { label: 'Storage from',  xtext: `$store.wizard.shipmentData?.storageStartDate || '—'` },
-              { label: 'Days in store', xtext: `$store.wizard.shipmentData?.storageDays ? $store.wizard.shipmentData.storageDays + ' days' : '—'` },
-            ].map((item) => (
-              <div key={item.label} style="background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:12px 14px;">
-                <p style="font-size:10px; color:#78716C; margin:0 0 4px;">{item.label}</p>
-                <p style="font-weight:600; color:#1C1917; font-size:13px; margin:0;" x-text={item.xtext}></p>
+function ChargeRow({ label, val, bold, small }: { label: string; val: string; bold?: boolean; small?: boolean }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', color: bold ? '#1C1917' : '#78716C', fontWeight: bold ? 600 : 400, fontSize: small ? 12 : 13 }}>
+      <span>{label}</span><span>{val}</span>
+    </div>
+  )
+}
+
+function Spinner() {
+  return <span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.25)', borderTopColor: '#fff', borderRadius: 9999, animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+}
+
+// ─── Per-slot detail fields for multi-slot mode ───────────────────────────────
+
+function SlotDetailFields({ cfg, set, touched, touch, touchPrefix, slotIndex }: {
+  cfg: SlotConfig
+  set: (f: string, v: string) => void
+  touched: Record<string, boolean>
+  touch: (f: string) => void
+  touchPrefix: string
+  slotIndex: number
+}) {
+  const { dispatch } = useWizard()
+  const [slotShipmentData,    setSlotShipmentData]    = useState<any>(null)
+  const [slotShipmentFetched, setSlotShipmentFetched] = useState(false)
+  const [slotShipmentLoading, setSlotShipmentLoading] = useState(false)
+  const [slotShipmentError,   setSlotShipmentError]   = useState<string | null>(null)
+
+  const fetchSlotLcl = async () => {
+    const hblVal = (cfg.hbl ?? '').trim()
+    if (!hblVal) return
+    setSlotShipmentLoading(true); setSlotShipmentData(null); setSlotShipmentFetched(false); setSlotShipmentError(null)
+    try {
+      const data = await lookupShipment(DEFAULT_TENANT_ID, hblVal)
+      setSlotShipmentData(data ?? null)
+      setSlotShipmentError(data ? null : 'HBL not found.')
+      setSlotShipmentFetched(true)
+      if (data?.containerNumber) {
+        set('containerNumber', data.containerNumber)
+        dispatch({ type: 'SET_SLOT_DETAIL', slotIndex, field: 'containerNumber', value: data.containerNumber })
+      }
+    } catch { setSlotShipmentError('Lookup failed.') }
+    finally { setSlotShipmentLoading(false) }
+  }
+
+  const fetchSlotFcl = async () => {
+    const cnVal = (cfg.containerNumber ?? '').trim()
+    if (!cnVal) return
+    setSlotShipmentLoading(true); setSlotShipmentData(null); setSlotShipmentFetched(false); setSlotShipmentError(null)
+    try {
+      const data = await lookupShipmentByContainer(DEFAULT_TENANT_ID, cnVal)
+      const result = data ?? { id: '', hbl: '', containerNumber: cnVal, icsStatus: 'unavailable', readyForCollection: false }
+      setSlotShipmentData(result)
+      setSlotShipmentError(data ? null : 'Container not found in CFS records — ICS status unavailable.')
+      setSlotShipmentFetched(true)
+    } catch { setSlotShipmentError('Lookup failed. Enter details manually.') }
+    finally { setSlotShipmentLoading(false) }
+  }
+
+  const sd       = slotShipmentData
+  const icsBadge = ICS_MAP[sd?.icsStatus ?? ''] ?? ICS_MAP.pending
+  const showHeld = sd?.icsStatus === 'held'
+
+  const svc = cfg.serviceType; const lt = cfg.loadType
+  const isPickupLcl  = svc === 'pickup'  && lt === 'lcl'
+  const isPickupFcl  = svc === 'pickup'  && lt === 'fcl'
+  const isDropoffLcl = svc === 'dropoff' && lt === 'lcl'
+  const isDropoffFcl = svc === 'dropoff' && lt === 'fcl'
+  const p = touchPrefix  // key prefix to avoid cross-slot touch collision
+
+  // Safe accessors — guard against undefined when restored from sessionStorage
+  const cn  = cfg.containerNumber  ?? ''
+  const hbl = cfg.hbl              ?? ''
+  const cs  = cfg.containerSize    ?? ''
+  const en  = cfg.entryNumber      ?? ''
+  const pu  = cfg.purpose          ?? ''
+  const co  = cfg.consolidator     ?? ''
+  const br  = cfg.bookingReference ?? ''
+
+  if (isPickupLcl) return (
+    <div>
+      <div style={{ ...ROW, marginBottom: 16 }}>
+        <FField label="Container Number" required error={touched[p+'cn'] && !cn.trim()}>
+          <input type="text" className="wizard-field" value={cn}
+            onChange={e => set('containerNumber', e.target.value.toUpperCase())}
+            onBlur={() => touch(p+'cn')} placeholder="e.g. MSCU1234567"
+            style={{ textTransform: 'uppercase', letterSpacing: '0.04em' }} />
+        </FField>
+        <FField label="House Bill of Lading #" required error={touched[p+'hbl'] && !hbl.trim()}>
+          <input type="text" className="wizard-field" value={hbl}
+            onChange={e => set('hbl', e.target.value.toUpperCase())}
+            onBlur={() => touch(p+'hbl')} placeholder="e.g. SYHMSCU001847"
+            style={{ textTransform: 'uppercase', letterSpacing: '0.04em' }} />
+        </FField>
+      </div>
+      <div style={{ marginBottom: slotShipmentFetched && sd ? 16 : 0 }}>
+        <button type="button" className="btn-dark" onClick={fetchSlotLcl}
+          disabled={hbl.trim().length < 4 || slotShipmentLoading}>
+          {slotShipmentLoading ? <Spinner /> : <Icon name={ICONS.search} size={16} />}
+          {slotShipmentLoading ? 'Looking up...' : 'Look Up Shipment'}
+        </button>
+      </div>
+      {slotShipmentFetched && sd && <SlotIcsCard sd={sd} icsBadge={icsBadge} showHeld={showHeld} error={slotShipmentError} />}
+    </div>
+  )
+
+  if (isPickupFcl) return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 16 }}>
+        <FField label="Container Number" required error={touched[p+'cn'] && !cn.trim()}>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <input type="text" className="wizard-field" value={cn}
+              onChange={e => set('containerNumber', e.target.value.toUpperCase())}
+              onBlur={() => touch(p+'cn')} placeholder="e.g. MSCU1234567"
+              style={{ flex: 1, textTransform: 'uppercase', letterSpacing: '0.04em' }} />
+            <button type="button" className="btn-dark" onClick={fetchSlotFcl}
+              disabled={cn.trim().length < 4 || slotShipmentLoading} style={{ flexShrink: 0 }}>
+              {slotShipmentLoading ? <Spinner /> : null}
+              Look Up
+            </button>
+          </div>
+        </FField>
+        <FField label="Container Size" required error={touched[p+'cs'] && !cs.trim()}>
+          <CustomSelect placeholder="Select size…" value={cs}
+            onChange={v => set('containerSize', v)} onBlur={() => touch(p+'cs')}
+            options={CONTAINER_SIZES.filter(Boolean).map(s => ({ value: s, label: s }))} />
+        </FField>
+      </div>
+      {slotShipmentFetched && sd && <SlotIcsCard sd={sd} icsBadge={icsBadge} showHeld={showHeld} error={slotShipmentError} />}
+    </div>
+  )
+
+  if (isDropoffLcl) return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <FField label="Booking Reference #" required error={touched[p+'br'] && !br.trim()}>
+        <input type="text" className="wizard-field" value={br}
+          onChange={e => set('bookingReference', e.target.value)}
+          onBlur={() => touch(p+'br')} placeholder="e.g. BK-2026-00142" />
+      </FField>
+      <FField label="Consolidator / Freight Forwarder" required error={touched[p+'co'] && !co.trim()}>
+        <input type="text" className="wizard-field" value={co}
+          onChange={e => set('consolidator', e.target.value)}
+          onBlur={() => touch(p+'co')} placeholder="e.g. Kuehne + Nagel" />
+      </FField>
+      <FField label="Customs Entry #" required error={touched[p+'en'] && !en.trim()}>
+        <input type="text" className="wizard-field" value={en}
+          onChange={e => set('entryNumber', e.target.value.toUpperCase())}
+          onBlur={() => touch(p+'en')} placeholder="e.g. CE2026100142"
+          style={{ textTransform: 'uppercase', letterSpacing: '0.04em' }} />
+      </FField>
+      <FField label="Purpose" required error={touched[p+'pu'] && !pu.trim()}>
+        <CustomSelect placeholder="Select purpose…" value={pu}
+          onChange={v => set('purpose', v)} onBlur={() => touch(p+'pu')}
+          options={PURPOSES.filter(Boolean).map(p2 => ({ value: p2, label: p2 }))} />
+      </FField>
+    </div>
+  )
+
+  if (isDropoffFcl) return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <FField label="Container Number" required error={touched[p+'cn'] && !cn.trim()}>
+        <input type="text" className="wizard-field" value={cn}
+          onChange={e => set('containerNumber', e.target.value.toUpperCase())}
+          onBlur={() => touch(p+'cn')} placeholder="e.g. MSCU1234567"
+          style={{ textTransform: 'uppercase', letterSpacing: '0.04em' }} />
+      </FField>
+      <FField label="Container Size" required error={touched[p+'cs'] && !cs.trim()}>
+        <CustomSelect placeholder="Select size…" value={cs}
+          onChange={v => set('containerSize', v)} onBlur={() => touch(p+'cs')}
+          options={CONTAINER_SIZES.filter(Boolean).map(s => ({ value: s, label: s }))} />
+      </FField>
+      <FField label="Customs Entry #" required error={touched[p+'en'] && !en.trim()}>
+        <input type="text" className="wizard-field" value={en}
+          onChange={e => set('entryNumber', e.target.value.toUpperCase())}
+          onBlur={() => touch(p+'en')} placeholder="e.g. CE2026100142"
+          style={{ textTransform: 'uppercase', letterSpacing: '0.04em' }} />
+      </FField>
+      <FField label="Purpose" required error={touched[p+'pu'] && !pu.trim()}>
+        <CustomSelect placeholder="Select purpose…" value={pu}
+          onChange={v => set('purpose', v)} onBlur={() => touch(p+'pu')}
+          options={PURPOSES.filter(Boolean).map(p2 => ({ value: p2, label: p2 }))} />
+      </FField>
+    </div>
+  )
+
+  return null
+}
+
+// ─── Per-slot ICS status card ─────────────────────────────────────────────────
+function SlotIcsCard({ sd, icsBadge, showHeld, error }: {
+  sd: any
+  icsBadge: { bg: string; color: string; border: string; label: string }
+  showHeld: boolean
+  error: string | null
+}) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#78716C' }}>ICS Status:</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 9999, border: `1px solid ${icsBadge.border}`, background: icsBadge.bg, color: icsBadge.color }}>
+          {icsBadge.label}
+        </span>
+      </div>
+      {showHeld && (
+        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 8, padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+          <Icon name={ICONS.warning} size={16} style={{ color: '#EF4444', flexShrink: 0, marginTop: 1 }} />
+          <div>
+            <p style={{ fontWeight: 600, color: '#EF4444', fontSize: 13, margin: '0 0 3px' }}>ICS Hold Detected</p>
+            <p style={{ fontSize: 12, color: 'rgba(239,68,68,0.70)', margin: 0 }}>This shipment is held by Australian Border Force. Contact your freight forwarder.</p>
+          </div>
+        </div>
+      )}
+      {error && (
+        <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 12, color: '#B45309', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Icon name={ICONS.info} size={14} style={{ color: '#B45309', flexShrink: 0 }} />
+          {error}
+        </div>
+      )}
+      {(sd.weightKg || sd.volumeCbm) && (
+        <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 10, padding: 16 }}>
+          <p style={{ ...FL, marginBottom: 12 }}>Container details</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {[['Gross Weight', sd.weightKg ? `${sd.weightKg} kg` : '—'], ['Volume', sd.volumeCbm ? `${sd.volumeCbm} CBM` : '—']].map(([l, v]) => (
+              <div key={l} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '10px 12px' }}>
+                <p style={{ fontSize: 10, color: '#78716C', margin: '0 0 3px' }}>{l}</p>
+                <p style={{ fontWeight: 600, color: '#1C1917', fontSize: 13, margin: 0 }}>{String(v)}</p>
               </div>
             ))}
           </div>
         </div>
-
-        {/* CHEP warning */}
-        <div x-show="$store.wizard.showChepWarning" style="background:rgba(217,119,6,0.08); border:1px solid rgba(217,119,6,0.25); border-radius:10px; padding:14px 16px; display:flex; align-items:flex-start; gap:12px; margin-bottom:24px;">
-          <Icon name={ICONS.warning} size={18} style="color:#D97706; flex-shrink:0; margin-top:1px;" />
-          <div>
-            <p style="font-weight:600; color:#B45309; font-size:13px; margin:0 0 4px;">CHEP Pallet Exchange Required</p>
-            <p style="font-size:12px; color:#92400E; line-height:1.5; margin:0;">Your shipment is on CHEP pallets. You must bring the same number of empty CHEP pallets to exchange when collecting.</p>
-          </div>
-        </div>
-
-        {/* Charges card */}
-        <div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px; padding:20px; margin-bottom:32px;">
-          <p style="font-size:13px; font-weight:600; color:#1C1917; margin:0 0 16px;">Estimated Charges</p>
-          <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
-            <div style="display:flex; justify-content:space-between; color:#78716C;">
-              <span>Storage charge</span>
-              <span style="font-weight:500;" x-text="$store.wizard.storageChargeFormatted"></span>
-            </div>
-            <div style="display:flex; justify-content:space-between; color:#78716C;">
-              <span>Shrink wrap</span>
-              <span style="font-weight:500;" x-text="$store.wizard.shrinkWrapFormatted"></span>
-            </div>
-            <div style="display:flex; justify-content:space-between; color:#78716C;">
-              <span>Slot fee</span>
-              <span style="font-weight:500;">$5.00</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; font-weight:600; color:#1C1917; padding-top:10px; border-top:1px solid rgba(0,0,0,0.07);">
-              <span>Subtotal</span>
-              <span x-text="'$' + $store.wizard.totalCharges.toFixed(2)"></span>
-            </div>
-            <div style="display:flex; justify-content:space-between; color:#78716C; font-size:12px;">
-              <span>GST (10%)</span>
-              <span x-text="'$' + ($store.wizard.totalCharges * 0.10).toFixed(2)"></span>
-            </div>
-            <div style="display:flex; justify-content:space-between; font-weight:700; color:#1C1917; padding-top:10px; border-top:1px solid rgba(0,0,0,0.07); font-size:15px;">
-              <span>Total</span>
-              <span style="color:#FC6514;" x-text="'$' + $store.wizard.totalWithGst"></span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Driver fields */}
-      <div style={ROW}>
-        <div>
-          <label style={FL}>Driver Name <span style="color:#EF4444;">*</span></label>
-          <input type="text" x-model="$store.wizard.driverName" placeholder="Person physically visiting" class="wizard-field" />
-        </div>
-        <div>
-          <label style={FL}>Driver Phone <span style="color:#A8A29E; font-weight:400; font-size:10px;">(optional)</span></label>
-          <input type="tel" x-model="$store.wizard.driverPhone" placeholder="+61 4XX XXX XXX" class="wizard-field" />
-        </div>
-      </div>
-
+      )}
     </div>
-
-    {/* ─── FCL Pickup ─── */}
-    <div x-show="$store.wizard.isPickupFcl">
-
-      <div style="margin-bottom:24px;">
-        <label style={FL}>Container Number <span style="color:#EF4444;">*</span></label>
-        <div style="display:flex; gap:10px;">
-          <input type="text" x-model="$store.wizard.containerNumber" placeholder="e.g. MSCU1234567" class="wizard-field" style="flex:1; text-transform:uppercase; letter-spacing:0.04em;" />
-          <button
-            type="button"
-            x-on:click="$store.wizard.fetchFclDetails()"
-            {...{"x-bind:disabled": "$store.wizard.containerNumber.trim().length < 4 || $store.wizard.shipmentFetching"}}
-            class="btn-dark" style="padding:10px 18px; font-size:13px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; flex-shrink:0;"
-          >
-            <span x-show="!$store.wizard.shipmentFetching"><Icon name={ICONS.search} size={16} /></span>
-            <span x-show="$store.wizard.shipmentFetching" style="width:16px; height:16px; border:2px solid rgba(255,255,255,0.25); border-top-color:white; border-radius:9999px; animation:spin 0.7s linear infinite; display:inline-block;"></span>
-            Look Up
-          </button>
-        </div>
-      </div>
-
-      {/* FCL fetched data */}
-      <div x-show="$store.wizard.shipmentFetched && $store.wizard.shipmentData">
-
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:24px;">
-          <span style="font-size:13px; font-weight:600; color:#78716C;">ICS Status:</span>
-          <span
-            style="display:inline-flex; align-items:center; font-size:11px; font-weight:600; padding:3px 10px; border-radius:9999px; border:1px solid transparent;"
-            {...{"x-bind:style": "{ background: $store.wizard.shipmentData?.icsStatus === 'cleared' ? 'rgba(34,197,94,0.12)' : $store.wizard.shipmentData?.icsStatus === 'held' ? 'rgba(239,68,68,0.12)' : 'rgba(0,0,0,0.04)', color: $store.wizard.shipmentData?.icsStatus === 'cleared' ? '#22C55E' : $store.wizard.shipmentData?.icsStatus === 'held' ? '#EF4444' : '#78716C', borderColor: $store.wizard.shipmentData?.icsStatus === 'cleared' ? 'rgba(34,197,94,0.22)' : $store.wizard.shipmentData?.icsStatus === 'held' ? 'rgba(239,68,68,0.22)' : 'rgba(0,0,0,0.10)' }"}}
-            x-text="{'cleared':'Cleared','held':'Held','examination':'On Hold','pending':'Pending'}[$store.wizard.shipmentData?.icsStatus] || 'Unknown'"
-          ></span>
-        </div>
-
-        <div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:12px; padding:20px; margin-bottom:32px;">
-          <p style="font-size:10px; font-weight:700; color:#78716C; letter-spacing:0.09em; text-transform:uppercase; margin:0 0 16px;">Container details</p>
-          <div style={ROW}>
-            <div style="background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:12px 14px;">
-              <p style="font-size:10px; color:#78716C; margin:0 0 4px;">Gross Weight</p>
-              <p style="font-weight:600; color:#1C1917; font-size:13px; margin:0;" x-text="$store.wizard.shipmentData?.weightKg ? $store.wizard.shipmentData.weightKg + ' kg' : '—'"></p>
-            </div>
-            <div style="background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:12px 14px;">
-              <p style="font-size:10px; color:#78716C; margin:0 0 4px;">Volume</p>
-              <p style="font-weight:600; color:#1C1917; font-size:13px; margin:0;" x-text="$store.wizard.shipmentData?.volumeCbm ? $store.wizard.shipmentData.volumeCbm + ' CBM' : '—'"></p>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Driver fields */}
-      <div style={ROW}>
-        <div>
-          <label style={FL}>Driver Name <span style="color:#EF4444;">*</span></label>
-          <input type="text" x-model="$store.wizard.driverName" placeholder="Person physically visiting" class="wizard-field" />
-        </div>
-        <div>
-          <label style={FL}>Driver Phone <span style="color:#A8A29E; font-weight:400; font-size:10px;">(optional)</span></label>
-          <input type="tel" x-model="$store.wizard.driverPhone" placeholder="+61 4XX XXX XXX" class="wizard-field" />
-        </div>
-      </div>
-
-    </div>
-
-    {/* ─── LCL Drop-Off ─── */}
-    <div x-show="$store.wizard.isDropoffLcl">
-
-      <div style="margin-bottom:24px;">
-        <label style={FL}>House Bill Number <span style="color:#A8A29E; font-weight:400; font-size:10px;">(if known)</span></label>
-        <input type="text" x-model="$store.wizard.houseBillNumber" placeholder="e.g. SYHMSCU001847" class="wizard-field" style="text-transform:uppercase; letter-spacing:0.04em;" />
-      </div>
-
-      <div style="margin-bottom:24px;">
-        <label style={FL}>Cargo Description <span style="color:#EF4444;">*</span></label>
-        <textarea x-model="$store.wizard.cargoDescription" rows={2} placeholder="Brief description of goods, packaging, and quantities" class="wizard-field" style="resize:none;"></textarea>
-      </div>
-
-      <div style={ROW + " margin-bottom:24px;"}>
-        <div>
-          <label style={FL}>Estimated Weight (kg)</label>
-          <input type="number" x-model="$store.wizard.estimatedWeightKg" placeholder="0" min="0" class="wizard-field" />
-        </div>
-        <div>
-          <label style={FL}>Estimated Volume (CBM)</label>
-          <input type="number" x-model="$store.wizard.estimatedVolumeCbm" placeholder="0.0" min="0" step="0.1" class="wizard-field" />
-        </div>
-      </div>
-
-      <div style="margin-bottom:24px;">
-        <label style={FL}>Destination Port</label>
-        <input type="text" x-model="$store.wizard.destinationPort" placeholder="e.g. Shanghai, China" class="wizard-field" />
-      </div>
-
-      <div style={ROW + " margin-bottom:20px;"}>
-        <div>
-          <label style={FL}>Driver Name <span style="color:#EF4444;">*</span></label>
-          <input type="text" x-model="$store.wizard.driverName" placeholder="Person physically visiting" class="wizard-field" />
-        </div>
-        <div>
-          <label style={FL}>Driver Phone <span style="color:#A8A29E; font-weight:400; font-size:10px;">(optional)</span></label>
-          <input type="tel" x-model="$store.wizard.driverPhone" placeholder="+61 4XX XXX XXX" class="wizard-field" />
-        </div>
-      </div>
-
-      <p style="font-size:12px; color:#78716C; display:flex; align-items:center; gap:6px; margin:0;">
-        <Icon name={ICONS.info} size={13} style="flex-shrink:0;" />
-        Drop-off does not incur storage charges. No ICS check required.
-      </p>
-
-    </div>
-
-    {/* ─── FCL Drop-Off ─── */}
-    <div x-show="$store.wizard.isDropoffFcl">
-
-      <div style="margin-bottom:24px;">
-        <label style={FL}>Container Number <span style="color:#A8A29E; font-weight:400; font-size:10px;">(if known)</span></label>
-        <input type="text" x-model="$store.wizard.containerNumber" placeholder="e.g. MSCU1234567" class="wizard-field" style="text-transform:uppercase; letter-spacing:0.04em;" />
-      </div>
-
-      <div style="margin-bottom:24px;">
-        <label style={FL}>Cargo Description <span style="color:#EF4444;">*</span></label>
-        <textarea x-model="$store.wizard.cargoDescription" rows={2} placeholder="Brief description of goods, packaging, and quantities" class="wizard-field" style="resize:none;"></textarea>
-      </div>
-
-      <div style="margin-bottom:24px;">
-        <label style={FL}>Destination Port</label>
-        <input type="text" x-model="$store.wizard.destinationPort" placeholder="e.g. Rotterdam, Netherlands" class="wizard-field" />
-      </div>
-
-      <div style={ROW}>
-        <div>
-          <label style={FL}>Driver Name <span style="color:#EF4444;">*</span></label>
-          <input type="text" x-model="$store.wizard.driverName" placeholder="Person physically visiting" class="wizard-field" />
-        </div>
-        <div>
-          <label style={FL}>Driver Phone <span style="color:#A8A29E; font-weight:400; font-size:10px;">(optional)</span></label>
-          <input type="tel" x-model="$store.wizard.driverPhone" placeholder="+61 4XX XXX XXX" class="wizard-field" />
-        </div>
-      </div>
-
-    </div>
-
-  </div>
-)
+  )
+}

@@ -1,7 +1,7 @@
 import { Icon, ICONS } from '../../lib/Icon'
 
-const inputStyle = 'width:100%; padding:10px 14px; font-size:13.5px; color:#1C1917; background:#F7F6F5; border:1px solid rgba(0,0,0,0.10); border-radius:10px; outline:none; transition:border-color 0.15s ease, box-shadow 0.15s ease; box-sizing:border-box; font-family:inherit;'
-const labelStyle = 'display:block; font-size:10px; font-weight:700; color:#78716C; letter-spacing:0.09em; text-transform:uppercase; margin-bottom:7px;'
+const inputStyle = 'width:100%; padding:12px 16px; height:48px; font-size:16px; color:#1C1917; background:#F7F6F5; border:1px solid rgba(0,0,0,0.10); border-radius:10px; outline:none; transition:border-color 0.15s ease, box-shadow 0.15s ease; box-sizing:border-box; font-family:inherit;'
+const labelStyle = 'display:block; font-size:15px; font-weight:700; color:#374151; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:8px;'
 
 interface Props {
   savedFlash?: boolean
@@ -16,14 +16,14 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
 
       {savedFlash && (
         <div style="display:flex; align-items:center; gap:10px; padding:14px 18px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.22); border-radius:12px; margin-bottom:20px;">
-          <Icon name={ICONS.check} size={16} style="color:#22C55E; flex-shrink:0;" />
-          <p style="font-size:13px; font-weight:500; color:#16A34A; margin:0;">Booking created successfully.</p>
+          <Icon name={ICONS.check} size={18} style="color:#22C55E; flex-shrink:0;" />
+          <p style="font-size:15px; font-weight:600; color:#16A34A; margin:0;">Booking created successfully.</p>
         </div>
       )}
       {error && (
         <div style="display:flex; align-items:center; gap:10px; padding:14px 18px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.22); border-radius:12px; margin-bottom:20px;">
-          <Icon name={ICONS.warning} size={16} style="color:#EF4444; flex-shrink:0;" />
-          <p style="font-size:13px; font-weight:500; color:#DC2626; margin:0;">{error}</p>
+          <Icon name={ICONS.warning} size={18} style="color:#EF4444; flex-shrink:0;" />
+          <p style="font-size:15px; font-weight:600; color:#DC2626; margin:0;">{error}</p>
         </div>
       )}
 
@@ -34,7 +34,7 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
       >
         {/* ── Service + Load ── */}
         <div style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:22px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);">
-          <p style="font-size:12px; font-weight:700; color:#A8A29E; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:16px;">Service Type</p>
+          <p style="font-size:16px; font-weight:700; color:#4B5563; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:16px;">Service Type</p>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
             <div>
               <label style={labelStyle}>Service</label>
@@ -57,7 +57,7 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
 
         {/* ── Slot ── */}
         <div style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:22px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);">
-          <p style="font-size:12px; font-weight:700; color:#A8A29E; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:16px;">Slot</p>
+          <p style="font-size:16px; font-weight:700; color:#4B5563; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:16px;">Slot</p>
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
             <div>
               <label style={labelStyle}>Date</label>
@@ -76,7 +76,7 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
 
         {/* ── Driver / Guest ── */}
         <div style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:22px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);">
-          <p style="font-size:12px; font-weight:700; color:#A8A29E; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:16px;">Driver / Visitor</p>
+          <p style="font-size:16px; font-weight:700; color:#4B5563; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:16px;">Driver / Visitor</p>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
             <div>
               <label style={labelStyle}>Driver Name <span style="color:#EF4444;">*</span></label>
@@ -99,8 +99,8 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
 
         {/* ── Shipment ── */}
         <div style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:22px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);">
-          <p style="font-size:12px; font-weight:700; color:#A8A29E; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:4px;">Shipment</p>
-          <p style="font-size:11.5px; color:#A8A29E; margin-bottom:16px;">Enter an HBL or container number and click <strong>Look Up</strong> to auto-fill cargo details from CFS records.</p>
+          <p style="font-size:16px; font-weight:700; color:#4B5563; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:4px;">Shipment</p>
+          <p style="font-size:14px; color:#4B5563; margin-bottom:16px;">Enter an HBL or container number and click <strong>Look Up</strong> to auto-fill cargo details from CFS records.</p>
 
           {/* HBL with live lookup */}
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
@@ -120,7 +120,7 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
                   type="button"
                   id="mbf-lookup-btn"
                   onclick="mbfLookup()"
-                  style="flex-shrink:0; padding:0 14px; background:linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%); color:#fff; border:none; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(252,101,20,0.35);"
+                  style="flex-shrink:0; padding:0 20px; background:linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(252,101,20,0.35);"
                   title="Look up shipment from CFS records"
                 >
                   Look Up
@@ -189,7 +189,7 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
 
         {/* ── Payment ── */}
         <div style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:22px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);">
-          <p style="font-size:12px; font-weight:700; color:#A8A29E; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:16px;">Payment</p>
+          <p style="font-size:16px; font-weight:700; color:#4B5563; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:16px;">Payment</p>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
             <div>
               <label style={labelStyle}>Method</label>
@@ -214,15 +214,15 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
         <div style="display:flex; gap:12px; align-items:center; padding-top:4px;">
           <button
             type="submit"
-            style="display:inline-flex; align-items:center; gap:8px; padding:12px 28px; background:linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%); color:#fff; border:none; border-radius:11px; font-size:13.5px; font-weight:600; cursor:pointer; box-shadow:inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px rgba(252,101,20,0.40), 0 1px 3px rgba(0,0,0,0.30); transition:box-shadow 0.15s ease;"
+            style="display:inline-flex; align-items:center; gap:10px; padding:0 32px; height:48px; background:linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%); color:#fff; border:none; border-radius:11px; font-size:15px; font-weight:700; cursor:pointer; box-shadow:inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px rgba(252,101,20,0.40), 0 1px 3px rgba(0,0,0,0.30); transition:box-shadow 0.15s ease;"
             onmouseover="this.style.boxShadow='inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 20px rgba(252,101,20,0.50), 0 1px 4px rgba(0,0,0,0.35)'"
             onmouseout="this.style.boxShadow='inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px rgba(252,101,20,0.40), 0 1px 3px rgba(0,0,0,0.30)'"
           >
             <Icon name={ICONS.check} size={15} />
             Create Booking
           </button>
-          <a href="/reception/bookings" style="font-size:13px; color:#78716C; text-decoration:none; font-weight:500; transition:color 0.15s ease;"
-            onmouseover="this.style.color='#1C1917'" onmouseout="this.style.color='#78716C'"
+          <a href="/reception/bookings" style="font-size:15px; color:#4B5563; text-decoration:none; font-weight:600; transition:color 0.15s ease;"
+            onmouseover="this.style.color='#1C1917'" onmouseout="this.style.color='#4B5563'"
           >
             Cancel
           </a>

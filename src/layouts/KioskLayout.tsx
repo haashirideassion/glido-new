@@ -1,35 +1,52 @@
-import type { FC } from 'hono/jsx'
+import type { ReactNode } from 'react'
 
-interface Props {
-  children: any
-}
-
-export const KioskLayout: FC<Props> = ({ children }) => {
+export default function KioskLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <title>Sydney CFS — Kiosk</title>
-        <link rel="icon" type="image/svg+xml" href="/public/favicon.svg" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts.css" />
-        <link rel="stylesheet" href="/public/styles.css" />
-        <link rel="stylesheet" href="/public/kiosk.css" />
-        {/* alpine-init.js MUST load synchronously before Alpine so stores are
-            registered before Alpine fires its 'alpine:init' event. */}
-        <script src="/public/alpine-init.js"></script>
-        <script src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js" defer></script>
-        <script src="https://code.iconify.design/3/3.1.1/iconify.min.js" defer></script>
-      </head>
-      <body
-        class="h-screen w-screen overflow-hidden bg-slate-900 text-white font-sans antialiased"
-        x-data="{}"
-        x-init="$store.kiosk.init()"
-      >
-        <div class="h-full w-full relative">
-          {children}
-        </div>
-      </body>
-    </html>
+    <div style={{ height: '100vh', width: '100vw', overflow: 'hidden', background: '#FAFAF9', color: '#1C1917', fontFamily: "'Inter', ui-sans-serif, system-ui, sans-serif", WebkitFontSmoothing: 'antialiased', userSelect: 'none', touchAction: 'manipulation' }}>
+      <style>{`
+        *, *::before, *::after { touch-action: manipulation; box-sizing: border-box; }
+        html, body, #root { height: 100%; width: 100%; overflow: hidden; margin: 0; padding: 0; }
+        .kiosk-btn {
+          min-height: 72px; min-width: 200px; font-size: 1.125rem; border-radius: 1rem;
+          font-weight: 600; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+          transition: all 0.15s ease; cursor: pointer;
+        }
+        .kiosk-btn-primary {
+          background: linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%); color:#fff;
+          border:1px solid rgba(0,0,0,0.18);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px rgba(252,101,20,0.35), 0 1px 3px rgba(0,0,0,0.18);
+        }
+        .kiosk-btn-primary:hover { background:linear-gradient(180deg,#FF8C42 0%,#F06418 100%); transform:translateY(-1px); }
+        .kiosk-btn-primary:active { transform:translateY(0) scale(0.985); }
+        .kiosk-btn-secondary { background:#fff; color:#78716C; border:1px solid rgba(0,0,0,0.12); }
+        .kiosk-btn-secondary:hover { background:#F7F6F5; border-color:rgba(0,0,0,0.18); color:#1C1917; }
+        .kiosk-option-card { background:#fff; color:#1C1917; border:1.5px solid rgba(0,0,0,0.10); text-align:left; }
+        .kiosk-option-card:hover { border-color:#FC6514; background:rgba(252,101,20,0.04); }
+        .kiosk-input {
+          min-height:64px; font-size:1.5rem; letter-spacing:0.1em; text-align:center;
+          width:100%; padding:14px 24px; border-radius:16px; outline:none; font-family:inherit;
+          background:#F7F6F5; border:2px solid #C2C2C2; color:#1C1917;
+        }
+        .kiosk-input:focus { border-color:#FC6514; box-shadow:0 0 0 3px rgba(252,101,20,0.12); }
+        .wizard-field {
+          width:100%; padding:12px 16px; font-size:14px; color:#1C1917;
+          background:#F7F6F5; border:1px solid rgba(0,0,0,0.10); border-radius:10px;
+          outline:none; font-family:inherit; transition:border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .wizard-field:focus { border-color:rgba(252,101,20,0.50); box-shadow:0 0 0 3px rgba(252,101,20,0.12); }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.7;transform:scale(0.97)} }
+        @keyframes pulse-slow { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.7;transform:scale(0.97)} }
+        .pulse-slow { animation: pulse-slow 2.5s ease-in-out infinite; }
+        .btn-primary {
+          display:inline-flex; align-items:center; gap:8px; padding:13px 24px;
+          font-size:14px; font-weight:600; color:#fff;
+          background:linear-gradient(135deg,#FF7A2A,#E85A0A); border:none; border-radius:9999px;
+          cursor:pointer; box-shadow:0 2px 8px rgba(252,101,20,0.35); font-family:inherit;
+        }
+      `}</style>
+      <div style={{ height: '100%', width: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+        {children}
+      </div>
+    </div>
   )
 }

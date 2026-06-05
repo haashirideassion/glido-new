@@ -2,8 +2,6 @@ import { supabaseAdmin as supabase } from '../supabase'
 import type { TimeSlot, SlotBusyness } from '../../data/types'
 import type { Database } from './types'
 
-const sig = () => AbortSignal.timeout(15_000)
-
 type SlotRow = Database['public']['Tables']['time_slots']['Row']
 
 function trimTime(t: string): string {
@@ -27,14 +25,32 @@ function rowToSlot(row: SlotRow): TimeSlot {
   }
 }
 
+function generateDefaultSlots(date: string, capacity = 10): TimeSlot[] {
+  return Array.from({ length: 12 }, (_, i) => {
+    const h = i + 6
+    const start = `${String(h).padStart(2, '0')}:00`
+    const end   = `${String(h + 1).padStart(2, '0')}:00`
+    return {
+      id:        `gen-${date}-${h}`,
+      date,
+      startTime: start,
+      endTime:   end,
+      capacity,
+      confirmed: 0,
+      held:      0,
+      busyness:  'available' as SlotBusyness,
+    }
+  })
+}
+
 export async function getSlotsByDate(date: string): Promise<TimeSlot[]> {
   const { data, error } = await supabase
     .from('time_slots')
     .select('*')
     .eq('date', date)
     .order('start_time', { ascending: true })
-    .abortSignal(sig())
   if (error) throw error
+  if (data.length === 0) return generateDefaultSlots(date)
   return data.map(rowToSlot)
 }
 
