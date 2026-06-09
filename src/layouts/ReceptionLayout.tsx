@@ -215,12 +215,6 @@ export default function ReceptionLayout() {
           })}
         </nav>
 
-        {/* New Booking button */}
-        <button type="button" className="action-btn" onClick={() => navigate('/reception/bookings/new')}>
-          <Icon name={ICONS.add} size={18} style={{ color: '#fff', flexShrink: 0 }} />
-          <span className="action-btn-label">New Booking</span>
-        </button>
-
         {/* User footer */}
         <div style={{ marginTop: 'auto', width: '100%', position: 'relative' }}>
           {/* User menu popover */}
@@ -299,16 +293,6 @@ export default function ReceptionLayout() {
             {tenant?.logoUrl && (
               <img src={tenant.logoUrl} alt="Company logo" style={{ height: 32, objectFit: 'contain', maxWidth: 100 }} />
             )}
-            <button
-              type="button"
-              onClick={() => navigate('/reception/bookings/new')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 14, fontWeight: 600, color: '#FC6514', background: 'rgba(252,101,20,0.07)', border: '1px solid rgba(252,101,20,0.22)', borderRadius: 9999, letterSpacing: '-0.01em', transition: 'all 0.14s ease', boxShadow: '0 1px 3px rgba(252,101,20,0.08)', cursor: 'pointer', fontFamily: 'inherit' }}
-              onMouseOver={e => { e.currentTarget.style.background = 'rgba(252,101,20,0.13)'; e.currentTarget.style.borderColor = 'rgba(252,101,20,0.38)' }}
-              onMouseOut={e  => { e.currentTarget.style.background = 'rgba(252,101,20,0.07)'; e.currentTarget.style.borderColor = 'rgba(252,101,20,0.22)' }}
-            >
-              <Icon name={ICONS.add} size={13} />
-              New Booking
-            </button>
           </div>
         </header>
 

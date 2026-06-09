@@ -39,14 +39,14 @@ export function DayChart({ bookings, loading, capacityByHour, defaultCapacity }:
           formatter: (params: any[]) => {
             const hour  = params[0]?.axisValue ?? ''
             const sched = params.find((p: any) => p.seriesName === 'Scheduled')?.value ?? 0
-            const onSite = params.find((p: any) => p.seriesName === 'On Site')?.value ?? 0
+            const onSite = params.find((p: any) => p.seriesName === 'Visitor')?.value ?? 0
             const cap   = params.find((p: any) => p.seriesName === 'Capacity')?.value ?? (defaultCapacity ?? 5)
             const total = sched + onSite
             const pct   = cap > 0 ? Math.round((total / cap) * 100) : 0
             return [
               `<span style="font-weight:600;color:#FCFBF8">${hour}</span>`,
               `<span style="color:rgba(252,101,20,0.80)">● Scheduled</span> ${sched}`,
-              `<span style="color:#FC6514">● On Site</span> ${onSite}`,
+              `<span style="color:#FC6514">● Visitor</span> ${onSite}`,
               `<span style="color:#C7C3BF">— Capacity</span> ${total} / ${cap} slots (${pct}%)`,
             ].join('<br/>')
           },
@@ -75,7 +75,7 @@ export function DayChart({ bookings, loading, capacityByHour, defaultCapacity }:
             itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(252,101,20,0.55)' }, { offset: 1, color: 'rgba(252,101,20,0.15)' }] }, borderRadius: [4, 4, 0, 0] },
           },
           {
-            name: 'On Site', type: 'bar', stack: 'day', data: checkedIn, barMaxWidth: 28,
+            name: 'Visitor', type: 'bar', stack: 'day', data: checkedIn, barMaxWidth: 28,
             itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: '#FC6514' }, { offset: 1, color: '#FC8A3C' }] }, borderRadius: [4, 4, 0, 0] },
           },
           {

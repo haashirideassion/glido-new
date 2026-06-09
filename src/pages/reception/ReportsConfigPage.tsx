@@ -1,0 +1,403 @@
+import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
+import { usePageTitle } from '@/lib/usePageTitle'
+import { Icon, ICONS } from '@/lib/Icon'
+import { fmtDate, fmtDateTime as _fmtDateTime, todaySydney, TZ } from '@/lib/time'
+import { supabase } from '@/lib/supabase'
+import { DEFAULT_TENANT_ID } from '@/lib/supabase'
+import { toast } from '@/lib/toast'
+
+interface VisitorRecord {
+  id: string
+  check_in_time: string
+  licence_name?: string
+  licence_address?: string
+  licence_number?: string
+  licence_dob?: string
+  licence_scan_method?: string
+  visit_person_name?: string
+  walk_in_reason?: string
+  bookings?: {
+    driver_name?: string
+    service_type?: string
+    completed_at?: string
+  }
+}
+
+const ALL_COLUMNS: { key: string; label: string }[] = [
+  { key: 'date',          label: 'Date' },
+  { key: 'fullName',      label: 'Full Name' },
+  { key: 'address',       label: 'Address' },
+  { key: 'idType',        label: 'ID Type' },
+  { key: 'idNumber',      label: 'ID Number' },
+  { key: 'dob',           label: 'DOB' },
+  { key: 'idSignedBy',    label: 'ID Signed By' },
+  { key: 'reason',        label: 'Reason' },
+  { key: 'personVisited', label: 'Person Visited' },
+  { key: 'checkInTime',   label: 'Check-in Time' },
+  { key: 'checkOutTime',  label: 'Check-out Time' },
+  { key: 'notes',         label: 'Notes' },
+]
+
+const DEFAULT_VISIBLE_KEYS = ['date', 'fullName', 'address', 'idType', 'idNumber', 'dob', 'idSignedBy', 'reason', 'personVisited']
+
+const FIELD: React.CSSProperties = {
+  fontSize: 15, border: '1px solid rgba(0,0,0,0.10)', borderRadius: 6,
+  padding: '8px 12px', height: 48, outline: 'none', boxSizing: 'border-box', background: '#fff', color: '#1C1917',
+}
+
+const fmtDateTime = (iso?: string) => iso ? _fmtDateTime(iso) : '—'
+const today = () => todaySydney()
+const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toLocaleDateString('sv-SE', { timeZone: TZ })
+
+export default function ReportsConfigPage() {
+  usePageTitle('Glido | Configure Visitor Log')
+
+  const [records, setRecords]           = useState<VisitorRecord[]>([])
+  const [loading, setLoading]           = useState(true)
+  const [from, setFrom]                 = useState(daysAgo(7))
+  const [to, setTo]                     = useState(today())
+  const [status, setStatus]             = useState('')
+  const [search, setSearch]             = useState('')
+  const [saving, setSaving]             = useState(false)
+  const [configOpen, setConfigOpen]     = useState(false)
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(DEFAULT_VISIBLE_KEYS)
+  const [exportConfig, setExportConfig] = useState({
+    includeTenantName: true,
+    includeDateRange:  true,
+    includeTimestamp:  false,
+  })
+
+  const toggleColumn = (key: string) =>
+    setVisibleColumns(v => v.includes(key) ? v.filter(k => k !== key) : [...v, key])
+
+  const toggleExport = (key: string) =>
+    setExportConfig(c => ({ ...c, [key]: !c[key as keyof typeof c] }))
+
+  // Load saved config on mount
+  useEffect(() => {
+    supabase
+      .from('tenants')
+      .select('report_config')
+      .eq('id', DEFAULT_TENANT_ID)
+      .single()
+      .then(({ data }) => {
+        const rc = (data?.report_config as any)
+        if (Array.isArray(rc?.visibleColumns)) {
+          setVisibleColumns(rc.visibleColumns)
+        } else if (rc?.visibleColumns && typeof rc.visibleColumns === 'object') {
+          // migrate from old boolean-map format
+          const keys = ALL_COLUMNS.filter(c => rc.visibleColumns[c.key] !== false).map(c => c.key)
+          setVisibleColumns(keys)
+        }
+        if (rc?.exportConfig) setExportConfig(prev => ({ ...prev, ...rc.exportConfig }))
+      })
+      .catch(() => { /* use defaults */ })
+  }, [])
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      let q = supabase
+        .from('checkin_records')
+        .select('*, bookings(*)')
+        .eq('tenant_id', DEFAULT_TENANT_ID)
+        .order('check_in_time', { ascending: false })
+
+      if (from) q = q.gte('check_in_time', from)
+      if (to)   q = q.lte('check_in_time', to + 'T23:59:59')
+
+      const { data } = await q
+      let rows = (data ?? []) as any[]
+
+      if (status) rows = rows.filter(r => (r.bookings as any)?.status === status)
+      if (search) {
+        const s = search.toLowerCase()
+        rows = rows.filter(r =>
+          (r.licence_name ?? '').toLowerCase().includes(s) ||
+          (r.licence_number ?? '').toLowerCase().includes(s) ||
+          (r.visit_person_name ?? '').toLowerCase().includes(s) ||
+          ((r.bookings as any)?.driver_name ?? '').toLowerCase().includes(s)
+        )
+      }
+      setRecords(rows)
+    } catch { /* noop */ } finally { setLoading(false) }
+  }, [from, to, status, search])
+
+  useEffect(() => { load() }, [load])
+
+  const stats = {
+    total:     records.length,
+    onSite:    records.filter(r => (r.bookings as any)?.status === 'checked_in').length,
+    completed: records.filter(r => (r.bookings as any)?.status === 'completed').length,
+  }
+
+  // CSV: only export visible columns
+  const exportCsv = () => {
+    const cols = ALL_COLUMNS.filter(c => visibleColumns.includes(c.key))
+    const header = cols.map(c => c.label)
+    const rows = records.map(r => {
+      const b = r.bookings as any
+      const name   = r.licence_name || b?.driver_name || ''
+      const reason = r.walk_in_reason || b?.service_type?.toUpperCase() || ''
+      const cellMap: Record<string, string> = {
+        date:          fmtDate(r.check_in_time),
+        fullName:      name,
+        address:       r.licence_address || '',
+        idType:        r.licence_scan_method || 'Manual',
+        idNumber:      r.licence_number || '',
+        dob:           fmtDate(r.licence_dob),
+        idSignedBy:    '',
+        reason,
+        personVisited: r.visit_person_name || '',
+        checkInTime:   fmtDateTime(r.check_in_time),
+        checkOutTime:  b?.completed_at ? fmtDateTime(b.completed_at) : '',
+        notes:         '',
+      }
+      return cols.map(c => `"${String(cellMap[c.key] ?? '').replace(/"/g, '""')}"`)
+    })
+
+    const headerRows: string[] = []
+    if (exportConfig.includeTenantName)  headerRows.push('"ABF Visitor Log"')
+    if (exportConfig.includeDateRange)   headerRows.push(`"Date range: ${from} to ${to}"`)
+    if (exportConfig.includeTimestamp)   headerRows.push(`"Generated: ${new Date().toLocaleString()}"`)
+
+    const csvParts = [...headerRows.map(h => [h].join(',')), header.join(','), ...rows.map(r => r.join(','))]
+    const csv = csvParts.join('\n')
+    const a = document.createElement('a')
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
+    a.download = `ABF_Visitor_Log_${today()}.csv`
+    a.click()
+  }
+
+  const saveConfig = async () => {
+    setSaving(true)
+    try {
+      await supabase
+        .from('tenants')
+        .update({ report_config: { visibleColumns, exportConfig } })
+        .eq('id', DEFAULT_TENANT_ID)
+      toast('Report config saved ✓', 'success')
+      setConfigOpen(false)
+    } catch {
+      toast('Failed to save config', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const vis = (key: string) => visibleColumns.includes(key)
+
+  const QUICK = [{ label: 'Today', from: today(), to: today() }, { label: '7 Days', from: daysAgo(7), to: today() }, { label: '15 Days', from: daysAgo(15), to: today() }]
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      {/* ABF compliance header */}
+      <div style={{ background: '#1C1917', borderRadius: 12, padding: '16px 24px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(252,101,20,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Icon name={ICONS.reports} size={20} style={{ color: '#FC6514' }} />
+        </div>
+        <div>
+          <h1 style={{ fontSize: 16, fontWeight: 700, color: '#FFFFFF', margin: 0, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+            S.77Q Customs Depot Licensed Area — Section 77Q, Customs Act 1901
+          </h1>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0', fontWeight: 500 }}>
+            Mandatory Visitor Record Log · ABF Regulatory Compliance Requirement
+          </p>
+        </div>
+      </div>
+
+      {/* KPI tiles */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+        {[
+          { label: 'Total Visitors',    value: stats.total,     icon: ICONS.walkIn,   color: '#1C1917' },
+          { label: 'Currently On-Site', value: stats.onSite,    icon: ICONS.check,    color: '#FC6514' },
+          { label: 'Completed Visits',  value: stats.completed, icon: ICONS.bookings, color: '#22C55E' },
+        ].map(k => (
+          <div key={k.label} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <p style={{ fontSize: 38, fontWeight: 800, color: '#1C1917', margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>{k.value}</p>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#4B5563', margin: '2px 0 0' }}>{k.label}</p>
+            </div>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.color }}>
+              <Icon name={k.icon} size={22} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter bar */}
+      <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', background: '#F7F6F5', borderRadius: 8, padding: 3, border: '1px solid rgba(0,0,0,0.05)' }}>
+            {QUICK.map(q => {
+              const active = from === q.from && to === q.to
+              return (
+                <button key={q.label} onClick={() => { setFrom(q.from); setTo(q.to) }}
+                  style={{ padding: '8px 14px', fontSize: 14, fontWeight: 600, textDecoration: 'none', borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all 0.15s', background: active ? '#FFFFFF' : 'transparent', color: active ? '#FC6514' : '#4B5563', boxShadow: active ? '0 1px 2px rgba(0,0,0,0.08)' : 'none' }}>
+                  {q.label}
+                </button>
+              )
+            })}
+          </div>
+          <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={FIELD} />
+          <span style={{ fontSize: 12, color: '#A8A29E', fontWeight: 700 }}>→</span>
+          <input type="date" value={to} onChange={e => setTo(e.target.value)} style={FIELD} />
+          <select value={status} onChange={e => setStatus(e.target.value)} style={{ ...FIELD, background: '#fff' }}>
+            <option value="">All Statuses</option>
+            <option value="checked_in">Checked In</option>
+            <option value="completed">Completed</option>
+            <option value="scheduled">Scheduled</option>
+          </select>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <input type="text" placeholder="Search visitor, ID…" value={search} onChange={e => setSearch(e.target.value)} style={{ ...FIELD, width: 220 }} />
+          <button onClick={exportCsv} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '0 16px', height: 48, fontSize: 14, fontWeight: 600, color: '#1C1917', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'background 0.15s' }}
+            onMouseOver={e => (e.currentTarget.style.background = '#F7F6F5')}
+            onMouseOut={e  => (e.currentTarget.style.background = '#FFFFFF')}
+          >
+            <Icon name={ICONS.download} size={15} /> CSV
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
+        {/* Table header row */}
+        <div style={{ padding: '14px 24px', borderBottom: '1px solid rgba(0,0,0,0.07)', background: 'rgba(0,0,0,0.01)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: '#1C1917', margin: 0 }}>
+            ABF Visitor Log <span style={{ fontWeight: 400, color: '#A8A29E', marginLeft: 6 }}>Showing {records.length} records</span>
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {loading && <span style={{ fontSize: 12, color: '#A8A29E' }}>Loading…</span>}
+            <button
+              onClick={() => setConfigOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 8, border: '1.5px solid rgba(0,0,0,0.08)', background: '#fff', fontSize: 13, fontWeight: 600, color: '#1C1917', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              <Icon name={ICONS.settings} size={15} />
+              Configure Report
+            </button>
+            <Link
+              to="/reception/reports/visitor-log"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#6B7280', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 8, padding: '6px 12px', textDecoration: 'none' }}
+            >
+              ← Back to Log
+            </Link>
+          </div>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, whiteSpace: 'nowrap' }}>
+            <thead>
+              <tr style={{ background: '#F7F6F5', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+                {vis('date')          && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Date</th>}
+                {vis('fullName')      && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Full Name</th>}
+                {vis('address')       && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Address</th>}
+                {vis('idType')        && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>ID Type</th>}
+                {vis('idNumber')      && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>ID Number</th>}
+                {vis('dob')           && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>DOB</th>}
+                {vis('idSignedBy')    && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>ID Signed By</th>}
+                {vis('reason')        && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Reason</th>}
+                {vis('personVisited') && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Person Visited</th>}
+                {vis('checkInTime')   && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Entry Time</th>}
+                {vis('checkOutTime')  && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Exit Time</th>}
+                {vis('notes')         && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Notes</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {records.map(r => {
+                const b = r.bookings as any
+                const name   = r.licence_name || b?.driver_name || '—'
+                const reason = r.walk_in_reason || b?.service_type?.toUpperCase() || '—'
+                return (
+                  <tr key={r.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)', transition: 'background 0.1s' }}
+                    onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.015)')}
+                    onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    {vis('date')          && <td style={{ padding: '14px 20px', color: '#1C1917', fontWeight: 500 }}>{fmtDate(r.check_in_time)}</td>}
+                    {vis('fullName')      && <td style={{ padding: '14px 20px', fontWeight: 700, color: '#1C1917' }}>{name}</td>}
+                    {vis('address')       && <td style={{ padding: '14px 20px', color: '#4B5563', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.licence_address || '—'}</td>}
+                    {vis('idType')        && <td style={{ padding: '14px 20px', color: '#4B5563' }}>{r.licence_scan_method || 'Manual'}</td>}
+                    {vis('idNumber')      && <td style={{ padding: '14px 20px', fontFamily: 'ui-monospace,monospace', color: '#FC6514', fontWeight: 700 }}>{r.licence_number || '—'}</td>}
+                    {vis('dob')           && <td style={{ padding: '14px 20px', color: '#4B5563' }}>{fmtDate(r.licence_dob)}</td>}
+                    {vis('idSignedBy')    && <td style={{ padding: '14px 20px', color: '#4B5563' }}>—</td>}
+                    {vis('reason')        && <td style={{ padding: '14px 20px' }}><span style={{ background: 'rgba(0,0,0,0.04)', padding: '4px 10px', borderRadius: 6, fontWeight: 600, color: '#374151' }}>{reason}</span></td>}
+                    {vis('personVisited') && <td style={{ padding: '14px 20px', color: '#1C1917', fontWeight: 600 }}>{r.visit_person_name || '—'}</td>}
+                    {vis('checkInTime')   && <td style={{ padding: '14px 20px', color: '#16A34A', fontWeight: 700 }}>{fmtDateTime(r.check_in_time)}</td>}
+                    {vis('checkOutTime')  && <td style={{ padding: '14px 20px', color: '#4B5563' }}>{b?.completed_at ? fmtDateTime(b.completed_at) : '—'}</td>}
+                    {vis('notes')         && <td style={{ padding: '14px 20px', color: '#4B5563' }}>—</td>}
+                  </tr>
+                )
+              })}
+              {!loading && records.length === 0 && (
+                <tr>
+                  <td colSpan={visibleColumns.length || 9} style={{ padding: '64px 20px', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                      <Icon name={ICONS.reports} size={40} style={{ color: 'rgba(0,0,0,0.1)' }} />
+                    </div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#78716C', margin: 0 }}>No visitor records found</p>
+                    <p style={{ fontSize: 12, color: '#A8A29E', margin: '4px 0 0' }}>Try adjusting your filters or date range.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Configure Report slide-over */}
+      {configOpen && (
+        <>
+          <div onClick={() => setConfigOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 40 }} />
+          <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 380, background: '#fff', zIndex: 50, padding: 28, overflowY: 'auto', boxShadow: '-4px 0 24px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: '#1C1917' }}>Configure Report</h3>
+              <button onClick={() => setConfigOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#9CA3AF', lineHeight: 1, padding: 4 }}>✕</button>
+            </div>
+
+            {/* Visible Columns */}
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 12, margin: '0 0 12px' }}>Visible Columns</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
+              {ALL_COLUMNS.map(col => {
+                const checked = visibleColumns.includes(col.key)
+                return (
+                  <label key={col.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, border: `1.5px solid ${checked ? 'rgba(252,101,20,0.25)' : 'rgba(0,0,0,0.08)'}`, cursor: 'pointer', background: checked ? 'rgba(252,101,20,0.03)' : '#fff', transition: 'all 0.15s' }}>
+                    <span style={{ fontSize: 14, fontWeight: 500, color: '#1C1917' }}>{col.label}</span>
+                    <input type="checkbox" checked={checked} onChange={() => toggleColumn(col.key)}
+                      style={{ width: 18, height: 18, accentColor: 'var(--brand-color, #FC6514)', cursor: 'pointer' }} />
+                  </label>
+                )
+              })}
+            </div>
+
+            {/* Export Settings */}
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 12px' }}>Export (CSV)</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 32 }}>
+              {([
+                { key: 'includeTenantName', label: 'Include tenant name in header' },
+                { key: 'includeDateRange',  label: 'Include date range in header' },
+                { key: 'includeTimestamp',  label: 'Include generated timestamp' },
+              ] as const).map(opt => (
+                <label key={opt.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, border: '1.5px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: '#1C1917' }}>{opt.label}</span>
+                  <input type="checkbox" checked={exportConfig[opt.key]} onChange={() => toggleExport(opt.key)}
+                    style={{ width: 18, height: 18, accentColor: 'var(--brand-color, #FC6514)', cursor: 'pointer' }} />
+                </label>
+              ))}
+            </div>
+
+            {/* Save button */}
+            <button
+              onClick={saveConfig}
+              disabled={saving}
+              style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: saving ? '#D1D5DB' : 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
+            >
+              {saving ? 'Saving…' : 'Save as Default'}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}

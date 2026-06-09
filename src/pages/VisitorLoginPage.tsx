@@ -69,6 +69,9 @@ export default function VisitorLoginPage() {
   const [suPhone,   setSuPhone]   = useState('')
   const [suPass,    setSuPass]    = useState('')
   const [suConfirm, setSuConfirm] = useState('')
+  const [showSiPassword,  setShowSiPassword]  = useState(false)
+  const [showSuPass,      setShowSuPass]      = useState(false)
+  const [showSuConfirm,   setShowSuConfirm]   = useState(false)
   const [suCompany, setSuCompany] = useState('')
 
   // ── Sign In ──────────────────────────────────────────────────────────────────
@@ -202,7 +205,12 @@ export default function VisitorLoginPage() {
               </div>
               <div>
                 <label style={LABEL}>Password</label>
-                <input type="password" value={siPassword} onChange={e => setSiPassword(e.target.value)} placeholder="••••••••" required style={FIELD} onFocus={focus} onBlur={blur} />
+                <div style={{ position: 'relative' }}>
+                  <input type={showSiPassword ? 'text' : 'password'} value={siPassword} onChange={e => setSiPassword(e.target.value)} placeholder="••••••••" required style={{ ...FIELD, paddingRight: 44 }} onFocus={focus} onBlur={blur} />
+                  <button type="button" onClick={() => setShowSiPassword(p => !p)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#9CA3AF', display: 'flex', alignItems: 'center' }}>
+                    <Icon name={showSiPassword ? ICONS.eyeOff : ICONS.eye} size={18} />
+                  </button>
+                </div>
               </div>
               <SubmitBtn loading={isSubmitting}>Sign In →</SubmitBtn>
 
@@ -242,11 +250,21 @@ export default function VisitorLoginPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
                   <label style={LABEL}>Password *</label>
-                  <input type="password" value={suPass} onChange={e => setSuPass(e.target.value)} placeholder="Min 8 chars" required style={FIELD} onFocus={focus} onBlur={blur} />
+                  <div style={{ position: 'relative' }}>
+                    <input type={showSuPass ? 'text' : 'password'} value={suPass} onChange={e => setSuPass(e.target.value)} placeholder="Min 8 chars" required style={{ ...FIELD, paddingRight: 44 }} onFocus={focus} onBlur={blur} />
+                    <button type="button" onClick={() => setShowSuPass(p => !p)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#9CA3AF', display: 'flex', alignItems: 'center' }}>
+                      <Icon name={showSuPass ? ICONS.eyeOff : ICONS.eye} size={18} />
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label style={LABEL}>Confirm *</label>
-                  <input type="password" value={suConfirm} onChange={e => setSuConfirm(e.target.value)} placeholder="••••••••" required style={FIELD} onFocus={focus} onBlur={blur} />
+                  <div style={{ position: 'relative' }}>
+                    <input type={showSuConfirm ? 'text' : 'password'} value={suConfirm} onChange={e => setSuConfirm(e.target.value)} placeholder="••••••••" required style={{ ...FIELD, paddingRight: 44 }} onFocus={focus} onBlur={blur} />
+                    <button type="button" onClick={() => setShowSuConfirm(p => !p)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#9CA3AF', display: 'flex', alignItems: 'center' }}>
+                      <Icon name={showSuConfirm ? ICONS.eyeOff : ICONS.eye} size={18} />
+                    </button>
+                  </div>
                 </div>
               </div>
 

@@ -262,6 +262,7 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
     case 'SET_SLOTS':
       return { ...state, slots: action.slots, slotsLoading: action.loading }
     case 'SELECT_SLOT':
+      console.log('[SELECT_SLOT fired] setting holdSeconds to:', (state.tenantPricing?.hold_duration_min ?? DEFAULT_HOLD_MIN) * 60)
       return { ...state, selectedSlotId: action.slotId, selectedSlotLabel: action.label,
         holdSeconds: (state.tenantPricing?.hold_duration_min ?? DEFAULT_HOLD_MIN) * 60 }
     case 'SET_SHIPMENT':

@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
+import pickupImg  from '@/assets/pickup.png'
+import dropoffImg from '@/assets/dropoff.png'
+import serviceImg from '@/assets/service.png'
 
 type ServiceType = 'pickup' | 'dropoff'
 
@@ -41,13 +44,18 @@ export function Step2SlotPicker() {
     <div>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28 }}>
-        <div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: '#111827', letterSpacing: '-0.03em', marginBottom: 6 }}>Service type</h2>
-          <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6 }}>
-            {multi
-              ? 'Select the service type for each slot.'
-              : 'Are you collecting cargo from, or delivering cargo to the CFS?'}
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <img src={serviceImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0 }}>Service type</h2>
+            <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>
+              {multi
+                ? 'Select the service type for each slot.'
+                : 'Are you collecting cargo from, or delivering cargo to the CFS?'}
+            </p>
+          </div>
         </div>
         {multi && (
           <ApplyAllToggle
@@ -61,7 +69,7 @@ export function Step2SlotPicker() {
 
       {/* Tab bar — only when multi and not applyAll */}
       {multi && !applyAll && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', borderBottom: '2px solid #F3F4F6', marginBottom: 24, gap: 0 }}>
           {state.slotConfigs.map((cfg, i) => {
             const done = !!cfg.serviceType
             const active = activeSlot === i
@@ -71,17 +79,19 @@ export function Step2SlotPicker() {
                 type="button"
                 onClick={() => setActiveSlot(i)}
                 style={{
-                  padding: '8px 20px', borderRadius: 999, border: 'none',
-                  background: active ? 'var(--brand-color, #FC6514)' : '#F3F4F6',
-                  color: active ? '#fff' : '#6B7280',
-                  fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  fontFamily: 'inherit', transition: 'all 0.15s',
+                  padding: '10px 24px', fontSize: 14,
+                  fontWeight: active ? 700 : 500,
+                  color: active ? 'var(--brand-color, #FC6514)' : '#6B7280',
+                  background: 'none', border: 'none',
+                  borderBottom: active ? '2px solid var(--brand-color, #FC6514)' : '2px solid transparent',
+                  marginBottom: -2, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  transition: 'all 0.15s', fontFamily: 'inherit', whiteSpace: 'nowrap',
                 }}
               >
                 {done && (
                   <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-                    <path d="M1 5L4.5 8.5L11 1" stroke={active ? '#fff' : '#22C55E'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M1 5L4.5 8.5L11 1" stroke="#16A34A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 )}
                 Slot {i + 1}
@@ -92,11 +102,12 @@ export function Step2SlotPicker() {
       )}
 
       {/* Cards — single slot view when multi, or all-at-once when applyAll */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28 }}>
+      <style>{`@keyframes slideInFromRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}`}</style>
+      <div key={activeSlot} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 28, animation: 'slideInFromRight 0.22s ease forwards' }}>
         <OptionCard
           selected={(applyAll ? state.slotConfigs[0]?.serviceType : activeCfg?.serviceType) === 'pickup'}
           onClick={() => handleSelect(activeCfg?.index ?? 1, 'pickup')}
-          icon={<PickupArrow selected={(applyAll ? state.slotConfigs[0]?.serviceType : activeCfg?.serviceType) === 'pickup'} />}
+          icon={<img src={pickupImg} alt="Pick Up" style={{ width: 80, height: 80, objectFit: 'contain' }} />}
           title="Pick Up"
           desc="Collect cargo from the CFS"
           sub="ICS auto-checked"
@@ -104,7 +115,7 @@ export function Step2SlotPicker() {
         <OptionCard
           selected={(applyAll ? state.slotConfigs[0]?.serviceType : activeCfg?.serviceType) === 'dropoff'}
           onClick={() => handleSelect(activeCfg?.index ?? 1, 'dropoff')}
-          icon={<DropoffArrow selected={(applyAll ? state.slotConfigs[0]?.serviceType : activeCfg?.serviceType) === 'dropoff'} />}
+          icon={<img src={dropoffImg} alt="Drop Off" style={{ width: 80, height: 80, objectFit: 'contain' }} />}
           title="Drop Off"
           desc="Deliver cargo to the CFS"
           sub="Container or HBL required"
@@ -125,7 +136,7 @@ function OptionCard({ selected, onClick, icon, title, desc, sub }: {
       style={{
         position: 'relative',
         display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-        padding: '20px 18px 18px', borderRadius: 14,
+        padding: '20px 18px 18px', borderRadius: 16,
         border: selected ? '2px solid var(--brand-color, #FC6514)' : '1.5px solid rgba(0,0,0,0.08)',
         background: selected ? 'rgba(252,101,20,0.04)' : '#fff',
         cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s ease',
@@ -145,10 +156,10 @@ function OptionCard({ selected, onClick, icon, title, desc, sub }: {
         </div>
       )}
       <div style={{
-        width: 48, height: 48, borderRadius: 12,
+        width: 112, height: 112, borderRadius: 24,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         marginBottom: 14, flexShrink: 0,
-        background: selected ? 'var(--brand-color, #FC6514)' : '#F3F4F6',
+        background: selected ? 'rgba(252,101,20,0.8)' : '#F3F4F6',
         color: selected ? '#fff' : '#6B7280', transition: 'all 0.15s ease',
       }}>
         {icon}
@@ -203,21 +214,5 @@ function ApplyAllToggle({ on, onToggle, slotCount, field }: {
           : `Use the same ${field} for all ${slotCount} bookings`}
       </span>
     </div>
-  )
-}
-
-function PickupArrow({ selected }: { selected: boolean }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" style={{ stroke: selected ? '#fff' : '#6B7280' }}>
-      <path d="M12 4v12M6 12l6 6 6-6"/><line x1="4" y1="20" x2="20" y2="20"/>
-    </svg>
-  )
-}
-
-function DropoffArrow({ selected }: { selected: boolean }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" style={{ stroke: selected ? '#fff' : '#6B7280' }}>
-      <path d="M12 20V8M6 12l6-6 6 6"/><line x1="4" y1="4" x2="20" y2="4"/>
-    </svg>
   )
 }

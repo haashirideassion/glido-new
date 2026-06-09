@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { usePageTitle } from '@/lib/usePageTitle'
 import { Icon, ICONS } from '@/lib/Icon'
 import { fmtDate, fmtDateTime as _fmtDateTime, todaySydney, TZ } from '@/lib/time'
 import { supabase } from '@/lib/supabase'
 import { DEFAULT_TENANT_ID } from '@/lib/supabase'
 
-interface Record {
+interface VisitorRecord {
   id: string
   check_in_time: string
   licence_name?: string
@@ -22,6 +23,21 @@ interface Record {
   }
 }
 
+interface ColumnConfig {
+  date:          boolean
+  fullName:      boolean
+  address:       boolean
+  idType:        boolean
+  idNumber:      boolean
+  dob:           boolean
+  idSignedBy:    boolean
+  reason:        boolean
+  personVisited: boolean
+  checkInTime:   boolean
+  checkOutTime:  boolean
+  notes:         boolean
+}
+
 const FIELD: React.CSSProperties = {
   fontSize: 15, border: '1px solid rgba(0,0,0,0.10)', borderRadius: 6,
   padding: '8px 12px', height: 48, outline: 'none', boxSizing: 'border-box', background: '#fff', color: '#1C1917',
@@ -31,14 +47,37 @@ const fmtDateTime = (iso?: string) => iso ? _fmtDateTime(iso) : '—'
 const today = () => todaySydney()
 const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toLocaleDateString('sv-SE', { timeZone: TZ })
 
+const DEFAULT_VISIBLE: ColumnConfig = {
+  date: true, fullName: true, address: true, idType: true,
+  idNumber: true, dob: true, idSignedBy: true, reason: true,
+  personVisited: true, checkInTime: false, checkOutTime: false, notes: false,
+}
+
 export default function VisitorLogPage() {
   usePageTitle('Glido | ABF Visitor Log')
-  const [records, setRecords] = useState<Record[]>([])
+  const [records, setRecords] = useState<VisitorRecord[]>([])
   const [loading, setLoading] = useState(true)
+  const [visibleCols, setVisibleCols] = useState<ColumnConfig>(DEFAULT_VISIBLE)
   const [from, setFrom]       = useState(daysAgo(7))
   const [to, setTo]           = useState(today())
   const [status, setStatus]   = useState('')
   const [search, setSearch]   = useState('')
+
+  // Load report_config.visibleColumns on mount
+  useEffect(() => {
+    supabase
+      .from('tenants')
+      .select('report_config')
+      .eq('id', DEFAULT_TENANT_ID)
+      .single()
+      .then(({ data }) => {
+        const rc = (data?.report_config as any)
+        if (rc?.visibleColumns && typeof rc.visibleColumns === 'object') {
+          setVisibleCols({ ...DEFAULT_VISIBLE, ...rc.visibleColumns })
+        }
+      })
+      .catch(() => { /* use defaults */ })
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -189,15 +228,39 @@ export default function VisitorLogPage() {
           <p style={{ fontSize: 13, fontWeight: 700, color: '#1C1917', margin: 0 }}>
             ABF Visitor Log <span style={{ fontWeight: 400, color: '#A8A29E', marginLeft: 6 }}>Showing {records.length} records</span>
           </p>
-          {loading && <span style={{ fontSize: 12, color: '#A8A29E' }}>Loading…</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {loading && <span style={{ fontSize: 12, color: '#A8A29E' }}>Loading…</span>}
+            <Link
+              to="/reception/reports/configure"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                fontSize: 13, fontWeight: 600, color: '#FC6514',
+                background: 'rgba(252,101,20,0.07)',
+                border: '1px solid rgba(252,101,20,0.20)',
+                borderRadius: 8, padding: '6px 12px',
+                textDecoration: 'none', transition: 'background 0.15s ease',
+              }}
+            >
+              Configure →
+            </Link>
+          </div>
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, whiteSpace: 'nowrap' }}>
             <thead>
               <tr style={{ background: '#F7F6F5', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
-                {['Date', 'Full Name', 'Address', 'ID Type', 'ID Number', 'DOB', 'ID Signed By', 'Reason', 'Person Visited', 'Escort', 'Entry Time', 'Exit Time'].map(h => (
-                  <th key={h} style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>{h}</th>
-                ))}
+                {visibleCols.date          && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Date</th>}
+                {visibleCols.fullName      && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Full Name</th>}
+                {visibleCols.address       && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Address</th>}
+                {visibleCols.idType        && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>ID Type</th>}
+                {visibleCols.idNumber      && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>ID Number</th>}
+                {visibleCols.dob           && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>DOB</th>}
+                {visibleCols.idSignedBy    && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>ID Signed By</th>}
+                {visibleCols.reason        && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Reason</th>}
+                {visibleCols.personVisited && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Person Visited</th>}
+                {visibleCols.checkInTime   && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Entry Time</th>}
+                {visibleCols.checkOutTime  && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Exit Time</th>}
+                {visibleCols.notes         && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Notes</th>}
               </tr>
             </thead>
             <tbody>
@@ -210,24 +273,24 @@ export default function VisitorLogPage() {
                     onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.015)')}
                     onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <td style={{ padding: '14px 20px', color: '#1C1917', fontWeight: 500 }}>{fmtDate(r.check_in_time)}</td>
-                    <td style={{ padding: '14px 20px', fontWeight: 700, color: '#1C1917' }}>{name}</td>
-                    <td style={{ padding: '14px 20px', color: '#4B5563', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.licence_address || '—'}</td>
-                    <td style={{ padding: '14px 20px', color: '#4B5563' }}>{r.licence_scan_method || 'Manual'}</td>
-                    <td style={{ padding: '14px 20px', fontFamily: 'ui-monospace,monospace', color: '#FC6514', fontWeight: 700 }}>{r.licence_number || '—'}</td>
-                    <td style={{ padding: '14px 20px', color: '#4B5563' }}>{fmtDate(r.licence_dob)}</td>
-                    <td style={{ padding: '14px 20px', color: '#4B5563' }}>—</td>
-                    <td style={{ padding: '14px 20px' }}><span style={{ background: 'rgba(0,0,0,0.04)', padding: '4px 10px', borderRadius: 6, fontWeight: 600, color: '#374151' }}>{reason}</span></td>
-                    <td style={{ padding: '14px 20px', color: '#1C1917', fontWeight: 600 }}>{r.visit_person_name || '—'}</td>
-                    <td style={{ padding: '14px 20px', color: '#4B5563' }}>—</td>
-                    <td style={{ padding: '14px 20px', color: '#16A34A', fontWeight: 700 }}>{fmtDateTime(r.check_in_time)}</td>
-                    <td style={{ padding: '14px 20px', color: '#4B5563' }}>{b?.completed_at ? fmtDateTime(b.completed_at) : '—'}</td>
+                    {visibleCols.date          && <td style={{ padding: '14px 20px', color: '#1C1917', fontWeight: 500 }}>{fmtDate(r.check_in_time)}</td>}
+                    {visibleCols.fullName      && <td style={{ padding: '14px 20px', fontWeight: 700, color: '#1C1917' }}>{name}</td>}
+                    {visibleCols.address       && <td style={{ padding: '14px 20px', color: '#4B5563', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.licence_address || '—'}</td>}
+                    {visibleCols.idType        && <td style={{ padding: '14px 20px', color: '#4B5563' }}>{r.licence_scan_method || 'Manual'}</td>}
+                    {visibleCols.idNumber      && <td style={{ padding: '14px 20px', fontFamily: 'ui-monospace,monospace', color: '#FC6514', fontWeight: 700 }}>{r.licence_number || '—'}</td>}
+                    {visibleCols.dob           && <td style={{ padding: '14px 20px', color: '#4B5563' }}>{fmtDate(r.licence_dob)}</td>}
+                    {visibleCols.idSignedBy    && <td style={{ padding: '14px 20px', color: '#4B5563' }}>—</td>}
+                    {visibleCols.reason        && <td style={{ padding: '14px 20px' }}><span style={{ background: 'rgba(0,0,0,0.04)', padding: '4px 10px', borderRadius: 6, fontWeight: 600, color: '#374151' }}>{reason}</span></td>}
+                    {visibleCols.personVisited && <td style={{ padding: '14px 20px', color: '#1C1917', fontWeight: 600 }}>{r.visit_person_name || '—'}</td>}
+                    {visibleCols.checkInTime   && <td style={{ padding: '14px 20px', color: '#16A34A', fontWeight: 700 }}>{fmtDateTime(r.check_in_time)}</td>}
+                    {visibleCols.checkOutTime  && <td style={{ padding: '14px 20px', color: '#4B5563' }}>{b?.completed_at ? fmtDateTime(b.completed_at) : '—'}</td>}
+                    {visibleCols.notes         && <td style={{ padding: '14px 20px', color: '#4B5563' }}>—</td>}
                   </tr>
                 )
               })}
               {!loading && records.length === 0 && (
                 <tr>
-                  <td colSpan={12} style={{ padding: '64px 20px', textAlign: 'center' }}>
+                  <td colSpan={Object.values(visibleCols).filter(Boolean).length || 9} style={{ padding: '64px 20px', textAlign: 'center' }}>
                     <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
                       <Icon name={ICONS.reports} size={40} style={{ color: 'rgba(0,0,0,0.1)' }} />
                     </div>

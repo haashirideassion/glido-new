@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
+import datetimeImg from '@/assets/datetime.png'
 import { getTenant } from '@/lib/db/tenants'
 import { getSlotsByDate } from '@/lib/db/slots'
 import { Icon, ICONS } from '@/lib/Icon'
@@ -99,33 +100,21 @@ function generateSlotsFromConfig(
 
 function groupSlotsByPeriods(slots: TimeSlot[], periods: PeriodConfig) {
   const groups: { period: PeriodDef; key: string; slots: TimeSlot[] }[] = []
-
   const periodEntries = Object.entries(periods) as [string, PeriodDef][]
-  const lastKey = [...periodEntries].reverse().find(([, p]) => p.enabled)?.[0]
-
+  const lastKey = periodEntries.filter(([, p]) => p.enabled).at(-1)?.[0]
   for (const [key, period] of periodEntries) {
     if (!period.enabled) continue
     const isLast = key === lastKey
     const periodSlots = slots.filter(s =>
-      s.startTime >= period.start && (isLast ? s.startTime <= period.end : s.startTime < period.end)
+      isLast
+        ? s.startTime >= period.start   // last period: no upper bound
+        : s.startTime >= period.start && s.startTime < period.end
     )
     if (periodSlots.length > 0) {
       groups.push({ period, key, slots: periodSlots })
     }
   }
-
-  // Any slots not covered by a period → append at end
-  const covered = new Set(groups.flatMap(g => g.slots.map(s => s.id)))
-  const uncovered = slots.filter(s => !covered.has(s.id))
-  if (uncovered.length > 0) {
-    groups.push({
-      key: 'other',
-      period: { enabled: true, label: 'Other Slots', start: '00:00', end: '24:00' },
-      slots: uncovered,
-    })
-  }
-
-  return groups
+  return groups  // ← no "Other Slots" fallback at all
 }
 
 // ─── Date strip ───────────────────────────────────────────────────────────────
@@ -231,9 +220,14 @@ export function Step4ShipmentDetails() {
     const isLoading    = state.slotsLoading || tenantLoading
     return (
       <div>
-        <div style={{ marginBottom: 28 }}>
-          <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, marginBottom: 8 }}>Pick Date &amp; Time</h2>
-          <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5 }}>Select a date and time slot and please ensure your vehicle arrives within the chosen window to avoid delays.</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <img src={datetimeImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0 }}>Pick Date &amp; Time</h2>
+            <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>Select a date and time slot and please ensure your vehicle arrives within the chosen window to avoid delays.</p>
+          </div>
         </div>
         <DateStrip dates={dates} selectedDate={state.selectedDate} wh={wh} cutoff={cutoff} isTodayPastCutoff={isTodayPastCutoff}
           onSelect={iso => dispatch({ type: 'SELECT_DATE', date: iso })} />
@@ -281,6 +275,8 @@ export function Step4ShipmentDetails() {
       dispatchSlotDetail(slotIndex, 'selectedSlotId',    slot.id)
       dispatchSlotDetail(slotIndex, 'selectedSlotLabel', label)
     }
+    // Start the hold timer (works for both single and multi-slot)
+    dispatch({ type: 'SELECT_SLOT', slotId: slot.id, label })
     // Auto-advance to next tab
     setActiveSlot(a => Math.min(a + 1, state.slotConfigs.length - 1))
   }
@@ -304,10 +300,15 @@ export function Step4ShipmentDetails() {
   return (
     <div>
       {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28 }}>
-        <div>
-          <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, marginBottom: 8 }}>Pick Date &amp; Time</h2>
-          <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5 }}>Select a date and time slot for each booking.</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <img src={datetimeImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0 }}>Pick Date &amp; Time</h2>
+            <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>Select a date and time slot for each booking.</p>
+          </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
           <button
@@ -345,45 +346,41 @@ export function Step4ShipmentDetails() {
       </div>
 
       {/* Tab bar */}
-      {(() => {
-        const allDone = state.slotConfigs.every(c => !!c.selectedSlotId)
-        return (
-          <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-            {state.slotConfigs.map((cfg, i) => {
-              const done   = !!cfg.selectedSlotId
-              const active = activeSlot === i
-              const bg = active
-                ? (allDone ? '#16A34A' : 'var(--brand-color, #FC6514)')
-                : '#F3F4F6'
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setActiveSlot(i)}
-                  style={{
-                    padding: '8px 20px', borderRadius: 999, border: 'none',
-                    background: bg,
-                    color: active ? '#fff' : '#6B7280',
-                    fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                    fontFamily: 'inherit', transition: 'all 0.15s',
-                  }}
-                >
-                  {done && (
-                    <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-                      <path d="M1 5L4.5 8.5L11 1" stroke={active ? '#fff' : '#22C55E'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  )}
-                  Slot {i + 1}
-                </button>
-              )
-            })}
-          </div>
-        )
-      })()}
+      <div style={{ display: 'flex', borderBottom: '2px solid #F3F4F6', marginBottom: 24, gap: 0 }}>
+        {state.slotConfigs.map((cfg, i) => {
+          const done   = !!cfg.selectedSlotId
+          const active = activeSlot === i
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setActiveSlot(i)}
+              style={{
+                padding: '10px 24px', fontSize: 14,
+                fontWeight: active ? 700 : 500,
+                color: active ? 'var(--brand-color, #FC6514)' : '#6B7280',
+                background: 'none', border: 'none',
+                borderBottom: active ? '2px solid var(--brand-color, #FC6514)' : '2px solid transparent',
+                marginBottom: -2, cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                transition: 'all 0.15s', fontFamily: 'inherit', whiteSpace: 'nowrap',
+              }}
+            >
+              {done && (
+                <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                  <path d="M1 5L4.5 8.5L11 1" stroke="#16A34A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+              Slot {i + 1}
+            </button>
+          )
+        })}
+      </div>
 
       {/* Active slot picker */}
+      <style>{`@keyframes slideInFromRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}`}</style>
       {activeCfg4 && (
+        <div key={activeSlot} style={{ animation: 'slideInFromRight 0.22s ease forwards' }}>
         <SlotPickerForSlot
           slotIndex={activeCfg4.index}
           tenant={tenant}
@@ -396,6 +393,7 @@ export function Step4ShipmentDetails() {
           onDateSelect={iso => handleDateSelect(activeCfg4.index, iso)}
           onSlotSelect={slot => handleSlotSelect(activeCfg4.index, slot)}
         />
+        </div>
       )}
     </div>
   )
@@ -494,7 +492,7 @@ function DateStrip({ dates, selectedDate, wh, cutoff, isTodayPastCutoff, onSelec
             }}
             style={{
               position: 'relative', flex: '0 0 64px', width: 64,
-              padding: '10px 0', borderRadius: 12, textAlign: 'center',
+              padding: '10px 0', borderRadius: 16, textAlign: 'center',
               transition: 'all 0.15s ease', cursor: disabled ? 'not-allowed' : 'pointer',
               opacity: disabled ? 0.38 : 1,
               border: sel ? '2px solid var(--brand-color)' : '1.5px solid rgba(0,0,0,0.08)',
@@ -555,7 +553,7 @@ function SlotGroup({ label, slots, selectedId, onSelect }: {
               onClick={() => !full && onSelect(slot)}
               style={{
                 width: '100%', position: 'relative', display: 'flex', flexDirection: 'column',
-                padding: '14px 18px', borderRadius: 12, textAlign: 'left',
+                padding: '14px 18px', borderRadius: 16, textAlign: 'left',
                 transition: 'all 0.15s ease', boxSizing: 'border-box', fontFamily: 'inherit',
                 border: selected ? '2px solid var(--brand-color)' : '1.5px solid rgba(0,0,0,0.08)',
                 background: full ? '#FAFAFA' : selected ? 'rgba(252,101,20,0.03)' : '#fff',

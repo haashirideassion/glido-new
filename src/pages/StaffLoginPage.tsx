@@ -53,6 +53,7 @@ export default function StaffLoginPage() {
   const [email,       setEmail]       = useState('')
   const [password,    setPassword]    = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -139,11 +140,16 @@ export default function StaffLoginPage() {
             </div>
             <div>
               <label style={LABEL}>Password</label>
-              <input
-                type="password" value={password} onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••" required
-                style={FIELD} onFocus={focus} onBlur={blur}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••" required
+                  style={{ ...FIELD, paddingRight: 44 }} onFocus={focus} onBlur={blur}
+                />
+                <button type="button" onClick={() => setShowPassword(p => !p)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#9CA3AF', display: 'flex', alignItems: 'center' }}>
+                  <Icon name={showPassword ? ICONS.eyeOff : ICONS.eye} size={18} />
+                </button>
+              </div>
             </div>
             <button
               type="submit"

@@ -50,6 +50,7 @@ export const ICONS = {
   trash:          'solar:trash-bin-minimalistic-bold-duotone',
   edit:           'solar:pen-bold-duotone',
   eye:            'solar:eye-bold-duotone',
+  eyeOff:         'solar:eye-closed-bold-duotone',
   copy:           'solar:copy-bold-duotone',
   filter:         'solar:filter-bold-duotone',
   sort:           'solar:sort-bold-duotone',

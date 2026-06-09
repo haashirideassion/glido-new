@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
+import rollImg from '@/assets/roll.png'
 import type { SlotConfig } from '@/contexts/WizardContext'
 import { Icon, ICONS } from '@/lib/Icon'
 import { CustomSelect } from '@/components/ui/CustomSelect'
@@ -98,11 +99,18 @@ export function Step5Documents() {
 
     return (
       <div>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: '0 0 8px' }}>Load Information</h2>
-        <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.5, margin: '0 0 20px' }}>Enter shipment details for each booking slot.</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <img src={rollImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0 }}>Load Information</h2>
+            <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.5, margin: '4px 0 0' }}>Enter shipment details for each booking slot.</p>
+          </div>
+        </div>
 
         {/* Tab bar */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', borderBottom: '2px solid #F3F4F6', marginBottom: 24, gap: 0 }}>
           {state.slotConfigs.map((cfg, i) => {
             const done   = isSlotDetailDone(cfg)
             const active = activeSlot5 === i
@@ -112,17 +120,19 @@ export function Step5Documents() {
                 type="button"
                 onClick={() => setActiveSlot5(i)}
                 style={{
-                  padding: '8px 20px', borderRadius: 999, border: 'none',
-                  background: active ? 'var(--brand-color, #FC6514)' : '#F3F4F6',
-                  color: active ? '#fff' : '#6B7280',
-                  fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  fontFamily: 'inherit', transition: 'all 0.15s',
+                  padding: '10px 24px', fontSize: 14,
+                  fontWeight: active ? 700 : 500,
+                  color: active ? 'var(--brand-color, #FC6514)' : '#6B7280',
+                  background: 'none', border: 'none',
+                  borderBottom: active ? '2px solid var(--brand-color, #FC6514)' : '2px solid transparent',
+                  marginBottom: -2, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  transition: 'all 0.15s', fontFamily: 'inherit', whiteSpace: 'nowrap',
                 }}
               >
                 {done && (
                   <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-                    <path d="M1 5L4.5 8.5L11 1" stroke={active ? '#fff' : '#22C55E'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M1 5L4.5 8.5L11 1" stroke="#16A34A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 )}
                 Slot {i + 1}
@@ -132,8 +142,10 @@ export function Step5Documents() {
         </div>
 
         {/* Active slot panel */}
+        <style>{`@keyframes slideInFromRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}`}</style>
         {activeCfg5 && (
-          <div style={{ padding: 20, background: '#F9F9F8', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14, marginBottom: 24 }}>
+          <div key={activeSlot5} style={{ animation: 'slideInFromRight 0.22s ease forwards' }}>
+          <div style={{ padding: 20, background: '#F9F9F8', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, marginBottom: 24 }}>
             <p style={{ fontSize: 12, fontWeight: 700, color: '#78716C', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 16 }}>
               Slot {activeCfg5.index} — {activeCfg5.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {(activeCfg5.loadType ?? '').toUpperCase()}
               {activeCfg5.selectedSlotLabel && <span style={{ fontWeight: 400, marginLeft: 8, textTransform: 'none', letterSpacing: 0 }}>{activeCfg5.selectedDate} {activeCfg5.selectedSlotLabel}</span>}
@@ -146,6 +158,7 @@ export function Step5Documents() {
               touchPrefix={`s${activeSlot5}_`}
               slotIndex={activeCfg5.index}
             />
+          </div>
           </div>
         )}
 
@@ -160,13 +173,20 @@ export function Step5Documents() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: '0 0 8px' }}>Load Information</h2>
-      <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.5, margin: '0 0 36px' }}>
-        {isPickupLcl  && 'Enter your container and house bill details. ICS clearance status is checked automatically.'}
-        {isPickupFcl  && 'Enter your container number and size. ICS clearance status is checked automatically.'}
-        {isDropoffLcl && 'Enter your booking and customs details for this LCL drop-off.'}
-        {isDropoffFcl && 'Enter your container details and customs information for this FCL drop-off.'}
-      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+        <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <img src={rollImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+        </div>
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0 }}>Load Information</h2>
+          <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.5, margin: '4px 0 0' }}>
+            {isPickupLcl  && 'Enter your container and house bill details. ICS clearance status is checked automatically.'}
+            {isPickupFcl  && 'Enter your container number and size. ICS clearance status is checked automatically.'}
+            {isDropoffLcl && 'Enter your booking and customs details for this LCL drop-off.'}
+            {isDropoffFcl && 'Enter your container details and customs information for this FCL drop-off.'}
+          </p>
+        </div>
+      </div>
 
       {/* ══════════════════════════════════════════════════════
           1. PICKUP + LCL

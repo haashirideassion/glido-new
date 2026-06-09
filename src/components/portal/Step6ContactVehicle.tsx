@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
 import type { DocumentFile } from '@/contexts/WizardContext'
 import { Icon, ICONS } from '@/lib/Icon'
+import documentsImg from '@/assets/documents.png'
 import { supabase } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
 import { todaySydney } from '@/lib/time'
@@ -88,9 +89,14 @@ export function Step6ContactVehicle() {
   if (multi) {
     return (
       <div>
-        <div style={{ marginBottom: 28 }}>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, marginBottom: 6 }}>Documents</h2>
-          <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.5 }}>Upload the required documents for each booking slot.</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <img src={documentsImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0 }}>Documents</h2>
+            <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>Upload the required documents for each booking slot.</p>
+          </div>
         </div>
         {state.slotConfigs.map(cfg => (
           <div key={cfg.index} style={{ marginBottom: 28 }}>
@@ -128,9 +134,14 @@ export function Step6ContactVehicle() {
 
   return (
     <div>
-      <div style={{ marginBottom: 28 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, marginBottom: 6 }}>Documents</h2>
-        <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.5 }}>Upload the required documents for your booking. Required documents must be uploaded before you can continue.</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
+        <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <img src={documentsImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+        </div>
+        <div>
+          <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0 }}>Documents</h2>
+          <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>Upload the required documents for your booking. Required documents must be uploaded before you can continue.</p>
+        </div>
       </div>
 
       {/* ── Per-combination document slots ── */}
@@ -141,7 +152,7 @@ export function Step6ContactVehicle() {
           const isUploaded  = uploaded.length > 0
 
           return (
-            <div key={slot.docType} style={{ background: '#fff', border: `1.5px solid ${isMissing ? '#EF4444' : isUploaded ? 'rgba(34,197,94,0.35)' : '#e5e7eb'}`, borderRadius: 12, padding: '14px 16px', transition: 'border-color 0.15s ease' }}>
+            <div key={slot.docType} style={{ background: '#fff', border: `1.5px solid ${isMissing ? '#EF4444' : isUploaded ? 'rgba(34,197,94,0.35)' : 'rgba(0,0,0,0.08)'}`, borderRadius: 16, padding: '14px 16px', transition: 'border-color 0.15s ease' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                   <span style={{ width: 20, height: 20, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: isUploaded ? 'rgba(34,197,94,0.14)' : 'rgba(0,0,0,0.05)', color: isUploaded ? '#22C55E' : '#A8A29E', transition: 'all 0.15s' }}>
@@ -270,7 +281,7 @@ function SlotDocSection({ slotIndex, docFiles, docSlots, onAdd, onRemove }: {
           const isMissing  = slot.required && uploaded.length === 0
           const isUploaded = uploaded.length > 0
           return (
-            <div key={slot.docType} style={{ background: '#fff', border: `1.5px solid ${isMissing ? '#EF4444' : isUploaded ? 'rgba(34,197,94,0.35)' : '#e5e7eb'}`, borderRadius: 12, padding: '12px 14px' }}>
+            <div key={slot.docType} style={{ background: '#fff', border: `1.5px solid ${isMissing ? '#EF4444' : isUploaded ? 'rgba(34,197,94,0.35)' : 'rgba(0,0,0,0.08)'}`, borderRadius: 16, padding: '12px 14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                   <span style={{ width: 18, height: 18, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: isUploaded ? 'rgba(34,197,94,0.14)' : 'rgba(0,0,0,0.05)', color: isUploaded ? '#22C55E' : '#A8A29E' }}>

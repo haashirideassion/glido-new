@@ -246,7 +246,8 @@ export default function BookingWizard() {
         <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderTop: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
 
           {/* Floating pills */}
-          {holdActive && state.step >= 3 && (
+          {console.log('[HOLD DEBUG] step:', state.step, 'holdSeconds:', state.holdSeconds, 'holdActive:', holdActive)}
+          {holdActive && state.step >= 5 && (
             <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', paddingBottom: 10, pointerEvents: 'none' }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 20px', borderRadius: 9999, background: '#fff', border: `1.5px solid ${expiring ? 'rgba(239,68,68,0.35)' : 'rgba(252,101,20,0.28)'}`, boxShadow: '0 4px 18px rgba(0,0,0,0.09),0 2px 8px rgba(252,101,20,0.12)', whiteSpace: 'nowrap' }}>
                 <Icon name={ICONS.clock} size={26} style={{ color: expiring ? '#EF4444' : 'var(--brand-color)', flexShrink: 0 }} />

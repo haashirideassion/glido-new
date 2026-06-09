@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useWizard, useHoldTimer, calcCharges } from '@/contexts/WizardContext'
 import { Icon, ICONS } from '@/lib/Icon'
+import timerImg from '@/assets/timer.png'
 import { createBooking } from '@/lib/db/bookings'
 import { supabase, DEFAULT_TENANT_ID } from '@/lib/supabase'
 import { useTenantInfo } from '@/lib/useTenantInfo'
@@ -214,20 +215,25 @@ export function Step7Confirmation() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, marginBottom: 6 }}>
-          {state.paymentMethod === 'eft' ? 'Review & Confirm' : 'Review & Pay'}
-        </h2>
-        <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.5 }}>
-          {state.paymentMethod === 'eft'
-            ? 'Confirm your booking details. You will receive bank transfer instructions by email.'
-            : 'Confirm your booking details and complete payment to secure your slot.'}
-        </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+        <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <img src={timerImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+        </div>
+        <div>
+          <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0 }}>
+            {state.paymentMethod === 'eft' ? 'Review & Confirm' : 'Review & Pay'}
+          </h2>
+          <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>
+            {state.paymentMethod === 'eft'
+              ? 'Confirm your booking details. You will receive bank transfer instructions by email.'
+              : 'Confirm your booking details and complete payment to secure your slot.'}
+          </p>
+        </div>
       </div>
 
 
       {/* Booking summary */}
-      <div style={{ background: '#fff', border: '1.5px solid #8B8B8B', borderRadius: 14, padding: 20, marginBottom: 20, fontSize: 13 }}>
+      <div style={{ background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: 20, marginBottom: 20, fontSize: 13 }}>
         <p style={{ fontSize: 10, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>Booking Summary</p>
         {/* Shared fields */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: state.slotCount > 1 ? 16 : 0 }}>
@@ -329,7 +335,7 @@ export function Step7Confirmation() {
       )}
 
       {/* Charges — single-slot: full breakdown; multi-slot: grand total summary only */}
-      <div style={{ background: '#fff', border: '1.5px solid #8B8B8B', borderRadius: 14, padding: 20, marginBottom: 20 }}>
+      <div style={{ background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: 20, marginBottom: 20 }}>
         <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', marginBottom: 14 }}>
           {state.slotCount > 1 ? 'Total Summary' : 'Charges'}
         </p>
@@ -363,7 +369,7 @@ export function Step7Confirmation() {
           const sel = state.paymentMethod === opt.val
           return (
             <button key={opt.val} type="button" onClick={() => dispatch({ type: 'SET', field: 'paymentMethod', value: opt.val })}
-              style={{ textAlign: 'left', cursor: 'pointer', borderRadius: 14, padding: 16, transition: 'all 0.15s ease', background: sel ? 'rgba(var(--brand-rgb),0.03)' : '#fff', border: `1.5px solid ${sel ? 'var(--brand-color)' : '#8B8B8B'}` }}>
+              style={{ textAlign: 'left', cursor: 'pointer', borderRadius: 16, padding: 16, transition: 'all 0.15s ease', background: sel ? 'rgba(var(--brand-rgb),0.03)' : '#fff', border: `1.5px solid ${sel ? 'var(--brand-color)' : 'rgba(0,0,0,0.08)'}` }}>
               <Icon name={opt.icon} size={20} style={{ color: 'var(--brand-color)', marginBottom: 8, display: 'block' }} />
               <div style={{ fontWeight: 600, fontSize: 13, color: '#1C1917' }}>{opt.title}</div>
               <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>{opt.sub}</div>

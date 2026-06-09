@@ -1,18 +1,20 @@
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
-import { Icon, ICONS } from '@/lib/Icon'
+import fclImg     from '@/assets/fcl.png'
+import lclImg     from '@/assets/lcl.png'
+import packageImg from '@/assets/package.png'
 
 const LOAD_OPTIONS = [
   {
     value: 'fcl' as const,
-    icon: ICONS.container,
+    img: fclImg,
     label: 'FCL',
     sub: 'Full Container Load',
     bullets: ['Container number required', 'No HBL needed'],
   },
   {
     value: 'lcl' as const,
-    icon: ICONS.cargo,
+    img: lclImg,
     label: 'LCL',
     sub: 'Less than Container Load',
     bullets: ['HBL + container number', 'ICS auto-checked'],
@@ -56,13 +58,18 @@ export function Step3HoldConfirm() {
     <div>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28 }}>
-        <div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: '#111827', letterSpacing: '-0.03em', marginBottom: 6 }}>Cargo type</h2>
-          <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6 }}>
-            {multi
-              ? 'Select FCL or LCL for each slot.'
-              : 'Select whether your shipment is FCL or LCL — this determines which details we ask for next.'}
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <img src={packageImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0 }}>Cargo type</h2>
+            <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>
+              {multi
+                ? 'Select FCL or LCL for each slot.'
+                : 'Select whether your shipment is FCL or LCL — this determines which details we ask for next.'}
+            </p>
+          </div>
         </div>
         {multi && (
           <ApplyAllToggle
@@ -76,7 +83,7 @@ export function Step3HoldConfirm() {
 
       {/* Tab bar — only when multi and not applyAll */}
       {multi && !applyAll && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', borderBottom: '2px solid #F3F4F6', marginBottom: 24, gap: 0 }}>
           {state.slotConfigs.map((cfg, i) => {
             const done = !!cfg.loadType
             const active = activeSlot === i
@@ -86,17 +93,19 @@ export function Step3HoldConfirm() {
                 type="button"
                 onClick={() => setActiveSlot(i)}
                 style={{
-                  padding: '8px 20px', borderRadius: 999, border: 'none',
-                  background: active ? 'var(--brand-color, #FC6514)' : '#F3F4F6',
-                  color: active ? '#fff' : '#6B7280',
-                  fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  fontFamily: 'inherit', transition: 'all 0.15s',
+                  padding: '10px 24px', fontSize: 14,
+                  fontWeight: active ? 700 : 500,
+                  color: active ? 'var(--brand-color, #FC6514)' : '#6B7280',
+                  background: 'none', border: 'none',
+                  borderBottom: active ? '2px solid var(--brand-color, #FC6514)' : '2px solid transparent',
+                  marginBottom: -2, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  transition: 'all 0.15s', fontFamily: 'inherit', whiteSpace: 'nowrap',
                 }}
               >
                 {done && (
                   <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-                    <path d="M1 5L4.5 8.5L11 1" stroke={active ? '#fff' : '#22C55E'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M1 5L4.5 8.5L11 1" stroke="#16A34A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 )}
                 Slot {i + 1}
@@ -107,7 +116,8 @@ export function Step3HoldConfirm() {
       )}
 
       {/* Cards — single slot view */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+      <style>{`@keyframes slideInFromRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}`}</style>
+      <div key={activeSlot} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24, animation: 'slideInFromRight 0.22s ease forwards' }}>
         {LOAD_OPTIONS.map(opt => {
           const currentVal = applyAll ? state.slotConfigs[0]?.loadType : activeCfg?.loadType
           const sel = currentVal === opt.value
@@ -116,7 +126,7 @@ export function Step3HoldConfirm() {
               key={opt.value}
               selected={sel}
               onClick={() => handleSelect(activeCfg?.index ?? 1, opt.value)}
-              icon={<Icon name={opt.icon} size={22} />}
+              icon={<img src={opt.img} alt={opt.label} style={{ width: 80, height: 80, objectFit: 'contain' }} />}
               label={opt.label}
               sub={opt.sub}
               bullets={opt.bullets}
@@ -179,7 +189,7 @@ function LoadCard({ selected, onClick, icon, label, sub, bullets }: {
       style={{
         position: 'relative',
         display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-        padding: '20px 18px 18px', borderRadius: 14,
+        padding: '20px 18px 18px', borderRadius: 16,
         border: selected ? '2px solid var(--brand-color, #FC6514)' : '1.5px solid rgba(0,0,0,0.08)',
         background: selected ? 'rgba(252,101,20,0.04)' : '#fff',
         cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s ease',
@@ -199,10 +209,10 @@ function LoadCard({ selected, onClick, icon, label, sub, bullets }: {
         </div>
       )}
       <div style={{
-        width: 48, height: 48, borderRadius: 12,
+        width: 112, height: 112, borderRadius: 24,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         marginBottom: 14, flexShrink: 0,
-        background: selected ? 'var(--brand-color, #FC6514)' : '#F3F4F6',
+        background: selected ? 'rgba(252,101,20,0.8)' : '#F3F4F6',
         color: selected ? '#fff' : '#6B7280', transition: 'all 0.15s ease',
       }}>
         {icon}
