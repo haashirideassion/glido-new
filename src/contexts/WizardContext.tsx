@@ -1,5 +1,5 @@
 import {
-  createContext, useContext, useReducer, useEffect,
+  createContext, useContext, useReducer, useEffect, useRef,
   type ReactNode, type Dispatch,
 } from 'react'
 import { todaySydney } from '@/lib/time'
@@ -39,9 +39,7 @@ export interface SlotConfig {
 }
 
 function getDefaultDateEarly(): string {
-  const tomorrow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Sydney' }))
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  return tomorrow.toLocaleDateString('sv-SE', { timeZone: 'Australia/Sydney' })
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Australia/Sydney' })
 }
 
 function makeSlotConfig(index: number): SlotConfig {
@@ -80,6 +78,7 @@ export interface TenantPricing {
   lcl_free_days:               number   // stored in working_hours.pricing
   slot_duration_min:           number
   max_bookings_per_slot:       number
+  hold_duration_min:           number   // from tenants.slot_hold_duration_min
 }
 
 function extractPricing(t: TenantRow): TenantPricing {
@@ -95,6 +94,7 @@ function extractPricing(t: TenantRow): TenantPricing {
     lcl_free_days:               pricingOverride.lcl_free_days ?? 3,
     slot_duration_min:           t.slot_duration_min           ?? 60,
     max_bookings_per_slot:       t.max_bookings_per_slot       ?? 5,
+    hold_duration_min:           t.slot_hold_duration_min      ?? 10,
   }
 }
 
@@ -153,7 +153,7 @@ export interface WizardState {
   submitting: boolean
   submitError: string | null
   confirmationRef: string | null        // first ref (backward compat)
-  confirmationRefs: string[]            // one per slot
+  confirmationRefs: Array<{ ref: string; slotLabel: string; date: string }>  // one per slot, carries time info
   // Tenant pricing config (loaded on wizard mount)
   tenantPricing: TenantPricing | null
   // Tenant document requirements (loaded on wizard mount)
@@ -174,13 +174,10 @@ export type WizardAction =
   | { type: 'CLEAR_HOLD' }
   | { type: 'RESET' }
 
-const HOLD_SECONDS = 600
+const DEFAULT_HOLD_MIN = 10   // fallback when tenant config not yet loaded
 
 function getDefaultDate(): string {
-  // Tomorrow in Sydney time
-  const tomorrow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Australia/Sydney' }))
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  return tomorrow.toLocaleDateString('sv-SE', { timeZone: 'Australia/Sydney' })
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Australia/Sydney' })
 }
 
 export const INITIAL_STATE: WizardState = {
@@ -251,11 +248,22 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
       return { ...state, slotConfigs: newConfigs }
     }
     case 'SELECT_DATE':
-      return { ...state, selectedDate: action.date, selectedSlotId: null, selectedSlotLabel: '', holdSeconds: 0, slots: [], slotsLoading: true }
+      return {
+        ...state,
+        selectedDate: action.date,
+        selectedSlotId: null,
+        selectedSlotLabel: '',
+        // Only reset the hold timer if no slot had been selected yet — prevents a redundant
+        // SELECT_DATE dispatch from killing an active hold the user already established
+        holdSeconds: state.selectedSlotId ? state.holdSeconds : 0,
+        slots: [],
+        slotsLoading: true,
+      }
     case 'SET_SLOTS':
       return { ...state, slots: action.slots, slotsLoading: action.loading }
     case 'SELECT_SLOT':
-      return { ...state, selectedSlotId: action.slotId, selectedSlotLabel: action.label, holdSeconds: HOLD_SECONDS }
+      return { ...state, selectedSlotId: action.slotId, selectedSlotLabel: action.label,
+        holdSeconds: (state.tenantPricing?.hold_duration_min ?? DEFAULT_HOLD_MIN) * 60 }
     case 'SET_SHIPMENT':
       return { ...state, shipmentData: action.data, shipmentLoading: action.loading, shipmentError: action.error, shipmentFetched: action.fetched }
     case 'ADD_DOCUMENT':
@@ -281,7 +289,7 @@ function load(): WizardState {
     const raw = sessionStorage.getItem(STORAGE_KEY)
     if (!raw) return INITIAL_STATE
     const saved = JSON.parse(raw) as Partial<WizardState>
-    return { ...INITIAL_STATE, ...saved, holdSeconds: 0, submitting: false }
+    return { ...INITIAL_STATE, ...saved, holdSeconds: saved.holdSeconds ?? 0, submitting: false }
   } catch {
     return INITIAL_STATE
   }
@@ -416,14 +424,27 @@ function deriveCanProceed(s: WizardState): boolean {
   }
 }
 
-export function useHoldTimer() {
+export function useHoldTimer(onExpire?: () => void) {
   const { state, dispatch } = useWizard()
+  const prevSeconds = useRef(state.holdSeconds)
+  const onExpireRef = useRef(onExpire)
+  onExpireRef.current = onExpire  // keep ref fresh without re-running effects
 
+  // Tick every second while a hold is active
   useEffect(() => {
     if (state.holdSeconds <= 0) return
     const id = setInterval(() => dispatch({ type: 'TICK_HOLD' }), 1000)
     return () => clearInterval(id)
   }, [state.holdSeconds > 0]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Expiry watcher — fires once when countdown reaches zero from a positive value
+  useEffect(() => {
+    if (state.holdSeconds === 0 && prevSeconds.current > 0) {
+      dispatch({ type: 'CLEAR_HOLD' })
+      onExpireRef.current?.()
+    }
+    prevSeconds.current = state.holdSeconds
+  }, [state.holdSeconds]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const mins = String(Math.floor(state.holdSeconds / 60)).padStart(2, '0')
   const secs = String(state.holdSeconds % 60).padStart(2, '0')

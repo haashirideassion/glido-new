@@ -45,6 +45,7 @@ export default function App() {
         <Route path="visitors"   element={<WalkInsPage />} />
         <Route path="reports"                  element={<ReportsPage />} />
         <Route path="reports/visitor-log"    element={<VisitorLogPage />} />
+        <Route path="reports/configure"      element={<VisitorLogPage />} />
         <Route path="reports/activity"       element={<ReportsPage />} />
         <Route path="settings"   element={<SettingsPage />} />
       </Route>

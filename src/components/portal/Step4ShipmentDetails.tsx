@@ -423,7 +423,7 @@ function DateStrip({ dates, selectedDate, wh, cutoff, isTodayPastCutoff, onSelec
               else onSelect(d.iso)
             }}
             style={{ flex: '0 0 80px', width: 80, height: 96, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '12px 4px 10px', borderRadius: 12, textAlign: 'center', transition: 'all 0.18s ease', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.38 : 1, border: `1.5px solid ${sel ? 'var(--brand-color)' : '#8B8B8B'}`, background: sel ? 'rgba(var(--brand-rgb),0.06)' : '#fff', boxShadow: sel ? '0 0 0 1px var(--brand-color),0 4px 14px rgba(var(--brand-rgb),0.18)' : 'none' }}>
-            <p style={{ fontSize: 11, fontWeight: sel ? 700 : 500, marginBottom: 6, color: sel ? 'var(--brand-color)' : '#101010', transition: 'all 0.18s ease', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.dayFull}</p>
+            <p style={{ fontSize: 11, fontWeight: sel ? 700 : 500, marginBottom: 6, color: sel ? 'var(--brand-color)' : '#101010', transition: 'all 0.18s ease', width: '100%', overflow: 'visible', textOverflow: 'clip', whiteSpace: 'nowrap' }}>{d.dayFull}</p>
             <p className="slot-num" style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1, color: '#101010' }}>{d.num}</p>
             <div style={{ height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
               {d.isToday && cutoffDisabled && cutoff ? <p style={{ fontSize: 9, color: '#EF4444', lineHeight: 1.2, margin: 0 }}>After {cutoff}</p>

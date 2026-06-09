@@ -9,6 +9,16 @@ import { toast } from '@/lib/toast'
 
 // EFT details are fetched live from tenant — see useTenantInfo() call inside the component
 
+function comboSuffix(serviceType: string, loadType: string): string {
+  const s = serviceType?.toLowerCase()
+  const l = loadType?.toLowerCase()
+  if (s === 'pickup'  && l === 'lcl') return 'PL'
+  if (s === 'pickup'  && l === 'fcl') return 'PF'
+  if (s === 'dropoff' && l === 'lcl') return 'DL'
+  if (s === 'dropoff' && l === 'fcl') return 'DF'
+  return 'XX'
+}
+
 export function Step7Confirmation() {
   const { state, dispatch } = useWizard()
   const { user } = useAuth()
@@ -65,11 +75,11 @@ export function Step7Confirmation() {
       // Suffix is per-slot-index (not per time-group) so every row has a distinct reference_number
       const slotRefMap = new Map<number, string>()
       for (const cfg of state.slotConfigs) {
-        const slotRef = multi ? `${groupRef}-S${cfg.index}` : groupRef
+        const slotRef = multi ? `${groupRef}-S${cfg.index}-${comboSuffix(cfg.serviceType, cfg.loadType)}` : groupRef
         slotRefMap.set(cfg.index, slotRef)
       }
 
-      const refs: string[] = []
+      const refs: Array<{ ref: string; slotLabel: string; date: string }> = []
       for (const cfg of state.slotConfigs) {
         // Per-slot: use per-slot fields if multi-slot, else top-level fields
         const slotDate        = multi ? cfg.selectedDate      : state.selectedDate
@@ -133,7 +143,7 @@ export function Step7Confirmation() {
             // Duplicate reference_number — regenerate slotRef only; keep groupRef unchanged
             const year    = new Date().getFullYear()
             const newRand = Math.random().toString(36).slice(2, 7).toUpperCase()
-            slotRef = multi ? `${groupRef}-S${cfg.index}-${newRand}` : `GLD-${year}-${newRand}`
+            slotRef = multi ? `${groupRef}-S${cfg.index}-${comboSuffix(cfg.serviceType, cfg.loadType)}-${newRand}` : `GLD-${year}-${newRand}`
             booking = await createBooking({ ...bookingParams, reference_number: slotRef } as any)
           } else {
             throw err
@@ -142,7 +152,7 @@ export function Step7Confirmation() {
 
         console.log('[Submit Debug] booking result:', booking)
         console.log('[Submit Debug] booking.referenceNumber:', booking?.referenceNumber)
-        refs.push(booking.referenceNumber)
+        refs.push({ ref: booking.referenceNumber, slotLabel, date: slotDate })
         console.log('[Submit Debug] refs so far:', refs)
 
         // Upsert time_slots row and increment confirmed count — best-effort
@@ -187,10 +197,11 @@ export function Step7Confirmation() {
         }
       }
 
-      // Deduplicate refs — slots sharing the same time get the same ref
-      const uniqueRefs = [...new Set(refs)]
+      // Deduplicate by ref string, preserving object shape
+      const _seenRefs = new Set<string>()
+      const uniqueRefs = refs.filter(r => { if (_seenRefs.has(r.ref)) return false; _seenRefs.add(r.ref); return true })
       console.log('[Submit Debug] final refs:', uniqueRefs)
-      dispatch({ type: 'SET', field: 'confirmationRef',  value: uniqueRefs[0] })
+      dispatch({ type: 'SET', field: 'confirmationRef',  value: uniqueRefs[0]?.ref ?? null })
       dispatch({ type: 'SET', field: 'confirmationRefs', value: uniqueRefs })
       dispatch({ type: 'SET', field: 'submitting', value: false })
       dispatch({ type: 'SET', field: 'step', value: 8 })
@@ -238,24 +249,58 @@ export function Step7Confirmation() {
           ))}
         </div>
         {/* Per-slot breakdown for multi-slot */}
-        {state.slotCount > 1 && state.slotConfigs.map((cfg, i) => (
-          <div key={cfg.index} style={{ borderTop: i === 0 ? '1px solid rgba(0,0,0,0.07)' : 'none', paddingTop: i === 0 ? 12 : 0, marginTop: i === 0 ? 4 : 12 }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#78716C', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8 }}>Slot {cfg.index}</p>
-            {[
-              ['Service',   cfg.serviceType === 'pickup' ? 'Pick Up' : cfg.serviceType === 'dropoff' ? 'Drop Off' : '—'],
-              ['Load',      (cfg.loadType || '—').toUpperCase()],
-              ['Date',      cfg.selectedDate || '—'],
-              ['Time',      cfg.selectedSlotLabel || '—'],
-              ...(cfg.containerNumber ? [['Container', cfg.containerNumber]] : []),
-              ...(cfg.hbl            ? [['HBL',       cfg.hbl]]             : []),
-            ].map(([label, val]) => (
-              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                <span style={{ color: '#A8A29E', fontSize: 12 }}>{label}</span>
-                <span style={{ fontWeight: 600, color: '#1C1917', fontSize: 12, fontFamily: label === 'HBL' || label === 'Container' ? 'ui-monospace,monospace' : undefined }}>{val}</span>
+        {state.slotCount > 1 && state.slotConfigs.map((cfg, i) => {
+          // Per-slot charge calculation
+          const tp = state.tenantPricing
+          const perSlotFee = cfg.serviceType === 'pickup'
+            ? (tp?.slot_fee_pickup  ?? 5.00)
+            : (tp?.slot_fee_dropoff ?? 5.00)
+          const perSlotStorage    = charges.storageCharge    / state.slotCount
+          const perSlotShrinkWrap = charges.shrinkWrapCharge / state.slotCount
+          const perSlotSubtotal   = perSlotFee + perSlotStorage + perSlotShrinkWrap
+
+          return (
+            <div key={cfg.index} style={{ borderTop: '1px solid rgba(0,0,0,0.07)', paddingTop: 12, marginTop: i === 0 ? 4 : 12 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#78716C', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8 }}>Slot {cfg.index}</p>
+              {[
+                ['Service',   cfg.serviceType === 'pickup' ? 'Pick Up' : cfg.serviceType === 'dropoff' ? 'Drop Off' : '—'],
+                ['Load',      (cfg.loadType || '—').toUpperCase()],
+                ['Date',      cfg.selectedDate || '—'],
+                ['Time',      cfg.selectedSlotLabel || '—'],
+                ...(cfg.containerNumber ? [['Container', cfg.containerNumber]] : []),
+                ...(cfg.hbl            ? [['HBL',       cfg.hbl]]             : []),
+              ].map(([label, val]) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                  <span style={{ color: '#A8A29E', fontSize: 12 }}>{label}</span>
+                  <span style={{ fontWeight: 600, color: '#1C1917', fontSize: 12, fontFamily: label === 'HBL' || label === 'Container' ? 'ui-monospace,monospace' : undefined }}>{val}</span>
+                </div>
+              ))}
+              {/* Per-slot charges */}
+              <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', marginTop: 8, paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#A8A29E' }}>
+                  <span>Slot fee</span>
+                  <span style={{ fontWeight: 500, color: '#78716C' }}>${perSlotFee.toFixed(2)}</span>
+                </div>
+                {perSlotStorage > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#A8A29E' }}>
+                    <span>Storage</span>
+                    <span style={{ fontWeight: 500, color: '#78716C' }}>${perSlotStorage.toFixed(2)}</span>
+                  </div>
+                )}
+                {perSlotShrinkWrap > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#A8A29E' }}>
+                    <span>Shrink wrap</span>
+                    <span style={{ fontWeight: 500, color: '#78716C' }}>${perSlotShrinkWrap.toFixed(2)}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 600, color: '#1C1917', marginTop: 2 }}>
+                  <span>Slot subtotal</span>
+                  <span>${perSlotSubtotal.toFixed(2)}</span>
+                </div>
               </div>
-            ))}
-          </div>
-        ))}
+            </div>
+          )
+        })}
       </div>
 
       {/* ICS status */}
@@ -283,15 +328,21 @@ export function Step7Confirmation() {
         </div>
       )}
 
-      {/* Charges */}
+      {/* Charges — single-slot: full breakdown; multi-slot: grand total summary only */}
       <div style={{ background: '#fff', border: '1.5px solid #8B8B8B', borderRadius: 14, padding: 20, marginBottom: 20 }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', marginBottom: 14 }}>Charges</p>
+        <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', marginBottom: 14 }}>
+          {state.slotCount > 1 ? 'Total Summary' : 'Charges'}
+        </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
-          {charges.storageCharge > 0 && <CR label="Storage charge" val={`$${charges.storageCharge.toFixed(2)}`} />}
-          {charges.shrinkWrapCharge > 0 && <CR label="Shrink wrap" val={`$${charges.shrinkWrapCharge.toFixed(2)}`} />}
-          <CR label="Slot fee" val={`$${charges.slotFee.toFixed(2)}`} />
-          <div style={{ height: 1, background: 'rgba(0,0,0,0.07)', margin: '2px 0' }} />
-          <CR label="Subtotal" val={`$${charges.subtotal.toFixed(2)}`} bold />
+          {state.slotCount === 1 && (
+            <>
+              {charges.storageCharge > 0 && <CR label="Storage charge" val={`$${charges.storageCharge.toFixed(2)}`} />}
+              {charges.shrinkWrapCharge > 0 && <CR label="Shrink wrap" val={`$${charges.shrinkWrapCharge.toFixed(2)}`} />}
+              <CR label="Slot fee" val={`$${charges.slotFee.toFixed(2)}`} />
+              <div style={{ height: 1, background: 'rgba(0,0,0,0.07)', margin: '2px 0' }} />
+            </>
+          )}
+          <CR label={state.slotCount > 1 ? 'Subtotal (all slots)' : 'Subtotal'} val={`$${charges.subtotal.toFixed(2)}`} bold />
           <CR label="GST (10%)" val={`$${charges.gst.toFixed(2)}`} small />
           <div style={{ height: 1, background: 'rgba(0,0,0,0.07)', margin: '2px 0' }} />
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#1C1917', fontSize: 15 }}>
@@ -353,7 +404,7 @@ export function Step7Confirmation() {
       {/* ComPay panel */}
       {state.paymentMethod === 'compay' && (() => {
         const clientNum = tenant?.compayClientNumber
-        const ref = state.confirmationRef || state.confirmationRefs?.[0] || ''
+        const ref = state.confirmationRef || state.confirmationRefs?.[0]?.ref || ''
         const amt = totalWithGst
         const compayUrl = clientNum
           ? `https://compay.1-stop.biz/AdhocCCWebPages/Payment.aspx?CN=${encodeURIComponent(clientNum)}&PayType=STORAGE&REF1=${encodeURIComponent(ref)}&AMT=${encodeURIComponent(amt)}`

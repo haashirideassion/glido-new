@@ -12,12 +12,12 @@ export default function KioskLayout({ children }: { children: ReactNode }) {
           transition: all 0.15s ease; cursor: pointer;
         }
         .kiosk-btn-primary {
-          background: linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%); color:#fff;
+          background: var(--brand-color, #FC6514); color:#fff;
           border:1px solid rgba(0,0,0,0.18);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px rgba(252,101,20,0.35), 0 1px 3px rgba(0,0,0,0.18);
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px rgba(var(--brand-rgb,252,101,20),0.35), 0 1px 3px rgba(0,0,0,0.18);
         }
-        .kiosk-btn-primary:hover { background:linear-gradient(180deg,#FF8C42 0%,#F06418 100%); transform:translateY(-1px); }
-        .kiosk-btn-primary:active { transform:translateY(0) scale(0.985); }
+        .kiosk-btn-primary:hover { background: var(--brand-color, #FC6514); opacity:0.88; transform:translateY(-1px); }
+        .kiosk-btn-primary:active { opacity:1; transform:translateY(0) scale(0.985); }
         .kiosk-btn-secondary { background:#fff; color:#78716C; border:1px solid rgba(0,0,0,0.12); }
         .kiosk-btn-secondary:hover { background:#F7F6F5; border-color:rgba(0,0,0,0.18); color:#1C1917; }
         .kiosk-option-card { background:#fff; color:#1C1917; border:1.5px solid rgba(0,0,0,0.10); text-align:left; }

@@ -32,7 +32,7 @@ const today = () => todaySydney()
 const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toLocaleDateString('sv-SE', { timeZone: TZ })
 
 export default function VisitorLogPage() {
-  usePageTitle('Glido | Visitor Log')
+  usePageTitle('Glido | ABF Visitor Log')
   const [records, setRecords] = useState<Record[]>([])
   const [loading, setLoading] = useState(true)
   const [from, setFrom]       = useState(daysAgo(7))
@@ -187,7 +187,7 @@ export default function VisitorLogPage() {
       <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
         <div style={{ padding: '14px 24px', borderBottom: '1px solid rgba(0,0,0,0.07)', background: 'rgba(0,0,0,0.01)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: '#1C1917', margin: 0 }}>
-            Visitor Activity Log <span style={{ fontWeight: 400, color: '#A8A29E', marginLeft: 6 }}>Showing {records.length} records</span>
+            ABF Visitor Log <span style={{ fontWeight: 400, color: '#A8A29E', marginLeft: 6 }}>Showing {records.length} records</span>
           </p>
           {loading && <span style={{ fontSize: 12, color: '#A8A29E' }}>Loading…</span>}
         </div>

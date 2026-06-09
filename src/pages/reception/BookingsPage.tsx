@@ -216,13 +216,22 @@ const STATUS_STYLE: Record<string, React.CSSProperties> = {
   completed:  { background: '#F9FAFB', color: '#6B7280', border: '1px solid #E5E7EB' },
   cancelled:  { background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' },
 }
-const ICS_LABEL: Record<string, string> = { cleared: 'Clear', held: 'Held', examination: 'On Hold', pending: 'Pending', unavailable: 'N/A' }
-const ICS_STYLE: Record<string, string> = {
-  cleared:     'background:rgba(34,197,94,0.10);color:#16A34A;border:1px solid rgba(34,197,94,0.22);',
-  held:        'background:rgba(239,68,68,0.10);color:#EF4444;border:1px solid rgba(239,68,68,0.22);',
-  examination: 'background:rgba(251,191,36,0.10);color:#B45309;border:1px solid rgba(251,191,36,0.22);',
-  pending:     'background:rgba(0,0,0,0.04);color:#78716C;border:1px solid rgba(0,0,0,0.10);',
+const ICS_LABEL: Record<string, string> = { cleared: 'Cleared', held: 'Held', examination: 'Examination', pending: 'Pending', unavailable: 'N/A' }
+const ICS_BAR_COLOR: Record<string, string> = {
+  cleared:     '#16A34A',
+  held:        '#DC2626',
+  examination: '#FC6514',
+  pending:     '#94A3B8',
+  unavailable: '#E5E7EB',
 }
+const ICS_LEGEND = [
+  { key: 'cleared',     label: 'Cleared'     },
+  { key: 'held',        label: 'Held'        },
+  { key: 'examination', label: 'Examination' },
+  { key: 'pending',     label: 'Pending'     },
+  { key: 'unavailable', label: 'N/A'         },
+]
+
 
 const FIELD = { width: '100%', padding: '10px 14px', height: 44, fontSize: 14, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, outline: 'none', boxSizing: 'border-box' as const, transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }
 
@@ -456,13 +465,24 @@ export default function BookingsPage() {
 
       {/* Table */}
       <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.01)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.01)', flexWrap: 'wrap', gap: 8 }}>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>
             {loading ? 'Loading…' : `${groupedRows.length} booking${groupedRows.length !== 1 ? 's' : ''}${filtered.length !== groupedRows.length ? ` (${filtered.length} slots)` : ''}`}
           </span>
-          <Link to="/reception/bookings/new" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 13, fontWeight: 600, background: 'linear-gradient(135deg,#FF7A2A,#E85A0A)', color: '#fff', borderRadius: 9999, textDecoration: 'none', boxShadow: '0 2px 8px rgba(252,101,20,0.30)' }}>
-            <Icon name={ICONS.add} size={14} /> New Booking
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+            {/* ICS legend */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {ICS_LEGEND.map(l => (
+                <span key={l.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#94A3B8', whiteSpace: 'nowrap' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 9999, background: ICS_BAR_COLOR[l.key], flexShrink: 0, display: 'inline-block' }} />
+                  {l.label}
+                </span>
+              ))}
+            </div>
+            <Link to="/reception/bookings/new" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 13, fontWeight: 600, background: 'linear-gradient(135deg,#FF7A2A,#E85A0A)', color: '#fff', borderRadius: 9999, textDecoration: 'none', boxShadow: '0 2px 8px rgba(252,101,20,0.30)' }}>
+              <Icon name={ICONS.add} size={14} /> New Booking
+            </Link>
+          </div>
         </div>
 
         {loading ? (
@@ -470,8 +490,8 @@ export default function BookingsPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#F7F6F5', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
-                  {['Reference', 'Driver', 'Slot', 'Service', 'HBL', 'ICS', 'Status', ''].map(h => (
-                    <th key={h} style={{ textAlign: 'left', padding: '12px 16px', fontSize: 14, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{h}</th>
+                  {['', 'Reference', 'Driver', 'Slot', 'Service', 'HBL', 'Status', ''].map((h, i) => (
+                    <th key={i} style={{ textAlign: 'left', padding: '12px 16px', fontSize: 14, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap', ...(i === 0 ? { width: 8, padding: 0 } : {}) }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -488,8 +508,8 @@ export default function BookingsPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#F7F6F5', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
-                  {['Reference', 'Driver', 'Slot', 'Service', 'HBL', 'ICS', 'Status', ''].map(h => (
-                    <th key={h} style={{ textAlign: 'left', padding: '12px 16px', fontSize: 14, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{h}</th>
+                  {['', 'Reference', 'Driver', 'Slot', 'Service', 'HBL', 'Status', ''].map((h, i) => (
+                    <th key={i} style={{ textAlign: 'left', padding: '12px 16px', fontSize: 14, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap', ...(i === 0 ? { width: 8, padding: 0 } : {}) }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -497,7 +517,6 @@ export default function BookingsPage() {
                 {groupedRows.map(({ primary: b, worstStatus, slotCount }) => {
                   const displayRef = b.groupReference ?? b.referenceNumber
                   const rowBg = b.icsStatus === 'held' ? 'rgba(239,68,68,0.05)' : worstStatus === 'checked_in' ? 'rgba(34,197,94,0.04)' : worstStatus === 'completed' ? 'rgba(0,0,0,0.01)' : ''
-                  const icsStyle = ICS_STYLE[b.icsStatus ?? ''] ?? ''
                   const statusSty = STATUS_STYLE[worstStatus] ?? STATUS_STYLE.scheduled
                   const navTarget = b.groupReference
                     ? `/reception/bookings/group/${b.groupReference}`
@@ -508,6 +527,9 @@ export default function BookingsPage() {
                       onMouseOut={e  => (e.currentTarget.style.background = rowBg)}
                       onClick={() => navigate(navTarget)}
                     >
+                      <td style={{ width: 8, padding: 0, paddingLeft: 4 }}>
+                        <div style={{ width: 4, minHeight: 40, height: '100%', borderRadius: 2, background: ICS_BAR_COLOR[b.icsStatus ?? ''] ?? ICS_BAR_COLOR.unavailable }} />
+                      </td>
                       <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                           <span
@@ -539,13 +561,6 @@ export default function BookingsPage() {
                         {b.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {(b.loadType ?? '').toUpperCase()}
                       </td>
                       <td style={{ padding: '14px 16px', fontFamily: 'ui-monospace,monospace', fontSize: 13, color: '#78716C' }}>{b.houseBillNumber ?? b.containerNumber ?? '—'}</td>
-                      <td style={{ padding: '14px 16px' }}>
-                        {b.icsStatus ? (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 12, fontWeight: 600, padding: '3px 9px', borderRadius: 9999, ...Object.fromEntries(icsStyle.split(';').filter(Boolean).map(s => { const [k, ...v] = s.split(':'); return [k.trim().replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase()), v.join(':').trim()] })) } as any}>
-                            {ICS_LABEL[b.icsStatus]}
-                          </span>
-                        ) : <span style={{ color: '#A8A29E', fontSize: 14 }}>—</span>}
-                      </td>
                       <td style={{ padding: '14px 16px' }}>
                         <span style={{ ...statusSty, borderRadius: 20, padding: '4px 10px', fontSize: 13, fontWeight: 500, display: 'inline-flex', alignItems: 'center' }}>
                           {STATUS_LABEL[worstStatus] ?? worstStatus}
@@ -597,3 +612,4 @@ export default function BookingsPage() {
     </>
   )
 }
+

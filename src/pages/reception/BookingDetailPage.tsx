@@ -5,6 +5,7 @@ import { Icon, ICONS } from '@/lib/Icon'
 import { fmtDateTime } from '@/lib/time'
 import { toast } from '@/lib/toast'
 import { supabase } from '@/lib/supabase'
+import { generateQRDataURL } from '@/lib/qr'
 import {
   getBookingById, checkInBooking, completeBooking,
   cancelBooking, rescheduleBooking, refreshIcsStatus,
@@ -13,6 +14,21 @@ import {
 import type { Booking } from '@/data/types'
 
 const CARD: React.CSSProperties  = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)', marginBottom: 16 }
+
+/** Format a document_type value into a human-readable label.
+ *  Handles: snake_case strings, numeric legacy values, nulls. */
+function fmtDocType(docType: string | number | null | undefined, filename?: string): string {
+  const s = docType != null ? String(docType).trim() : ''
+  // Numeric or empty — fall back to filename heuristic or generic label
+  if (!s || /^\d+$/.test(s)) {
+    if (filename) {
+      const part = filename.split('-')[0].replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ').trim()
+      if (part) return part.replace(/\b\w/g, c => c.toUpperCase())
+    }
+    return 'Document'
+  }
+  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
 const SL: React.CSSProperties   = { fontSize: 14, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 12 }
 const RL: React.CSSProperties   = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, color: '#4B5563' }
 const RV: React.CSSProperties   = { fontSize: 16, fontWeight: 600, color: '#1C1917' }
@@ -49,15 +65,39 @@ export default function BookingDetailPage() {
   const [checkinRecord, setCheckinRecord] = useState<any>(null)
   const [bookingDocs,   setBookingDocs]   = useState<any[]>([])
 
-  // Modal state
-  const [confirmModal,    setConfirmModal]    = useState(false)
-  const [cancelModal,     setCancelModal]     = useState(false)
-  const [rescheduleModal, setRescheduleModal] = useState(false)
+  // Modal state — two-step: action selection → slot selection → action modal
+  const [confirmModal,   setConfirmModal]   = useState(false)  // Mark Complete (kept separate)
+  const [selectedAction, setSelectedAction] = useState<'checkin' | 'reschedule' | 'cancel' | null>(null)
+  const [selectedSlot,   setSelectedSlot]   = useState<Booking | null>(null)
 
   // Form fields
   const [completionNotes, setCompletionNotes] = useState('')
+  const [cancelReason,    setCancelReason]    = useState('')
   const [newDate,  setNewDate]  = useState('')
   const [newStart, setNewStart] = useState('')
+
+  // Open slot-select → action flow. Single-slot groups skip straight to action modal.
+  const openAction = (action: 'checkin' | 'reschedule' | 'cancel') => {
+    if (groupSlots.length <= 1) {
+      const slot = groupSlots[0] ?? b
+      if (slot) {
+        setSelectedSlot(slot)
+        setNewDate(slot.slotDate)
+        setNewStart(slot.slotStartTime)
+      }
+    } else {
+      setSelectedSlot(null)
+    }
+    setSelectedAction(action)
+  }
+
+  const closeActionModal = () => {
+    setSelectedAction(null)
+    setSelectedSlot(null)
+    setCancelReason('')
+  }
+
+  const ACTION_LABEL: Record<string, string> = { checkin: 'Check In', reschedule: 'Reschedule', cancel: 'Cancel Slot' }
 
   useEffect(() => {
     if (!id && !groupRef) return
@@ -201,30 +241,95 @@ export default function BookingDetailPage() {
           {groupSlots.length > 1 ? (
             groupSlots.map((slot, i) => {
               const slotStatusStyle = STATUS_BADGE[slot.status] ?? STATUS_BADGE.scheduled
+              const comboLabel = `${slot.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · ${slot.loadType?.toUpperCase()}`
+
+              const downloadSlotQr = async () => {
+                const url = await generateQRDataURL(slot.referenceNumber, 220)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `${slot.referenceNumber}-QR.png`
+                a.click()
+              }
+
+              const exportSlotPdf = async () => {
+                const { jsPDF } = await import('jspdf')
+                const qrUrl = await generateQRDataURL(slot.referenceNumber, 220)
+                const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+                const pw = doc.internal.pageSize.getWidth()
+                const ph = doc.internal.pageSize.getHeight()
+                let y = 18
+                doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 113, 108)
+                doc.text('BOOKING CONFIRMATION', pw / 2, y, { align: 'center' }); y += 8
+                doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 25, 23)
+                doc.text(`Slot ${i + 1} of ${groupSlots.length}`, pw / 2, y, { align: 'center' }); y += 8
+                doc.setFontSize(13); doc.setFont('courier', 'bold'); doc.setTextColor(100, 92, 80)
+                doc.text(slot.referenceNumber, pw / 2, y, { align: 'center' }); y += 10
+                if (qrUrl) { const sz = 56; doc.addImage(qrUrl, 'PNG', (pw - sz) / 2, y, sz, sz); y += sz + 6 }
+                doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139)
+                doc.text('Present this QR code at the CFS gate for check-in', pw / 2, y, { align: 'center' }); y += 10
+                doc.setDrawColor(220, 215, 210); doc.line(20, y, pw - 20, y); y += 8
+                doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 25, 23)
+                doc.text('Booking Details', 20, y); y += 6
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5)
+                const rows: [string, string][] = [
+                  ['Driver',    b?.driverName || '—'],
+                  ['Service',   comboLabel],
+                  ['Date',      slot.slotDate || '—'],
+                  ['Time',      `${slot.slotStartTime} – ${slot.slotEndTime}`],
+                  ...(slot.houseBillNumber  ? [['HBL',       slot.houseBillNumber]  as [string,string]] : []),
+                  ...(slot.containerNumber  ? [['Container', slot.containerNumber]  as [string,string]] : []),
+                ]
+                for (const [label, val] of rows) {
+                  doc.setTextColor(120, 113, 108); doc.text(label, 20, y)
+                  doc.setTextColor(28, 25, 23);   doc.text(val, pw / 2, y)
+                  y += 5.5
+                }
+                doc.setFontSize(8); doc.setFont('helvetica', 'italic'); doc.setTextColor(156, 163, 175)
+                doc.text('Present this QR code at the CFS gate for check-in', pw / 2, ph - 14, { align: 'center' })
+                doc.text(`Generated ${new Date().toLocaleDateString('en-AU')}`, pw / 2, ph - 9, { align: 'center' })
+                doc.save(`${slot.referenceNumber}.pdf`)
+              }
+
               return (
-                <div key={slot.id} style={{ ...CARD }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <p style={{ ...SL, marginBottom: 0 }}>Slot {i + 1} {slot.referenceNumber && <span style={{ fontFamily: 'ui-monospace,monospace', fontSize: 12, fontWeight: 400, color: '#FC6514' }}>· {slot.referenceNumber}</span>}</p>
+                <div key={slot.id} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 24, marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
+                  {/* Slot header */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.09em', margin: 0 }}>
+                      Slot {i + 1}
+                      {slot.referenceNumber && (
+                        <span style={{ fontFamily: 'ui-monospace,monospace', fontSize: 12, fontWeight: 500, color: '#FC6514', marginLeft: 6 }}>
+                          · {slot.referenceNumber}
+                        </span>
+                      )}
+                    </p>
                     <span style={{ ...slotStatusStyle, fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 9999 }}>
                       {STATUS_LABEL[slot.status] ?? slot.status}
                     </span>
                   </div>
+
+                  {/* Combo badge */}
+                  <div style={{ marginBottom: 16 }}>
+                    <span style={{ background: 'rgba(252,101,20,0.09)', color: '#FC6514', fontWeight: 600, fontSize: 13, padding: '4px 12px', borderRadius: 9999, display: 'inline-block' }}>
+                      {comboLabel}
+                    </span>
+                  </div>
+
+                  {/* Fields grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     <FieldBlock label="Date"        value={slot.slotDate} />
                     <FieldBlock label="Time"        value={`${slot.slotStartTime} – ${slot.slotEndTime}`} />
-                    <FieldBlock label="Service"     value={slot.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} />
-                    <FieldBlock label="Load Type"   value={slot.loadType.toUpperCase()} />
                     {slot.containerNumber  && <FieldBlock label="Container No."  value={slot.containerNumber}  mono />}
-                    {slot.houseBillNumber  && <FieldBlock label="HBL"            value={slot.houseBillNumber}  mono />}
                     {slot.containerSize    && <FieldBlock label="Container Size" value={slot.containerSize} />}
-                    {slot.entryNumber      && <FieldBlock label="Entry Number"   value={slot.entryNumber}   mono />}
+                    {slot.houseBillNumber  && <FieldBlock label="HBL"            value={slot.houseBillNumber}  mono />}
+                    {slot.entryNumber      && <FieldBlock label="Entry Number"   value={slot.entryNumber}      mono />}
                     {slot.purpose          && <FieldBlock label="Purpose"        value={slot.purpose} />}
                     {slot.consolidator     && <FieldBlock label="Consolidator"   value={slot.consolidator} />}
                   </div>
+
                   {/* Per-slot actions */}
-                  {slot.status === 'scheduled' && (
-                    <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                      <button type="button" onClick={async () => { setActing(slot.id + '-checkin'); try { await checkInBooking(slot.id); setGroupSlots(prev => prev.map(s => s.id === slot.id ? { ...s, status: 'checked_in' as any } : s)); if (slot.id === b?.id) setB(prev => prev ? { ...prev, status: 'checked_in' as any } : prev); toast('Checked in', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+                    {slot.status === 'scheduled' && (<>
+                      <button type="button" onClick={async () => { setActing(slot.id + '-checkin'); try { await checkInBooking(slot.id); setGroupSlots(prev => { const next = prev.map(s => s.id === slot.id ? { ...s, status: 'checked_in' as any } : s); const allChecked = next.every(s => s.status === 'checked_in' || s.status === 'completed' || s.status === 'cancelled'); if (allChecked) setB(p => p ? { ...p, status: 'checked_in' as any } : p); return next }); toast('Checked in', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
                         disabled={acting === slot.id + '-checkin'}
                         style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, background: 'rgba(34,197,94,0.10)', color: '#16A34A', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
                         {acting === slot.id + '-checkin' ? '…' : 'Check In'}
@@ -234,17 +339,37 @@ export default function BookingDetailPage() {
                         style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.20)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
                         {acting === slot.id + '-cancel' ? '…' : 'Cancel Slot'}
                       </button>
-                    </div>
-                  )}
-                  {slot.status === 'checked_in' && (
-                    <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                    </>)}
+                    {slot.status === 'checked_in' && (
                       <button type="button" onClick={async () => { setActing(slot.id + '-complete'); try { await completeBooking(slot.id); setGroupSlots(prev => prev.map(s => s.id === slot.id ? { ...s, status: 'completed' as any } : s)); if (slot.id === b?.id) setB(prev => prev ? { ...prev, status: 'completed' as any } : prev); toast('Completed', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
                         disabled={acting === slot.id + '-complete'}
                         style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, background: 'rgba(107,114,128,0.10)', color: '#374151', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
                         {acting === slot.id + '-complete' ? '…' : 'Complete'}
                       </button>
+                    )}
+
+                    {/* QR / PDF downloads */}
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={downloadSlotQr}
+                        style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 12, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', transition: 'border-color 0.12s' }}
+                        onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.28)' }}
+                        onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.14)' }}
+                      >
+                        <Icon name={ICONS.download} size={12} /> QR
+                      </button>
+                      <button
+                        type="button"
+                        onClick={exportSlotPdf}
+                        style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 12, fontWeight: 600, color: '#fff', background: 'var(--brand-color, #FC6514)', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 0.12s' }}
+                        onMouseOver={e => { e.currentTarget.style.opacity = '0.88' }}
+                        onMouseOut={e  => { e.currentTarget.style.opacity = '1' }}
+                      >
+                        <Icon name={ICONS.document} size={12} /> PDF
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </div>
               )
             })
@@ -295,8 +420,8 @@ export default function BookingDetailPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                         <Icon name={ICONS.document} size={16} style={{ color: '#78716C', flexShrink: 0 }} />
                         <div style={{ minWidth: 0 }}>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', margin: 0, textTransform: 'capitalize' }}>
-                            {doc.document_type ? doc.document_type.replace(/_/g, ' ') : 'Document'}
+                          <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', margin: 0 }}>
+                            {fmtDocType(doc.document_type, doc.filename)}
                           </p>
                           <p style={{ fontSize: 12, color: '#78716C', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.filename}</p>
                         </div>
@@ -412,94 +537,289 @@ export default function BookingDetailPage() {
             </div>
           </div>
 
-          {/* Actions */}
-          {(b.status === 'scheduled' || b.status === 'checked_in') && (
-            <div style={CARD}>
-              <p style={SL}>Actions</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {b.status === 'scheduled' && (
-                  <Btn color="green" loading={acting === 'checkin'} onClick={() => act('checkin', () => checkInBooking(b.id), `✓ ${b.driverName} checked in`, 'success')}>
-                    <Icon name={ICONS.userCheck} size={16} /> Check In Visitor
-                  </Btn>
-                )}
-                {b.status === 'checked_in' && (
-                  <Btn color="brand" loading={acting === 'complete'} onClick={() => setConfirmModal(true)}>
-                    <Icon name={ICONS.checkSquare} size={16} /> Mark Complete
-                  </Btn>
-                )}
-                {b.status === 'scheduled' && (
-                  <Btn color="ghost" onClick={() => setRescheduleModal(true)}>
-                    <Icon name={ICONS.calendar} size={14} /> Reschedule
-                  </Btn>
-                )}
-                {b.status === 'scheduled' && (
-                  <Btn color="danger" onClick={() => setCancelModal(true)}>
-                    <Icon name={ICONS.close} size={14} /> Cancel Booking
-                  </Btn>
-                )}
+          {/* Actions — derive visibility from per-slot statuses, not group-level b.status */}
+          {(() => {
+            const slots = groupSlots.length > 0 ? groupSlots : (b ? [b] : [])
+            const hasActionable  = slots.some(s => s.status === 'scheduled')
+            const hasCheckedIn   = slots.some(s => s.status === 'checked_in')
+            const allDone        = slots.every(s => s.status === 'checked_in' || s.status === 'completed' || s.status === 'cancelled')
+            if (!hasActionable && !hasCheckedIn) return null
+            return (
+              <div style={CARD}>
+                <p style={SL}>Actions</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {hasActionable && (
+                    <Btn color="green" onClick={() => openAction('checkin')}>
+                      <Icon name={ICONS.userCheck} size={16} /> Check In Visitor
+                    </Btn>
+                  )}
+                  {hasCheckedIn && allDone && (
+                    <>
+                      <button
+                        disabled={acting === 'complete'}
+                        onClick={() => setConfirmModal(true)}
+                        style={{ width: '100%', padding: '11px 16px', borderRadius: 10, border: 'none', background: 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: acting === 'complete' ? 'not-allowed' : 'pointer', opacity: acting === 'complete' ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit', transition: 'opacity 0.15s' }}
+                      >
+                        <Icon name={ICONS.checkSquare} size={16} /> {acting === 'complete' ? 'Completing…' : 'Mark Complete'}
+                      </button>
+                      <button
+                        onClick={() => openAction('checkin')}
+                        style={{ width: '100%', marginTop: 0, padding: '11px 16px', borderRadius: 10, border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', color: '#1C1917', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                      >
+                        Slot Actions
+                      </button>
+                    </>
+                  )}
+                  {hasActionable && (
+                    <Btn color="ghost" onClick={() => openAction('reschedule')}>
+                      <Icon name={ICONS.calendar} size={14} /> Reschedule
+                    </Btn>
+                  )}
+                  {hasActionable && (
+                    <Btn color="danger" onClick={() => openAction('cancel')}>
+                      <Icon name={ICONS.close} size={14} /> Cancel Booking
+                    </Btn>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
         </div>
       </div>
 
-      {/* ── Reschedule modal ── */}
-      {rescheduleModal && (
-        <ModalWrap onClose={() => setRescheduleModal(false)}>
-          <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1C1917', marginBottom: 6 }}>Reschedule Booking</h3>
-          <p style={{ fontSize: 13, color: '#78716C', marginBottom: 20, lineHeight: 1.5 }}>
-            Change the slot for <strong style={{ fontFamily: 'ui-monospace,monospace', color: '#1C1917' }}>{b.referenceNumber}</strong>.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>New Date</label>
-              <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} style={FIELD} onFocus={focus} onBlur={blur} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>New Start Time</label>
-              <input type="time" value={newStart} onChange={e => setNewStart(e.target.value)} style={FIELD} onFocus={focus} onBlur={blur} />
-            </div>
+      {/* ── Step 1: Slot Selection Modal (multi-slot groups only) ── */}
+      {selectedAction && !selectedSlot && groupSlots.length > 1 && (
+        <ModalWrap onClose={closeActionModal}>
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: '#FC6514', marginBottom: 6 }}>
+              {ACTION_LABEL[selectedAction]}
+            </p>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1C1917', marginBottom: 4 }}>Select a slot</h3>
+            <p style={{ fontSize: 13, color: '#78716C' }}>Choose which slot to {selectedAction === 'checkin' ? 'check in' : selectedAction}.</p>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <Btn color="ghost" onClick={() => setRescheduleModal(false)}>Cancel</Btn>
-            <Btn color="brand" loading={acting === 'reschedule'} onClick={async () => {
-              const endH = String(parseInt(newStart.split(':')[0]) + 1).padStart(2, '0')
-              await act('reschedule', () => rescheduleBooking(b.id, newDate, newStart, `${endH}:${newStart.split(':')[1]}`), `Rescheduled to ${newDate} at ${newStart}`, 'success')
-              setRescheduleModal(false)
-            }}>
-              <Icon name={ICONS.calendar} size={14} /> Confirm Reschedule
-            </Btn>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+            {groupSlots.map((slot, i) => {
+              const slotSt = STATUS_BADGE[slot.status] ?? STATUS_BADGE.scheduled
+              const comboLabel = `${slot.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · ${slot.loadType?.toUpperCase()}`
+              const actionable = selectedAction === 'checkin'
+                ? slot.status === 'scheduled'
+                : selectedAction === 'reschedule'
+                ? slot.status === 'scheduled'
+                : slot.status !== 'cancelled'
+              return (
+                <button
+                  key={slot.id}
+                  type="button"
+                  disabled={!actionable}
+                  onClick={() => { setSelectedSlot(slot); setNewDate(slot.slotDate); setNewStart(slot.slotStartTime) }}
+                  style={{
+                    width: '100%', textAlign: 'left', padding: '14px 16px',
+                    background: actionable ? '#FAFAF9' : 'rgba(0,0,0,0.025)',
+                    border: `1.5px solid ${actionable ? 'rgba(0,0,0,0.09)' : 'rgba(0,0,0,0.06)'}`,
+                    borderRadius: 12, cursor: actionable ? 'pointer' : 'not-allowed',
+                    opacity: actionable ? 1 : 0.5,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                    transition: 'border-color 0.14s, background 0.14s',
+                    fontFamily: 'inherit',
+                  }}
+                  onMouseOver={e => { if (actionable) { e.currentTarget.style.borderColor = 'rgba(252,101,20,0.40)'; e.currentTarget.style.background = 'rgba(252,101,20,0.03)' } }}
+                  onMouseOut={e  => { e.currentTarget.style.borderColor = actionable ? 'rgba(0,0,0,0.09)' : 'rgba(0,0,0,0.06)'; e.currentTarget.style.background = actionable ? '#FAFAF9' : 'rgba(0,0,0,0.025)' }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Slot {i + 1}</span>
+                      <span style={{ fontFamily: 'ui-monospace,monospace', fontSize: 12, fontWeight: 600, color: '#FC6514' }}>{slot.referenceNumber}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 13, color: '#1C1917', fontWeight: 500 }}>{slot.slotDate} · {slot.slotStartTime}–{slot.slotEndTime}</span>
+                      <span style={{ background: 'rgba(252,101,20,0.09)', color: '#FC6514', fontWeight: 600, fontSize: 11, padding: '2px 8px', borderRadius: 9999 }}>
+                        {comboLabel}
+                      </span>
+                      <span style={{ ...slotSt, fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 9999 }}>
+                        {STATUS_LABEL[slot.status] ?? slot.status}
+                      </span>
+                    </div>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: '#A8A29E' }}>
+                    <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              )
+            })}
           </div>
+
+          <Btn color="ghost" onClick={closeActionModal}>Cancel</Btn>
         </ModalWrap>
       )}
 
-      {/* ── Cancel modal ── */}
-      {cancelModal && (
-        <ModalWrap onClose={() => setCancelModal(false)}>
-          <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1C1917', marginBottom: 6 }}>Cancel this booking?</h3>
-          <p style={{ fontSize: 13, color: '#78716C', marginBottom: 20, lineHeight: 1.5 }}>
-            You are cancelling <strong style={{ fontFamily: 'ui-monospace,monospace', color: '#1C1917' }}>{b.referenceNumber}</strong> for <strong style={{ color: '#1C1917' }}>{b.driverName}</strong>. This cannot be undone.
-          </p>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <Btn color="ghost" onClick={() => setCancelModal(false)}>Keep Booking</Btn>
-            <Btn color="danger" loading={acting === 'cancel'} onClick={async () => {
-              setActing('cancel')
-              try {
-                await cancelBooking(b.id)
-                setB(prev => prev ? { ...prev, status: 'cancelled' as Booking['status'] } : prev)
-                toast(`Booking ${b.referenceNumber} cancelled`, 'info')
-                setCancelModal(false)
-              } catch (err: any) {
-                toast(err?.message ?? 'Action failed', 'error')
-              } finally {
-                setActing('')
-              }
-            }}>
-              <Icon name={ICONS.close} size={14} /> Confirm Cancel
-            </Btn>
-          </div>
-        </ModalWrap>
-      )}
+      {/* ── Step 2: Action Modal (per slot) ── */}
+      {selectedAction && selectedSlot && (() => {
+        const sl = selectedSlot
+        const comboLabel = `${sl.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · ${sl.loadType?.toUpperCase()}`
+        const slotSt = STATUS_BADGE[sl.status] ?? STATUS_BADGE.scheduled
+        const isMulti = groupSlots.length > 1
+        return (
+          <ModalWrap onClose={closeActionModal}>
+            {/* Back button — always shown; single-slot goes straight to close */}
+            <button
+              type="button"
+              onClick={() => isMulti ? setSelectedSlot(null) : closeActionModal()}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 18px', fontFamily: 'inherit' }}
+            >
+              <Icon name={ICONS.arrowLeft} size={16} /> Back
+            </button>
+
+            {/* Eyebrow + heading */}
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--brand-color, #FC6514)', textTransform: 'uppercase', margin: '0 0 6px' }}>
+              {ACTION_LABEL[selectedAction]}
+            </p>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.02em', margin: '0 0 20px' }}>
+              {selectedAction === 'checkin' ? 'Confirm Check In' : selectedAction === 'reschedule' ? 'Reschedule Slot' : 'Cancel Slot'}
+            </h2>
+
+            {/* Slot card */}
+            <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: '14px 16px', marginBottom: 20 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-color, #FC6514)', fontFamily: 'ui-monospace,monospace', letterSpacing: '0.01em', margin: '0 0 4px' }}>
+                {sl.referenceNumber}
+              </p>
+              <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 10px' }}>
+                {sl.slotDate} &nbsp;·&nbsp; {sl.slotStartTime} – {sl.slotEndTime}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                <span style={{ background: 'rgba(252,101,20,0.09)', color: '#FC6514', fontWeight: 600, fontSize: 11, padding: '2px 8px', borderRadius: 9999 }}>
+                  {comboLabel}
+                </span>
+                <span style={{ ...slotSt, fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 9999 }}>
+                  {STATUS_LABEL[sl.status] ?? sl.status}
+                </span>
+              </div>
+            </div>
+
+            {/* ── Check In ── */}
+            {selectedAction === 'checkin' && (
+              <>
+                <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6, margin: 0 }}>
+                  Checking in <strong style={{ color: '#1C1917', fontWeight: 700 }}>{sl.driverName || b.driverName}</strong> will mark
+                  this slot as arrived and record the exact time.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 24 }}>
+                  <button
+                    disabled={acting === 'checkin-' + sl.id}
+                    onClick={async () => {
+                      setActing('checkin-' + sl.id)
+                      try {
+                        await checkInBooking(sl.id)
+                        setGroupSlots(prev => {
+                          const next = prev.map(s => s.id === sl.id ? { ...s, status: 'checked_in' as any } : s)
+                          // Only promote group-level status to checked_in when every slot is now checked in or done
+                          const allChecked = next.every(s => s.status === 'checked_in' || s.status === 'completed' || s.status === 'cancelled')
+                          if (allChecked) setB(p => p ? { ...p, status: 'checked_in' as any } : p)
+                          return next
+                        })
+                        toast(`✓ ${b.driverName} checked in`, 'success')
+                        closeActionModal()
+                      } catch (err: any) {
+                        toast(err?.message ?? 'Check-in failed', 'error')
+                      } finally {
+                        setActing('')
+                      }
+                    }}
+                    style={{ width: '100%', padding: '14px', borderRadius: 12, border: 'none', background: 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: acting === 'checkin-' + sl.id ? 'not-allowed' : 'pointer', opacity: acting === 'checkin-' + sl.id ? 0.6 : 1, fontFamily: 'inherit', transition: 'opacity 0.15s' }}
+                  >
+                    {acting === 'checkin-' + sl.id ? 'Checking in…' : 'Confirm Check In'}
+                  </button>
+                  <button
+                    onClick={closeActionModal}
+                    style={{ width: '100%', padding: '14px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', color: '#1C1917', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* ── Reschedule ── */}
+            {selectedAction === 'reschedule' && (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>New Date</label>
+                    <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} style={FIELD} onFocus={focus} onBlur={blur} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>New Start Time</label>
+                    <input type="time" value={newStart} onChange={e => setNewStart(e.target.value)} style={FIELD} onFocus={focus} onBlur={blur} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <Btn color="ghost" onClick={closeActionModal}>Cancel</Btn>
+                  <Btn color="brand" loading={acting === 'reschedule-' + sl.id} onClick={async () => {
+                    const endH = String(parseInt(newStart.split(':')[0]) + 1).padStart(2, '0')
+                    const newEnd = `${endH}:${newStart.split(':')[1]}`
+                    setActing('reschedule-' + sl.id)
+                    try {
+                      const updated = await rescheduleBooking(sl.id, newDate, newStart, newEnd)
+                      if (updated) {
+                        setGroupSlots(prev => prev.map(s => s.id === sl.id ? { ...s, slotDate: newDate, slotStartTime: newStart, slotEndTime: newEnd } : s))
+                        if (sl.id === b?.id) setB(updated)
+                      }
+                      toast(`Rescheduled to ${newDate} at ${newStart}`, 'success')
+                      closeActionModal()
+                    } catch (err: any) {
+                      toast(err?.message ?? 'Reschedule failed', 'error')
+                    } finally {
+                      setActing('')
+                    }
+                  }}>
+                    <Icon name={ICONS.calendar} size={14} /> Confirm Reschedule
+                  </Btn>
+                </div>
+              </>
+            )}
+
+            {/* ── Cancel ── */}
+            {selectedAction === 'cancel' && (
+              <>
+                <p style={{ fontSize: 13, color: '#78716C', marginBottom: 16, lineHeight: 1.5 }}>
+                  You are cancelling slot <strong style={{ fontFamily: 'ui-monospace,monospace', color: '#1C1917' }}>{sl.referenceNumber}</strong>. This cannot be undone.
+                </p>
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Reason (optional)</label>
+                  <textarea
+                    rows={3}
+                    value={cancelReason}
+                    onChange={e => setCancelReason(e.target.value)}
+                    placeholder="e.g. Shipment delayed, driver unavailable…"
+                    style={{ ...FIELD, resize: 'none' }}
+                    onFocus={focus}
+                    onBlur={blur}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <Btn color="ghost" onClick={closeActionModal}>Keep Slot</Btn>
+                  <Btn color="danger" loading={acting === 'cancel-' + sl.id} onClick={async () => {
+                    setActing('cancel-' + sl.id)
+                    try {
+                      await cancelBooking(sl.id)
+                      setGroupSlots(prev => prev.map(s => s.id === sl.id ? { ...s, status: 'cancelled' as any } : s))
+                      if (sl.id === b?.id) setB(prev => prev ? { ...prev, status: 'cancelled' as Booking['status'] } : prev)
+                      toast(`Slot ${sl.referenceNumber} cancelled`, 'info')
+                      closeActionModal()
+                    } catch (err: any) {
+                      toast(err?.message ?? 'Cancel failed', 'error')
+                    } finally {
+                      setActing('')
+                    }
+                  }}>
+                    <Icon name={ICONS.close} size={14} /> Cancel Slot
+                  </Btn>
+                </div>
+              </>
+            )}
+          </ModalWrap>
+        )
+      })()}
 
       {/* ── Mark Complete modal ── */}
       {confirmModal && (
@@ -586,8 +906,8 @@ function TRow({ icon, iconColor, label, value, valueColor }: { icon: string; ico
 function ModalWrap({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={onClose} />
-      <div style={{ position: 'relative', background: '#FFFFFF', borderRadius: 16, boxShadow: '0 24px 64px rgba(0,0,0,0.28)', maxWidth: 420, width: '100%', padding: 24 }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.60)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
+      <div style={{ position: 'relative', background: '#FFFFFF', borderRadius: 20, boxShadow: '0 24px 64px rgba(0,0,0,0.28)', maxWidth: 520, width: '100%', padding: 28 }}>
         {children}
       </div>
     </div>

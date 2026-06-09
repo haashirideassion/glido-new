@@ -44,6 +44,7 @@ interface SlotConfigState {
   advanceBookingDays: string
   sameDayCutoff:      string
   holdDuration:       string
+  capacityByHour:     Record<string, number>  // e.g. { "08:00": 4, "09:00": 6 }
 }
 
 const DEFAULT_SLOT_CONFIG: SlotConfigState = {
@@ -52,6 +53,31 @@ const DEFAULT_SLOT_CONFIG: SlotConfigState = {
   advanceBookingDays: '30',
   sameDayCutoff:      '08:00',
   holdDuration:       '10',
+  capacityByHour:     {},
+}
+
+/** Generate hourly (or sub-hourly) time-bucket start times between open and close. */
+function makeTimeBuckets(openTime: string, closeTime: string, durationMin: number): string[] {
+  const [oh, om] = openTime.split(':').map(Number)
+  const [ch, cm] = closeTime.split(':').map(Number)
+  const startMin = oh * 60 + om
+  const endMin   = ch * 60 + cm
+  const buckets: string[] = []
+  for (let t = startMin; t < endMin; t += durationMin) {
+    const h = String(Math.floor(t / 60)).padStart(2, '0')
+    const m = String(t % 60).padStart(2, '0')
+    buckets.push(`${h}:${m}`)
+  }
+  return buckets
+}
+
+/** Format a bucket start time + duration into a range label e.g. "08:00 – 09:00" */
+function bucketLabel(start: string, durationMin: number): string {
+  const [h, m] = start.split(':').map(Number)
+  const endMin  = h * 60 + m + durationMin
+  const eh = String(Math.floor(endMin / 60)).padStart(2, '0')
+  const em = String(endMin % 60).padStart(2, '0')
+  return `${start} – ${eh}:${em}`
 }
 
 interface CargowiseState {
@@ -175,8 +201,14 @@ const DEFAULT_PERIODS: SlotPeriodsState = {
 
 // ─── Helper components ────────────────────────────────────────────────────────
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div><label style={LABEL}>{label}</label>{children}</div>
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label style={LABEL}>{label}</label>
+      {children}
+      {hint && <p style={{ fontSize: 11, color: '#A8A29E', marginTop: 5, lineHeight: 1.4 }}>{hint}</p>}
+    </div>
+  )
 }
 
 function FocusInput({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -341,15 +373,17 @@ export default function SettingsPage() {
     getTenant(DEFAULT_TENANT_ID)
       .then(tenant => {
         if (!tenant) return
-        setGeneral({
+        setGeneral(prev => ({
           name:         tenant.name              ?? '',
           address:      tenant.address           ?? '',
-          logoUrl:      tenant.logo_url          ?? '',
+          // Don't overwrite logoUrl if an upload just completed — stale DB value
+          // would replace the freshly-uploaded URL before the next save cycle.
+          logoUrl:      logoJustUploaded.current ? prev.logoUrl : (tenant.logo_url ?? ''),
           primaryColor: tenant.primary_color     ?? '#FC6514',
           timezone:     tenant.timezone          ?? 'Australia/Sydney',
           contactEmail: tenant.contact_email     ?? '',
           contactPhone: tenant.contact_phone     ?? '',
-        })
+        }))
       })
       .catch(() => { /* use defaults */ })
       .finally(() => setGeneralLoading(false))
@@ -387,9 +421,13 @@ export default function SettingsPage() {
         .upload(path, file, { upsert: true, contentType: file.type })
       if (upErr) throw upErr
       const { data } = supabase.storage.from('tenant-assets').getPublicUrl(path)
+      // Guard against stale DB value overwriting this URL on any subsequent re-render
+      logoJustUploaded.current = true
       setGeneral(g => ({ ...g, logoUrl: data.publicUrl }))
+      // Persist immediately — no need to hit "Save Changes" for logo
+      await updateTenant(DEFAULT_TENANT_ID, { logo_url: data.publicUrl })
       toast('Logo uploaded', 'success')
-      setGeneralDirty(true)
+      window.location.reload()
     } catch (err: any) {
       toast(err?.message ?? 'Logo upload failed', 'error')
     } finally {
@@ -564,12 +602,22 @@ export default function SettingsPage() {
     getTenant(DEFAULT_TENANT_ID)
       .then(tenant => {
         if (!tenant) return
+        const defaultCap = tenant.max_bookings_per_slot ?? 5
+        const savedCap   = (tenant as any).slot_capacity_by_hour as Record<string, number> | null
+        // If no per-hour map exists yet, pre-fill every bucket with the global default
+        const wh        = tenant.working_hours as any
+        const openTime  = wh?.mon?.open  ?? '07:00'
+        const closeTime = wh?.mon?.close ?? '18:00'
+        const duration  = tenant.slot_duration_min ?? 60
+        const buckets   = makeTimeBuckets(openTime, closeTime, duration)
+        const capacityByHour = savedCap ?? Object.fromEntries(buckets.map(b => [b, defaultCap]))
         setSlotConfig({
           slotDuration:       String(tenant.slot_duration_min      ?? DEFAULT_SLOT_CONFIG.slotDuration),
           maxBookingsPerSlot: String(tenant.max_bookings_per_slot  ?? DEFAULT_SLOT_CONFIG.maxBookingsPerSlot),
           advanceBookingDays: String(tenant.advance_booking_days   ?? DEFAULT_SLOT_CONFIG.advanceBookingDays),
           sameDayCutoff:      tenant.same_day_cutoff_time          ?? '',
           holdDuration:       String(tenant.slot_hold_duration_min ?? DEFAULT_SLOT_CONFIG.holdDuration),
+          capacityByHour,
         })
       })
       .catch(() => { /* use defaults */ })
@@ -581,12 +629,15 @@ export default function SettingsPage() {
     setSlotConfigSaving(true)
     try {
       await updateTenant(DEFAULT_TENANT_ID, {
-        slot_duration_min:      Number(slotConfig.slotDuration),
-        max_bookings_per_slot:  Number(slotConfig.maxBookingsPerSlot),
-        advance_booking_days:   Number(slotConfig.advanceBookingDays),
+        slot_duration_min:        Number(slotConfig.slotDuration),
+        max_bookings_per_slot:    Number(slotConfig.maxBookingsPerSlot),
+        advance_booking_days:     Number(slotConfig.advanceBookingDays),
         // same_day_cutoff_time: slotConfig.sameDayCutoff || null,
-        slot_hold_duration_min: Number(slotConfig.holdDuration),
-      })
+        slot_hold_duration_min:   Number(slotConfig.holdDuration),
+        slot_capacity_by_hour:    Object.keys(slotConfig.capacityByHour).length > 0
+          ? slotConfig.capacityByHour
+          : null,
+      } as any)
       toast('Slot configuration saved', 'success')
       setSlotConfigDirty(false)
     } catch (err: any) {
@@ -743,7 +794,8 @@ export default function SettingsPage() {
   // Load staff users once when the User Management tab is opened.
   // Guarded by a ref so re-renders (e.g. role updates, toasts) never re-fetch;
   // resets when leaving the tab so re-opening pulls fresh data.
-  const usersLoadedRef = useRef(false)
+  const usersLoadedRef     = useRef(false)
+  const logoJustUploaded   = useRef(false)
   useEffect(() => {
     if (tab === 'User Management' && isAdmin) {
       if (!usersLoadedRef.current) {
@@ -869,43 +921,87 @@ export default function SettingsPage() {
             {whLoading ? <Skeleton /> : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {DAYS.map(({ key, label }) => {
+                  // Derive period boundaries — constrain selectors to enabled slot period range
+                  const activePeriods = Object.values(slotPeriods).filter(p => p.enabled)
+                  const minOpen  = activePeriods.length ? activePeriods.map(p => p.start).sort()[0]         : null
+                  const maxClose = activePeriods.length ? activePeriods.map(p => p.end).sort().reverse()[0] : null
                   const day = workingHours[key]
+                  // Periods that overlap this day's open/close window
+                  const dayPeriods = day.enabled
+                    ? activePeriods.filter(p => p.start < day.close && p.end > day.open)
+                    : activePeriods
+                  const openExceedsMin  = minOpen  && day.enabled && day.open  > minOpen
+                  const closeExceedsMax = maxClose && day.enabled && day.close > maxClose
                   return (
-                    <div key={key} style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr 90px', gap: 16, alignItems: 'center' }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: day.enabled ? '#1C1917' : '#A8A29E' }}>{label}</span>
+                    <div key={key}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr 90px', gap: 16, alignItems: 'start' }}>
+                        {/* Day label — vertically centred to the selector height */}
+                        <span style={{ fontSize: 14, fontWeight: 600, color: day.enabled ? '#1C1917' : '#A8A29E', paddingTop: 22 }}>{label}</span>
 
-                      <Field label="Open">
-                        <FocusSelect
-                          value={day.open}
-                          disabled={!day.enabled}
-                          onChange={e => setDay(key, 'open', e.target.value)}
-                        >
-                          {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                        </FocusSelect>
-                      </Field>
+                        {/* Open selector */}
+                        <div>
+                          <p style={LABEL}>Open</p>
+                          <CustomSelect
+                            neutral
+                            placeholder="Open time"
+                            value={day.open}
+                            onChange={v => { setDay(key, 'open', v); setWhDirty(true) }}
+                            options={TIME_OPTIONS
+                              .filter(t => !maxClose || t <= maxClose)
+                              .map(t => ({ value: t, label: t }))}
+                          />
+                          {openExceedsMin && (
+                            <p style={{ fontSize: 11, color: '#D97706', marginTop: 4, lineHeight: 1.4 }}>
+                              Open time is earlier than the first slot period ({minOpen}). Bookings won't be accepted until {minOpen}.
+                            </p>
+                          )}
+                        </div>
 
-                      <Field label="Close">
-                        <FocusSelect
-                          value={day.close}
-                          disabled={!day.enabled}
-                          onChange={e => setDay(key, 'close', e.target.value)}
-                        >
-                          {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                        </FocusSelect>
-                      </Field>
+                        {/* Close selector */}
+                        <div>
+                          <p style={LABEL}>Close</p>
+                          <CustomSelect
+                            neutral
+                            placeholder="Close time"
+                            value={day.close}
+                            onChange={v => { setDay(key, 'close', v); setWhDirty(true) }}
+                            options={TIME_OPTIONS
+                              .filter(t => !maxClose || t <= maxClose)
+                              .map(t => ({ value: t, label: t }))}
+                          />
+                          {closeExceedsMax && (
+                            <p style={{ fontSize: 11, color: '#D97706', marginTop: 4, lineHeight: 1.4 }}>
+                              Close time exceeds available slot periods. Bookings will only run until {maxClose}.
+                            </p>
+                          )}
+                        </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 18 }}>
-                        <input
-                          type="checkbox"
-                          checked={day.enabled}
-                          onChange={e => setDay(key, 'enabled', e.target.checked)}
-                          style={{ accentColor: '#FC6514', width: 16, height: 16, cursor: 'pointer' }}
-                        />
-                        <span style={{ fontSize: 12, color: '#78716C' }}>Open</span>
+                        {/* Open/closed toggle — aligned to selector */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 22 }}>
+                          <input
+                            type="checkbox"
+                            checked={day.enabled}
+                            onChange={e => setDay(key, 'enabled', e.target.checked)}
+                            style={{ accentColor: '#FC6514', width: 16, height: 16, cursor: 'pointer' }}
+                          />
+                          <span style={{ fontSize: 12, color: '#78716C' }}>Open</span>
+                        </div>
                       </div>
+
+                      {/* Slot period chips — shown under each day row */}
+                      {day.enabled && dayPeriods.length > 0 && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingLeft: 136, marginTop: 6, marginBottom: 4 }}>
+                          {dayPeriods.map(p => (
+                            <span key={p.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500, color: '#78716C', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 6, padding: '2px 8px', fontFamily: 'ui-monospace,monospace' }}>
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FC6514', flexShrink: 0, display: 'inline-block' }} />
+                              {p.label} · {p.start}–{p.end}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )
-                })}
+                  })}
               </div>
             )}
           </div>
@@ -1044,12 +1140,12 @@ export default function SettingsPage() {
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                     <Field label="Logo">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {general.logoUrl && (
-                          <img src={general.logoUrl} alt="Logo" style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 8, border: '1px solid rgba(0,0,0,0.08)', background: '#f9fafb', flexShrink: 0 }} />
+                          <img src={`${general.logoUrl}?t=${Date.now()}`} alt="Logo" style={{ height: 48, objectFit: 'contain', maxWidth: 160, borderRadius: 8, border: '1px solid rgba(0,0,0,0.08)', background: '#f9fafb' }} />
                         )}
-                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', fontSize: 13, fontWeight: 600, color: '#374151', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 10, cursor: logoUploading ? 'not-allowed' : 'pointer', opacity: logoUploading ? 0.6 : 1 }}>
-                          {logoUploading ? 'Uploading…' : 'Upload Logo'}
+                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', fontSize: 13, fontWeight: 600, color: '#374151', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 10, cursor: logoUploading ? 'not-allowed' : 'pointer', opacity: logoUploading ? 0.6 : 1, alignSelf: 'flex-start' }}>
+                          {logoUploading ? 'Uploading…' : general.logoUrl ? 'Change Logo' : 'Upload Logo'}
                           <input type="file" accept="image/*" style={{ display: 'none' }} disabled={logoUploading} onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f) }} />
                         </label>
                       </div>
@@ -1076,41 +1172,125 @@ export default function SettingsPage() {
                   {[0,1,2,3,4].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                  <Field label="Slot Duration (minutes)">
-                    <CustomSelect
-                      placeholder="Select duration"
-                      value={slotConfig.slotDuration}
-                      onChange={v => { setSlotConfig(s => ({ ...s, slotDuration: v })); setSlotConfigDirty(true) }}
-                      options={[
-                        { value: '15',  label: '15 minutes' },
-                        { value: '30',  label: '30 minutes' },
-                        { value: '60',  label: '60 minutes' },
-                        { value: '120', label: '120 minutes' },
-                      ]}
-                    />
-                  </Field>
-                  <Field label="Max Bookings Per Slot">
-                    <FocusInput type="number" min="1" max="999" value={slotConfig.maxBookingsPerSlot}
-                      onChange={e => { setSlotConfig(s => ({ ...s, maxBookingsPerSlot: e.target.value })); setSlotConfigDirty(true) }} />
-                  </Field>
-                  <Field label="Advance Booking Window (days)">
-                    <FocusInput type="number" min="1" max="90" value={slotConfig.advanceBookingDays}
-                      onChange={e => { setSlotConfig(s => ({ ...s, advanceBookingDays: e.target.value })); setSlotConfigDirty(true) }} />
-                  </Field>
-                  {/* <Field label="Same-day Cutoff Time">
-                    <CustomSelect
-                      placeholder="No cutoff — allow any time"
-                      value={slotConfig.sameDayCutoff}
-                      onChange={v => { setSlotConfig(s => ({ ...s, sameDayCutoff: v })); setSlotConfigDirty(true) }}
-                      options={TIME_OPTIONS.map(t => ({ value: t, label: t }))}
-                    />
-                  </Field> */}
-                  <Field label="Slot Hold Duration (minutes)">
-                    <FocusInput type="number" min="5" max="30" value={slotConfig.holdDuration}
-                      onChange={e => { setSlotConfig(s => ({ ...s, holdDuration: e.target.value })); setSlotConfigDirty(true) }} />
-                  </Field>
-                </div>
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <Field label="Slot Duration (minutes)">
+                      <CustomSelect
+                        placeholder="Select duration"
+                        value={slotConfig.slotDuration}
+                        onChange={v => {
+                          // Rebuild capacity grid when duration changes, preserving existing values
+                          const dur = Number(v)
+                          const enabledPeriods = Object.values(slotPeriods).filter(p => p.enabled)
+                          const wh             = Object.values(workingHours).filter((d: any) => d.enabled) as { open: string; close: string }[]
+                          const whOpen  = enabledPeriods.length ? enabledPeriods.map(p => p.start).sort()[0]
+                            : wh.length ? wh.map(d => d.open).sort()[0] : '07:00'
+                          const whClose = enabledPeriods.length ? enabledPeriods.map(p => p.end).sort().reverse()[0]
+                            : wh.length ? wh.map(d => d.close).sort().reverse()[0] : '18:00'
+                          const buckets = makeTimeBuckets(whOpen, whClose, dur)
+                          const newCap: Record<string, number> = {}
+                          for (const b of buckets) {
+                            newCap[b] = slotConfig.capacityByHour[b] ?? Number(slotConfig.maxBookingsPerSlot)
+                          }
+                          setSlotConfig(s => ({ ...s, slotDuration: v, capacityByHour: newCap }))
+                          setSlotConfigDirty(true)
+                        }}
+                        options={[
+                          { value: '15',  label: '15 minutes' },
+                          { value: '30',  label: '30 minutes' },
+                          { value: '60',  label: '60 minutes' },
+                          { value: '120', label: '120 minutes' },
+                        ]}
+                      />
+                    </Field>
+                    <Field label="Default Max Bookings Per Slot" hint="Fallback for any hour not individually configured below.">
+                      <FocusInput type="number" min="1" max="999" value={slotConfig.maxBookingsPerSlot}
+                        onChange={e => { setSlotConfig(s => ({ ...s, maxBookingsPerSlot: e.target.value })); setSlotConfigDirty(true) }} />
+                    </Field>
+                    <Field label="Advance Booking Window (days)">
+                      <FocusInput type="number" min="1" max="90" value={slotConfig.advanceBookingDays}
+                        onChange={e => { setSlotConfig(s => ({ ...s, advanceBookingDays: e.target.value })); setSlotConfigDirty(true) }} />
+                    </Field>
+                    <Field label="Slot Hold Duration (minutes)">
+                      <FocusInput type="number" min="5" max="30" value={slotConfig.holdDuration}
+                        onChange={e => { setSlotConfig(s => ({ ...s, holdDuration: e.target.value })); setSlotConfigDirty(true) }} />
+                    </Field>
+                  </div>
+
+                  {/* Validation banner — working hours extend beyond slot periods */}
+                  {(() => {
+                    const enabledPeriods = Object.values(slotPeriods).filter(p => p.enabled)
+                    const wh             = Object.values(workingHours).filter((d: any) => d.enabled) as { open: string; close: string }[]
+                    if (!enabledPeriods.length || !wh.length) return null
+                    const periodEnd = enabledPeriods.map(p => p.end).sort().reverse()[0]
+                    const whClose   = wh.map(d => d.close).sort().reverse()[0]
+                    if (whClose <= periodEnd) return null
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.28)', borderRadius: 10, padding: '11px 14px', marginBottom: 20, marginTop: 16 }}>
+                        <p style={{ fontSize: 12, color: '#92400E', lineHeight: 1.5, margin: 0 }}>
+                          Your working hours extend beyond your enabled slot periods (closes at <strong>{whClose}</strong>, last period ends at <strong>{periodEnd}</strong>). Bookings will only be accepted during enabled slot periods.
+                        </p>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Per-hour capacity grid — open/close derived from enabled slot periods */}
+                  {(() => {
+                    const dur            = Number(slotConfig.slotDuration) || 60
+                    const enabledPeriods = Object.values(slotPeriods).filter(p => p.enabled)
+                    const wh             = Object.values(workingHours).filter((d: any) => d.enabled) as { open: string; close: string }[]
+                    const whOpen  = enabledPeriods.length ? enabledPeriods.map(p => p.start).sort()[0]
+                      : wh.length ? wh.map(d => d.open).sort()[0] : '07:00'
+                    const whClose = enabledPeriods.length ? enabledPeriods.map(p => p.end).sort().reverse()[0]
+                      : wh.length ? wh.map(d => d.close).sort().reverse()[0] : '18:00'
+                    const buckets = makeTimeBuckets(whOpen, whClose, dur)
+                    return (
+                      <div style={{ marginTop: 24 }}>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: '#78716C', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 10 }}>
+                          Per-hour Capacity
+                        </p>
+                        <p style={{ fontSize: 12, color: '#A8A29E', marginBottom: 12, lineHeight: 1.5 }}>
+                          Set the maximum number of bookings allowed per time slot. Leave a slot at 0 to block it.
+                        </p>
+                        <div style={{ border: '1px solid rgba(0,0,0,0.09)', borderRadius: 12, overflow: 'hidden', maxHeight: 320, overflowY: 'auto' }}>
+                          {buckets.map((bucket, i) => (
+                            <div
+                              key={bucket}
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr auto',
+                                alignItems: 'center',
+                                gap: 16,
+                                padding: '10px 16px',
+                                background: i % 2 === 0 ? '#fff' : '#FAFAF9',
+                                borderBottom: i < buckets.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none',
+                              }}
+                            >
+                              <span style={{ fontSize: 13, fontWeight: 500, color: '#374151', fontFamily: 'ui-monospace,monospace' }}>
+                                {bucketLabel(bucket, dur)}
+                              </span>
+                              <FocusInput
+                                type="number"
+                                min="0"
+                                max="999"
+                                value={String(slotConfig.capacityByHour[bucket] ?? Number(slotConfig.maxBookingsPerSlot))}
+                                onChange={e => {
+                                  const val = Math.max(0, parseInt(e.target.value, 10) || 0)
+                                  setSlotConfig(s => ({
+                                    ...s,
+                                    capacityByHour: { ...s.capacityByHour, [bucket]: val },
+                                  }))
+                                  setSlotConfigDirty(true)
+                                }}
+                                style={{ width: 72, textAlign: 'center' }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </>
               )}
               <button type="button" onClick={saveSlotConfig} disabled={slotConfigSaving || !slotConfigDirty} style={{ ...SAVE, opacity: (slotConfigSaving || !slotConfigDirty) ? 0.4 : 1, cursor: (slotConfigSaving || !slotConfigDirty) ? 'not-allowed' : 'pointer' }}>
                 {slotConfigSaving ? 'Saving…' : 'Save changes'}

@@ -7,6 +7,7 @@ import { initToast, toast } from '@/lib/toast'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { useReceptionAuth } from '@/contexts/ReceptionAuthContext'
+import { useTenantInfo } from '@/lib/useTenantInfo'
 
 const NAV = [
   { to: '/reception',           label: 'Dashboard', icon: ICONS.home,     badge: false },
@@ -14,7 +15,7 @@ const NAV = [
   { to: '/reception/visitors',  label: 'Visitors',  icon: ICONS.walkIn,   badge: true  },
   { to: '/reception/reports',   label: 'Reports',   icon: ICONS.reports,  badge: false, children: [
     { to: '/reception/reports/visitor-log', label: 'ABF Visitor Log'   },
-    { to: '/reception/reports/activity',    label: 'Activity Reports'  },
+    { to: '/reception/reports/configure',    label: 'Configure Reports' },
   ]},
   { to: '/reception/settings',  label: 'Settings',  icon: ICONS.settings, badge: false },
 ] as const
@@ -45,6 +46,7 @@ export default function ReceptionLayout() {
 
   // Staff profile loaded directly from Supabase session — no AuthContext
   const [staffName,   setStaffName]   = useState<string | null>(null)
+  const tenant = useTenantInfo()
   const [tenantName,  setTenantName]  = useState<string | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
 
@@ -214,7 +216,7 @@ export default function ReceptionLayout() {
         </nav>
 
         {/* New Booking button */}
-        <button type="button" className="action-btn" onClick={() => toast('New Booking — Coming Soon', 'info')}>
+        <button type="button" className="action-btn" onClick={() => navigate('/reception/bookings/new')}>
           <Icon name={ICONS.add} size={18} style={{ color: '#fff', flexShrink: 0 }} />
           <span className="action-btn-label">New Booking</span>
         </button>
@@ -294,20 +296,21 @@ export default function ReceptionLayout() {
             </button>
             <h1 style={{ fontSize: 28, fontWeight: 600, color: '#1C1917', letterSpacing: '-0.02em' }}>{title}</h1>
           </div>
-          <button
-            type="button"
-            onClick={() => toast('Visitor Portal — Coming Soon', 'info')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 14, fontWeight: 600, color: '#FC6514', background: 'rgba(252,101,20,0.07)', border: '1px solid rgba(252,101,20,0.22)', borderRadius: 9999, letterSpacing: '-0.01em', transition: 'all 0.14s ease', boxShadow: '0 1px 3px rgba(252,101,20,0.08)', cursor: 'pointer', fontFamily: 'inherit' }}
-            onMouseOver={e => { e.currentTarget.style.background = 'rgba(252,101,20,0.13)'; e.currentTarget.style.borderColor = 'rgba(252,101,20,0.38)' }}
-            onMouseOut={e  => { e.currentTarget.style.background = 'rgba(252,101,20,0.07)'; e.currentTarget.style.borderColor = 'rgba(252,101,20,0.22)' }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-            Visitor Portal
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {tenant?.logoUrl && (
+              <img src={tenant.logoUrl} alt="Company logo" style={{ height: 32, objectFit: 'contain', maxWidth: 100 }} />
+            )}
+            <button
+              type="button"
+              onClick={() => navigate('/reception/bookings/new')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 14, fontWeight: 600, color: '#FC6514', background: 'rgba(252,101,20,0.07)', border: '1px solid rgba(252,101,20,0.22)', borderRadius: 9999, letterSpacing: '-0.01em', transition: 'all 0.14s ease', boxShadow: '0 1px 3px rgba(252,101,20,0.08)', cursor: 'pointer', fontFamily: 'inherit' }}
+              onMouseOver={e => { e.currentTarget.style.background = 'rgba(252,101,20,0.13)'; e.currentTarget.style.borderColor = 'rgba(252,101,20,0.38)' }}
+              onMouseOut={e  => { e.currentTarget.style.background = 'rgba(252,101,20,0.07)'; e.currentTarget.style.borderColor = 'rgba(252,101,20,0.22)' }}
+            >
+              <Icon name={ICONS.add} size={13} />
+              New Booking
+            </button>
+          </div>
         </header>
 
         {/* Content */}

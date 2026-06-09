@@ -445,14 +445,14 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
 
         {/* CargoWise */}
         <div style={cardStyle}>
-          <p style="font-size:13px; font-weight:700; color:#1C1917; margin-bottom:4px;">CargoWise Integration</p>
+          <p style="font-size:13px; font-weight:700; color:#1C1917; margin-bottom:4px;">ICS API Integration</p>
           <p style="font-size:12.5px; color:#78716C; line-height:1.5; margin-bottom:20px;">
-            Connect your CargoWise (WiseCloud) account to enable live HBL lookups and automatic ICS clearance status checks when creating bookings. Leave blank to use cached values from CFS records only.
+            Connect your ICS API account to enable live HBL lookups and automatic ICS clearance status checks when creating bookings. Leave blank to use cached values from CFS records only.
           </p>
 
           <div style="display:flex; flex-direction:column; gap:16px;">
             <div>
-              <label style={labelStyle}>CargoWise API URL</label>
+              <label style={labelStyle}>ICS API URL</label>
               <input
                 type="url"
                 name="cargowise_api_url"
@@ -463,7 +463,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
                 onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';"
                 onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';"
               />
-              <p style="font-size:11.5px; color:#A8A29E; margin-top:5px;">The base URL of your WiseCloud REST endpoint, e.g. <code>https://api.cargowise.com</code></p>
+              <p style="font-size:11.5px; color:#A8A29E; margin-top:5px;">The base URL of your ICS REST endpoint</p>
             </div>
             <div>
               <label style={labelStyle}>API Key / Bearer Token</label>
@@ -497,7 +497,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
         <div style="background:rgba(252,101,20,0.04); border:1px solid rgba(252,101,20,0.14); border-radius:14px; padding:18px 20px; margin-bottom:20px;">
           <p style="font-size:12.5px; font-weight:600; color:#C2410C; margin-bottom:6px;">About ICS Status</p>
           <p style="font-size:12px; color:#78716C; line-height:1.6; margin:0;">
-            ICS (Integrated Cargo System) status is provided by Australian Border Force and indicates whether a shipment has been cleared for collection. When CargoWise is connected, status is fetched live on each HBL lookup and cached to the shipment record. Without a connection, status shows as <em>Not Checked</em> unless manually updated in the CFS records.
+            ICS (Integrated Cargo System) status is provided by Australian Border Force and indicates whether a shipment has been cleared for collection. When ICS API is connected, status is fetched live on each HBL lookup and cached to the shipment record. Without a connection, status shows as <em>Not Checked</em> unless manually updated in the CFS records.
           </p>
         </div>
 

@@ -7,7 +7,7 @@ import { useTenantInfo } from '@/lib/useTenantInfo'
 import { supabase } from '@/lib/supabase'
 
 const NAV_LINKS = [
-  { to: '/',         label: 'Home',        icon: ICONS.home     },
+  { to: '/modules',  label: 'Modules',     icon: ICONS.home     },
   { to: '/book',     label: 'Book a Slot', icon: ICONS.calendar },
   { to: '/bookings', label: 'My Bookings', icon: ICONS.bookings },
 ]
@@ -147,10 +147,7 @@ export default function PublicLayout() {
               onMouseOver={e => (e.currentTarget.style.opacity = '0.75')}
               onMouseOut={e  => (e.currentTarget.style.opacity = '1')}
             >
-              {tenant?.logoUrl
-                ? <img src={tenant.logoUrl} alt={tenant.name || 'Logo'} style={{ height: 40, maxHeight: 40, objectFit: 'contain', display: 'block' }} />
-                : <GlidoLogo height={21} onDark={false} />
-              }
+              <GlidoLogo height={21} onDark={false} />
             </Link>
 
             <nav

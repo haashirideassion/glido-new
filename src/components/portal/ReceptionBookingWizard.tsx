@@ -2,7 +2,7 @@ import { useWizard, useHoldTimer } from '@/contexts/WizardContext'
 import { useState, useCallback } from 'react'
 import { Icon, ICONS } from '@/lib/Icon'
 import { useTenantInfo } from '@/lib/useTenantInfo'
-import { Step1ServiceType } from './Step1ServiceType'
+import { ReceptionStep1ServiceType as Step1ServiceType } from './ReceptionStep1ServiceType'
 import { Step2SlotPicker } from './Step2SlotPicker'
 import { Step3HoldConfirm } from './Step3HoldConfirm'
 import { Step4ShipmentDetails } from './Step4ShipmentDetails'
@@ -11,7 +11,7 @@ import { Step6ContactVehicle } from './Step6ContactVehicle'
 import { Step7Confirmation } from './Step7Confirmation'
 
 const STEP_CTX = [
-  { label: 'Get started',      shortLabel: 'Slots',        icon: ICONS.users     },
+  { label: 'Booking details',  shortLabel: 'Details',      icon: ICONS.users     },
   { label: 'Service type',     shortLabel: 'Service Type', icon: ICONS.cargo     },
   { label: 'Cargo type',       shortLabel: 'Load Type',    icon: ICONS.container },
   { label: 'Choose a slot',    shortLabel: 'Time Slot',    icon: ICONS.clock     },
@@ -183,9 +183,9 @@ export default function BookingWizard() {
 
             {/* Title */}
             <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', marginBottom: 40 }}>
-              <h1 className="wiz-header-title" style={{ fontSize: 36, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: 10 }}>Visitor Booking</h1>
+              <h1 className="wiz-header-title" style={{ fontSize: 36, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: 10 }}>New Booking</h1>
               <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.6, maxWidth: 480, margin: '0 auto' }}>
-                Complete your booking now to ensure you get the exact date and time that works for you
+                Create a new booking on behalf of a visitor or driver. Select a slot, fill in the details and confirm.
               </p>
             </div>
 

@@ -87,6 +87,6 @@ export interface DashboardStats {
   todaysVisitors: number
   checkedIn: number
   pending: number
-  held: number   // ICS held
+  icsHeld: number   // ICS status = 'held', awaiting customs clearance
   recentVisitors: Booking[]
 }

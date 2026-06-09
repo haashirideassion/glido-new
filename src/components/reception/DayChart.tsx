@@ -8,13 +8,16 @@ const HOURS = ['07','08','09','10','11','12','13','14','15','16','17']
 interface Props {
   bookings: Booking[]
   loading?: boolean
+  capacityByHour?: Record<string, number>
+  defaultCapacity?: number
 }
 
-export function DayChart({ bookings, loading }: Props) {
+export function DayChart({ bookings, loading, capacityByHour, defaultCapacity }: Props) {
   const ref = useRef<HTMLDivElement>(null)
 
   const scheduled = HOURS.map(h => bookings.filter(b => b.slotStartTime.startsWith(h) && b.status === 'scheduled').length)
   const checkedIn = HOURS.map(h => bookings.filter(b => b.slotStartTime.startsWith(h) && (b.status === 'checked_in' || b.status === 'completed')).length)
+  const capacity  = HOURS.map(h => capacityByHour?.[`${h}:00`] ?? defaultCapacity ?? 5)
 
   useEffect(() => {
     if (!ref.current) return
@@ -33,6 +36,20 @@ export function DayChart({ bookings, loading }: Props) {
           borderColor: 'transparent',
           textStyle: { color: '#FCFBF8', fontFamily: 'Inter,ui-sans-serif,sans-serif', fontSize: 12 },
           axisPointer: { type: 'shadow' },
+          formatter: (params: any[]) => {
+            const hour  = params[0]?.axisValue ?? ''
+            const sched = params.find((p: any) => p.seriesName === 'Scheduled')?.value ?? 0
+            const onSite = params.find((p: any) => p.seriesName === 'On Site')?.value ?? 0
+            const cap   = params.find((p: any) => p.seriesName === 'Capacity')?.value ?? (defaultCapacity ?? 5)
+            const total = sched + onSite
+            const pct   = cap > 0 ? Math.round((total / cap) * 100) : 0
+            return [
+              `<span style="font-weight:600;color:#FCFBF8">${hour}</span>`,
+              `<span style="color:rgba(252,101,20,0.80)">● Scheduled</span> ${sched}`,
+              `<span style="color:#FC6514">● On Site</span> ${onSite}`,
+              `<span style="color:#C7C3BF">— Capacity</span> ${total} / ${cap} slots (${pct}%)`,
+            ].join('<br/>')
+          },
         },
         legend: {
           bottom: 0, left: 'center',
@@ -61,6 +78,13 @@ export function DayChart({ bookings, loading }: Props) {
             name: 'On Site', type: 'bar', stack: 'day', data: checkedIn, barMaxWidth: 28,
             itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: '#FC6514' }, { offset: 1, color: '#FC8A3C' }] }, borderRadius: [4, 4, 0, 0] },
           },
+          {
+            name: 'Capacity', type: 'line', data: capacity,
+            symbol: 'circle', symbolSize: 5,
+            lineStyle: { color: '#C7C3BF', type: 'dashed', width: 1.5 },
+            itemStyle: { color: '#C7C3BF' },
+            areaStyle: undefined,
+          },
         ],
       })
       const onResize = () => chart?.resize()
@@ -69,7 +93,7 @@ export function DayChart({ bookings, loading }: Props) {
     }
     init()
     return () => chart?.dispose()
-  }, [bookings.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [bookings, capacityByHour]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14, padding: '18px 20px', marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>

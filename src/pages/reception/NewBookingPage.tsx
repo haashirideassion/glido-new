@@ -3,7 +3,7 @@ import { usePageTitle } from '@/lib/usePageTitle'
 import QRCode from 'qrcode'
 import { Link } from 'react-router-dom'
 import { WizardProvider, useWizard, calcCharges } from '@/contexts/WizardContext'
-import BookingWizard from '@/components/portal/BookingWizard'
+import BookingWizard from '@/components/portal/ReceptionBookingWizard'
 import { useTenantInfo } from '@/lib/useTenantInfo'
 import { Icon, ICONS } from '@/lib/Icon'
 
@@ -35,7 +35,7 @@ function ConfirmedScreen() {
 
   const ref     = rawRefs[0]?.ref ?? ''
   // Flat array of reference-number strings — used by multi-slot QR card loop
-  const refs    = rawRefs.map(r => typeof r === 'string' ? r : r.ref)
+  const refs    = rawRefs.map(r => r.ref)
   const slot    = state.slots.find(s => s.id === state.selectedSlotId)
   const charges = calcCharges(state)
   const isEft   = state.paymentMethod === 'eft'
@@ -194,7 +194,7 @@ function ConfirmedScreen() {
           </div>
           <div>
             <p style={{ fontSize: 13, fontWeight: 600, color: '#22C55E' }}>
-              {multi ? `${rawRefs.length} Bookings Confirmed!` : 'Booking Confirmed!'}
+              {multi ? `${rawRefs.length} Bookings Created` : 'Booking Created'}
             </p>
             <p
               style={{ fontSize: 12, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#78716C', marginTop: 2, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}
@@ -294,9 +294,18 @@ function ConfirmedScreen() {
                   <p style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Slot {i + 1}</p>
                   {url ? (
                     <img src={url} alt={`QR for ${r}`} width={160} height={160} style={{ borderRadius: 8 }} />
-                  ) : (
+                  ) : r ? (
+                    /* ref exists, QR still generating */
                     <div style={{ width: 160, height: 160, borderRadius: 8, background: '#F7F6F5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Icon name={ICONS.qrCode} size={48} style={{ color: 'rgba(0,0,0,0.15)' }} />
+                    </div>
+                  ) : (
+                    /* ref missing — reference_number not returned for this slot */
+                    <div style={{ width: 160, height: 160, borderRadius: 8, background: '#FEF2F2', border: '1.5px dashed #FCA5A5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 12 }}>
+                      <Icon name={ICONS.qrCode} size={32} style={{ color: '#FCA5A5' }} />
+                      <p style={{ fontSize: 10, fontWeight: 600, color: '#EF4444', textAlign: 'center', lineHeight: 1.4 }}>
+                        QR unavailable — reference number missing
+                      </p>
                     </div>
                   )}
                   <p style={{ fontSize: 11, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#1C1917', marginTop: 10 }}>{r}</p>
@@ -340,12 +349,21 @@ function ConfirmedScreen() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', background: '#fff', borderRadius: 16, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
             {qrUrl ? (
               <img src={qrUrl} alt={`QR code for ${ref}`} width={220} height={220} style={{ borderRadius: 8 }} />
-            ) : (
+            ) : ref ? (
+              /* ref exists but QR hasn't rendered yet — loading state */
               <div style={{ width: 220, height: 220, borderRadius: 8, background: '#F7F6F5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon name={ICONS.qrCode} size={64} style={{ color: 'rgba(0,0,0,0.15)' }} />
               </div>
+            ) : (
+              /* ref is empty — booking may not have returned a reference_number */
+              <div style={{ width: 220, height: 220, borderRadius: 8, background: '#FEF2F2', border: '1.5px dashed #FCA5A5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 16 }}>
+                <Icon name={ICONS.qrCode} size={40} style={{ color: '#FCA5A5' }} />
+                <p style={{ fontSize: 11, fontWeight: 600, color: '#EF4444', textAlign: 'center', lineHeight: 1.4 }}>
+                  QR unavailable — reference number missing
+                </p>
+              </div>
             )}
-            <p style={{ fontSize: 12, fontWeight: 500, color: '#64748B', marginTop: 14 }}>Scan at the kiosk to check in</p>
+            <p style={{ fontSize: 12, fontWeight: 500, color: '#64748B', marginTop: 14 }}>Give this QR code to the driver for kiosk check-in</p>
             <p style={{ fontSize: 12, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#1C1917', marginTop: 4 }}>{ref}</p>
 
             {/* Download actions */}
@@ -442,15 +460,15 @@ function ConfirmedScreen() {
         {/* Actions */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 32, justifyContent: 'center' }}>
           <button
-            onClick={() => { dispatch({ type: 'RESET' }); window.location.href = '/book' }}
+            onClick={() => { dispatch({ type: 'RESET' }); window.location.href = '/reception/bookings/new' }}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', fontSize: 13, fontWeight: 600, color: '#fff', background: 'var(--brand-color)', border: 'none', borderRadius: 9999, cursor: 'pointer', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)' }}
           >
             <Icon name={ICONS.add} size={14} />
-            Book Another Visit
+            Create Another Booking
           </button>
-          <Link to="/bookings" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 20px', fontSize: 13, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 9999, textDecoration: 'none', transition: 'all 0.15s' }}>
+          <Link to="/reception/bookings" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 20px', fontSize: 13, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 9999, textDecoration: 'none', transition: 'all 0.15s' }}>
             <Icon name={ICONS.search} size={14} />
-            View My Bookings
+            Back to Bookings
           </Link>
         </div>
 
@@ -473,8 +491,8 @@ function WizardOrConfirmed() {
   return <BookingWizard />
 }
 
-export default function BookPage() {
-  usePageTitle('Glido | Book a Slot')
+export default function NewBookingPage() {
+  usePageTitle('Glido | New Booking')
   return (
     <WizardProvider>
       <WizardOrConfirmed />

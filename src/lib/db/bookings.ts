@@ -147,22 +147,25 @@ export async function getBookingsByDate(date: string): Promise<Booking[]> {
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const today = todaySydney()
-  
-  // All stats for the KPI tiles
+
+  // All stats for the KPI tiles — scoped to this tenant + today only
   const { data: bookings, error: bError } = await supabase
     .from('bookings')
     .select('status, ics_status')
+    .eq('tenant_id', DEFAULT_TENANT_ID)
     .eq('slot_date', today)
     .neq('status', 'cancelled')
-  
+
   if (bError) throw bError
 
-  // Recent activity feed (Tile 5)
+  // Recent activity feed — scoped to tenant + today, non-cancelled, ordered by creation time
   const { data: recent, error: rError } = await supabase
     .from('bookings')
     .select('*')
+    .eq('tenant_id', DEFAULT_TENANT_ID)
     .eq('slot_date', today)
-    .order('updated_at', { ascending: false })
+    .neq('status', 'cancelled')
+    .order('created_at', { ascending: false })
     .limit(5)
 
   if (rError) throw rError
@@ -171,7 +174,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     todaysVisitors: (bookings ?? []).filter(b => ['scheduled', 'checked_in', 'completed'].includes(b.status!)).length,
     checkedIn:      (bookings ?? []).filter(b => b.status === 'checked_in').length,
     pending:        (bookings ?? []).filter(b => b.status === 'scheduled').length,
-    held:           (bookings ?? []).filter(b => b.ics_status === 'held').length,
+    icsHeld:        (bookings ?? []).filter(b => b.ics_status === 'held').length,
     recentVisitors: (recent ?? []).map(rowToBooking),
   }
 }

@@ -9,9 +9,11 @@ interface Props {
   onChange: (v: string) => void
   width?: string | number
   onBlur?: () => void
+  /** When true, selected value renders in dark text with neutral border — no orange active state */
+  neutral?: boolean
 }
 
-export function CustomSelect({ placeholder, options, value, onChange, width = '100%', onBlur }: Props) {
+export function CustomSelect({ placeholder, options, value, onChange, width = '100%', onBlur, neutral }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const allOpts = [{ value: '', label: placeholder }, ...options]
@@ -39,9 +41,9 @@ export function CustomSelect({ placeholder, options, value, onChange, width = '1
           width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
           fontSize: 14, padding: '11px 14px', height: 44, borderRadius: 10,
           cursor: 'pointer', outline: 'none', transition: 'all 0.12s ease', boxSizing: 'border-box',
-          background: active ? 'rgba(252,101,20,0.05)' : '#F7F6F5',
-          border: `1px solid ${active ? 'rgba(252,101,20,0.40)' : 'rgba(0,0,0,0.10)'}`,
-          color: active ? '#FC6514' : '#78716C',
+          background: (active && !neutral) ? 'rgba(252,101,20,0.05)' : '#F7F6F5',
+          border: `1px solid ${(active && !neutral) ? 'rgba(252,101,20,0.40)' : 'rgba(0,0,0,0.10)'}`,
+          color: (active && !neutral) ? '#FC6514' : active ? '#1C1917' : '#78716C',
           fontFamily: 'inherit', fontWeight: active ? 600 : 400,
           boxShadow: open ? '0 0 0 3px rgba(252,101,20,0.12)' : 'none',
         }}
