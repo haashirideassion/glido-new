@@ -236,7 +236,6 @@ export default function ReceptionLayout() {
                   </div>
                 </div>
                 <div style={{ padding: 6 }}>
-                  <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', margin: '4px 0' }} />
                   <button onClick={handleSignOut} className="user-menu-item danger" style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
                     <Icon name={ICONS.logout} size={15} style={{ flexShrink: 0 }} />
                     Sign Out

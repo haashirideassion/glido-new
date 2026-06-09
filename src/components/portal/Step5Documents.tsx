@@ -24,6 +24,23 @@ const PURPOSES = [
   '', 'Delivery to Consignee', 'Customs Examination', 'Transfer to Another Depot', 'Return to Shipper',
 ]
 
+// ─── Per-slot "done" check ────────────────────────────────────────────────────
+function isSlotDetailDone(cfg: any): boolean {
+  const svc = cfg.serviceType; const lt = cfg.loadType
+  const cn = (cfg.containerNumber ?? '').trim()
+  const hbl = (cfg.hbl ?? '').trim()
+  const cs = (cfg.containerSize ?? '').trim()
+  const en = (cfg.entryNumber ?? '').trim()
+  const pu = (cfg.purpose ?? '').trim()
+  const co = (cfg.consolidator ?? '').trim()
+  const br = (cfg.bookingReference ?? '').trim()
+  if (svc === 'pickup'  && lt === 'lcl')  return !!(cn && hbl)
+  if (svc === 'pickup'  && lt === 'fcl')  return !!(cn && cs)
+  if (svc === 'dropoff' && lt === 'lcl')  return !!(br && co && en && pu)
+  if (svc === 'dropoff' && lt === 'fcl')  return !!(cn && cs && en && pu)
+  return false
+}
+
 export function Step5Documents() {
   const { state, dispatch } = useWizard()
   const [touched, setTouch] = useState<Record<string, boolean>>({})
@@ -32,6 +49,10 @@ export function Step5Documents() {
   const touch = (f: string) => setTouch(p => ({ ...p, [f]: true }))
 
   const multi = state.slotCount > 1
+
+  // Tab state for multi-slot
+  const firstIncomplete5 = state.slotConfigs.findIndex(c => !isSlotDetailDone(c))
+  const [activeSlot5, setActiveSlot5] = useState(firstIncomplete5 === -1 ? 0 : firstIncomplete5)
 
   const isPickupLcl  = state.serviceType === 'pickup'  && state.loadType === 'lcl'
   const isPickupFcl  = state.serviceType === 'pickup'  && state.loadType === 'fcl'
@@ -68,31 +89,65 @@ export function Step5Documents() {
   const showChep  = sd?.palletType === 'chep'
   const showHeld  = sd?.icsStatus === 'held'
 
-  // Multi-slot: render per-slot sections + shared driver fields
+  // Multi-slot: tab switcher + shared driver fields
   if (multi) {
     const setSlot = (slotIndex: number) => (f: string, v: string) =>
       dispatch({ type: 'SET_SLOT_DETAIL', slotIndex, field: f, value: v })
+
+    const activeCfg5 = state.slotConfigs[activeSlot5]
+
     return (
       <div>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: '0 0 8px' }}>Load Information</h2>
-        <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.5, margin: '0 0 28px' }}>Enter shipment details for each booking slot.</p>
+        <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.5, margin: '0 0 20px' }}>Enter shipment details for each booking slot.</p>
 
-        {state.slotConfigs.map((cfg, i) => (
-          <div key={cfg.index} style={{ marginBottom: 32, padding: 20, background: '#F9F9F8', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14 }}>
+        {/* Tab bar */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+          {state.slotConfigs.map((cfg, i) => {
+            const done   = isSlotDetailDone(cfg)
+            const active = activeSlot5 === i
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setActiveSlot5(i)}
+                style={{
+                  padding: '8px 20px', borderRadius: 999, border: 'none',
+                  background: active ? 'var(--brand-color, #FC6514)' : '#F3F4F6',
+                  color: active ? '#fff' : '#6B7280',
+                  fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  fontFamily: 'inherit', transition: 'all 0.15s',
+                }}
+              >
+                {done && (
+                  <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                    <path d="M1 5L4.5 8.5L11 1" stroke={active ? '#fff' : '#22C55E'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+                Slot {i + 1}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Active slot panel */}
+        {activeCfg5 && (
+          <div style={{ padding: 20, background: '#F9F9F8', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14, marginBottom: 24 }}>
             <p style={{ fontSize: 12, fontWeight: 700, color: '#78716C', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 16 }}>
-              Slot {cfg.index} — {cfg.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {(cfg.loadType ?? '').toUpperCase()}
-              {cfg.selectedSlotLabel && <span style={{ fontWeight: 400, marginLeft: 8, textTransform: 'none', letterSpacing: 0 }}>{cfg.selectedDate} {cfg.selectedSlotLabel}</span>}
+              Slot {activeCfg5.index} — {activeCfg5.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {(activeCfg5.loadType ?? '').toUpperCase()}
+              {activeCfg5.selectedSlotLabel && <span style={{ fontWeight: 400, marginLeft: 8, textTransform: 'none', letterSpacing: 0 }}>{activeCfg5.selectedDate} {activeCfg5.selectedSlotLabel}</span>}
             </p>
             <SlotDetailFields
-              cfg={cfg}
-              set={setSlot(cfg.index)}
+              cfg={activeCfg5}
+              set={setSlot(activeCfg5.index)}
               touched={touched}
               touch={touch}
-              touchPrefix={`s${i}_`}
-              slotIndex={cfg.index}
+              touchPrefix={`s${activeSlot5}_`}
+              slotIndex={activeCfg5.index}
             />
           </div>
-        ))}
+        )}
 
         {/* Shared driver fields */}
         <div style={{ marginTop: 8 }}>

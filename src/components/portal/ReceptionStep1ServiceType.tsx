@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useWizard } from '@/contexts/WizardContext'
+import { Icon, ICONS } from '@/lib/Icon'
 
 export function ReceptionStep1ServiceType() {
   const { state, dispatch } = useWizard()
@@ -26,24 +27,21 @@ export function ReceptionStep1ServiceType() {
       </div>
 
       {/* Slot counter */}
-      <div style={{ border: '1.5px solid #e5e7eb', borderRadius: 14, padding: '20px 24px', marginBottom: 28, background: '#fff' }}>
-        <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 14, display: 'block', letterSpacing: '-0.01em' }}>Number of slots</label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 16 }}>
-          <button
-            type="button"
-            className="wizard-stepper-btn"
-            onClick={() => dispatch({ type: 'SET', field: 'slotCount', value: Math.max(1, state.slotCount - 1) })}
-            disabled={state.slotCount <= 1}
-          >−</button>
+      <div style={{ border: '1.5px solid #e5e7eb', borderRadius: 14, padding: '28px 24px', marginBottom: 28, background: '#fff' }}>
+        {/* Big counter display */}
+        <div style={{ textAlign: 'center', paddingBottom: 24 }}>
+          <p style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 16, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase' }}>How many slots?</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 32 }}>
+            <button
+              type="button"
+              onClick={() => dispatch({ type: 'SET', field: 'slotCount', value: Math.max(1, state.slotCount - 1) })}
+              disabled={state.slotCount <= 1}
+              style={{ width: 48, height: 48, borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.10)', background: '#fff', fontSize: 24, cursor: state.slotCount <= 1 ? 'not-allowed' : 'pointer', opacity: state.slotCount <= 1 ? 0.35 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', transition: 'opacity 0.15s' }}
+            >−</button>
 
-          <div style={{ minWidth: 80, textAlign: 'center', padding: '0 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
             {editing ? (
               <input
-                type="number"
-                min={1}
-                max={10}
-                defaultValue={state.slotCount}
-                className="slot-num"
+                type="number" min={1} max={10} defaultValue={state.slotCount}
                 autoFocus
                 onFocus={e => e.target.select()}
                 onBlur={e => commitEdit(e.target.value)}
@@ -52,58 +50,70 @@ export function ReceptionStep1ServiceType() {
                   if (e.key === 'Escape') setEditing(false)
                 }}
                 style={{
-                  fontSize: 36, fontWeight: 800, color: '#FC6514',
-                  fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.04em',
-                  lineHeight: 1, width: 64, height: 44, textAlign: 'center',
-                  border: '2px solid rgba(252,101,20,0.50)',
-                  borderRadius: 8, outline: 'none', background: 'rgba(252,101,20,0.05)',
-                  boxShadow: '0 0 0 3px rgba(252,101,20,0.12)',
-                  padding: '2px 4px', fontFamily: 'inherit', display: 'block',
+                  fontSize: 64, fontWeight: 800, color: '#FC6514', lineHeight: 1,
+                  width: 96, textAlign: 'center', border: '2px solid rgba(252,101,20,0.40)',
+                  borderRadius: 10, outline: 'none', background: 'rgba(252,101,20,0.04)',
+                  fontFamily: 'inherit', padding: '0 8px', boxSizing: 'border-box',
                 }}
               />
             ) : (
               <span
-                className="slot-num"
                 title="Click to type a number"
                 onClick={() => setEditing(true)}
-                style={{ fontSize: 36, fontWeight: 800, color: '#111827', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.04em', lineHeight: 1, display: 'block', cursor: 'text', height: 44 }}
+                style={{ fontSize: 64, fontWeight: 800, color: '#1C1917', lineHeight: 1, cursor: 'text', display: 'block', minWidth: 64, textAlign: 'center', fontFamily: 'inherit' }}
               >
                 {state.slotCount}
               </span>
             )}
-            <span style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#9ca3af' }}>slots</span>
-          </div>
 
-          <button
-            type="button"
-            className="wizard-stepper-btn"
-            onClick={() => dispatch({ type: 'SET', field: 'slotCount', value: Math.min(10, state.slotCount + 1) })}
-            disabled={state.slotCount >= 10}
-          >+</button>
+            <button
+              type="button"
+              onClick={() => dispatch({ type: 'SET', field: 'slotCount', value: Math.min(10, state.slotCount + 1) })}
+              disabled={state.slotCount >= 10}
+              style={{ width: 48, height: 48, borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.10)', background: '#fff', fontSize: 24, cursor: state.slotCount >= 10 ? 'not-allowed' : 'pointer', opacity: state.slotCount >= 10 ? 0.35 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', transition: 'opacity 0.15s' }}
+            >+</button>
+          </div>
+          <p style={{ fontSize: 13, color: '#9CA3AF', marginTop: 8 }}>slot{state.slotCount !== 1 ? 's' : ''}</p>
         </div>
 
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* Quick-select pills */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
           {[1, 2, 3, 5, 10].map(n => (
             <button
               key={n}
               type="button"
-              className={`wizard-chip slot-num${state.slotCount === n ? ' active' : ''}`}
               onClick={() => dispatch({ type: 'SET', field: 'slotCount', value: n })}
+              style={{
+                padding: '8px 20px', fontSize: 14, fontWeight: 600, borderRadius: 9999,
+                border: state.slotCount === n ? '1.5px solid var(--brand-color, #FC6514)' : '1.5px solid rgba(0,0,0,0.10)',
+                background: state.slotCount === n ? 'rgba(252,101,20,0.08)' : '#fff',
+                color: state.slotCount === n ? 'var(--brand-color, #FC6514)' : '#6B7280',
+                cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
+              }}
             >{n}</button>
           ))}
-          <span className="slot-num" style={{ fontSize: 11, color: '#9ca3af', marginLeft: 4 }}>max 10</span>
         </div>
+
+        {/* Info banner */}
+        {state.slotCount > 1 && (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: 'rgba(252,101,20,0.06)', border: '1px solid rgba(252,101,20,0.15)', borderRadius: 10, padding: '12px 16px', marginTop: 20 }}>
+            <Icon name={ICONS.info} size={16} style={{ color: '#FC6514', flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontSize: 13, color: '#92400E', margin: 0, lineHeight: 1.5 }}>
+              {state.slotCount} slots — you'll enter shipment details for each slot separately.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Booking For — always visible, staff enters visitor/driver details */}
       <div style={{ border: '1.5px solid #e5e7eb', borderRadius: 14, padding: '20px 24px', background: '#fff' }}>
         <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 16, display: 'block', letterSpacing: '-0.01em' }}>
-          Visitor Name
+          Booking Name
         </label>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 8, display: 'block' }}>
-              Visitor / Driver Name <span style={{ color: '#FC6514' }}>*</span>
+              Booking Name <span style={{ color: '#FC6514' }}>*</span>
             </label>
             <input
               type="text"

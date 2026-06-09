@@ -43,8 +43,8 @@ export default function BookingWizard() {
   const brandColor = tenant?.primaryColor ?? '#FC6514'
   const brandRgb   = hexToRgb(brandColor)
 
-  const next = () => dispatch({ type: 'SET', field: 'step', value: state.step + 1 })
-  const back = () => dispatch({ type: 'SET', field: 'step', value: state.step - 1 })
+  const next = () => { dispatch({ type: 'SET', field: 'step', value: state.step + 1 }); window.scrollTo({ top: 0, behavior: 'smooth' }) }
+  const back = () => { dispatch({ type: 'SET', field: 'step', value: state.step - 1 }); window.scrollTo({ top: 0, behavior: 'smooth' }) }
 
   const continueLabel = state.step === 6 ? 'Review & Submit' : 'Continue'
 
@@ -193,12 +193,20 @@ export default function BookingWizard() {
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', maxWidth: 1000, margin: '0 auto' }}>
               {STEP_CTX.flatMap((ctx, i) => {
                 const n = i + 1
-                const done   = n < state.step
-                const active = n === state.step
+                const done       = n < state.step
+                const active     = n === state.step
+                // Connector between step n-1 and step n — classify relative to active step
+                const connCompleted  = done || active          // leading into completed or active step → solid orange
+                const connAfterActive = (n - 1) === state.step // leaving the active step → fade to grey
+                const connBg = connCompleted
+                  ? 'var(--brand-color)'
+                  : connAfterActive
+                  ? 'linear-gradient(to right, var(--brand-color), #D1D5DB)'
+                  : '#D1D5DB'
                 const els = []
 
                 if (i > 0) els.push(
-                  <div key={`conn-${n}`} className="wiz-conn" style={{ flex: 1, height: 3, marginTop: 27, minWidth: 8, borderRadius: 2, transition: 'background 0.3s ease', background: done ? 'var(--brand-color)' : active ? 'linear-gradient(to right,var(--brand-color),#C2C2C2)' : '#C2C2C2' }} />
+                  <div key={`conn-${n}`} className="wiz-conn" style={{ flex: 1, height: 2, marginTop: 27, minWidth: 8, borderRadius: 2, transition: 'background 0.3s ease', background: connBg }} />
                 )
 
                 els.push(

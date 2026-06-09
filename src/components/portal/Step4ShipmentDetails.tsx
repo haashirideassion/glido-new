@@ -100,10 +100,14 @@ function generateSlotsFromConfig(
 function groupSlotsByPeriods(slots: TimeSlot[], periods: PeriodConfig) {
   const groups: { period: PeriodDef; key: string; slots: TimeSlot[] }[] = []
 
-  for (const [key, period] of Object.entries(periods) as [string, PeriodDef][]) {
+  const periodEntries = Object.entries(periods) as [string, PeriodDef][]
+  const lastKey = [...periodEntries].reverse().find(([, p]) => p.enabled)?.[0]
+
+  for (const [key, period] of periodEntries) {
     if (!period.enabled) continue
+    const isLast = key === lastKey
     const periodSlots = slots.filter(s =>
-      s.startTime >= period.start && s.startTime < period.end
+      s.startTime >= period.start && (isLast ? s.startTime <= period.end : s.startTime < period.end)
     )
     if (periodSlots.length > 0) {
       groups.push({ period, key, slots: periodSlots })
@@ -160,7 +164,10 @@ const PERIOD_ICONS: Record<string, string> = {
 
 export function Step4ShipmentDetails() {
   const { state, dispatch } = useWizard()
-  const [applyAll, setApplyAll] = useState(false)
+
+  // Tab state for multi-slot — start on first slot without a selection
+  const firstIncomplete4 = state.slotConfigs.findIndex(c => !c.selectedSlotId)
+  const [activeSlot, setActiveSlot] = useState(firstIncomplete4 === -1 ? 0 : firstIncomplete4)
 
   // Tenant config — loaded once on mount
   const [tenant,        setTenant]        = useState<TenantRow | null>(null)
@@ -238,7 +245,7 @@ export function Step4ShipmentDetails() {
           </div>
         )}
         {!isLoading && slotGroups.map(({ key, period, slots }) => (
-          <SlotGroup key={key} label={period.label} icon={PERIOD_ICONS[key] ?? ICONS.clock}
+          <SlotGroup key={key} label={period.label}
             slots={slots} selectedId={state.selectedSlotId} onSelect={selectSlot} />
         ))}
       </div>
@@ -246,6 +253,19 @@ export function Step4ShipmentDetails() {
   }
 
   // ── Multi-slot UI ──────────────────────────────────────────────────────────
+  const [applyAll, setApplyAll] = useState(false)
+
+  const toggleApplyAll = (newVal: boolean) => {
+    setApplyAll(newVal)
+    if (!newVal) return
+    const anySelected = state.slotConfigs.some(c => !!c.selectedSlotId)
+    if (anySelected) {
+      toast(`Same slot applied to all ${state.slotCount} bookings`, 'success')
+    } else {
+      toast("Select a slot — it'll apply to all bookings automatically", 'info')
+    }
+  }
+
   const dispatchSlotDetail = (slotIndex: number, field: string, value: any) =>
     dispatch({ type: 'SET_SLOT_DETAIL', slotIndex, field, value })
 
@@ -256,10 +276,13 @@ export function Step4ShipmentDetails() {
         dispatchSlotDetail(cfg.index, 'selectedSlotId',    slot.id)
         dispatchSlotDetail(cfg.index, 'selectedSlotLabel', label)
       }
+      toast(`Same slot applied to all ${state.slotCount} bookings`, 'success')
     } else {
       dispatchSlotDetail(slotIndex, 'selectedSlotId',    slot.id)
       dispatchSlotDetail(slotIndex, 'selectedSlotLabel', label)
     }
+    // Auto-advance to next tab
+    setActiveSlot(a => Math.min(a + 1, state.slotConfigs.length - 1))
   }
 
   const handleDateSelect = (slotIndex: number, iso: string) => {
@@ -276,60 +299,104 @@ export function Step4ShipmentDetails() {
     }
   }
 
-  const panelSlotConfigs = applyAll ? [state.slotConfigs[0]] : state.slotConfigs
+  const activeCfg4 = state.slotConfigs[activeSlot]
 
   return (
     <div>
-      {/* Header + Apply All toggle */}
+      {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28 }}>
         <div>
           <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, marginBottom: 8 }}>Pick Date &amp; Time</h2>
           <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5 }}>Select a date and time slot for each booking.</p>
         </div>
-        <ApplyAllToggle on={applyAll} onToggle={() => setApplyAll(v => !v)} slotCount={state.slotCount} field="date &amp; time" />
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+          <button
+            type="button"
+            onClick={() => toggleApplyAll(!applyAll)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              padding: '5px 12px', borderRadius: 9999,
+              background: applyAll ? 'rgba(252,101,20,0.10)' : 'rgba(0,0,0,0.06)',
+              border: `1.5px solid ${applyAll ? 'rgba(252,101,20,0.30)' : 'rgba(0,0,0,0.12)'}`,
+              cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit',
+            }}
+          >
+            <span style={{
+              position: 'relative', width: 28, height: 16, borderRadius: 9999,
+              background: applyAll ? 'var(--brand-color, #FC6514)' : '#D1D5DB',
+              display: 'inline-block', flexShrink: 0, transition: 'background 0.15s',
+            }}>
+              <span style={{
+                position: 'absolute', top: 2, left: applyAll ? 14 : 2,
+                width: 12, height: 12, borderRadius: 9999,
+                background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.18)', transition: 'left 0.15s',
+              }} />
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: applyAll ? 'var(--brand-color, #FC6514)' : '#6B7280', whiteSpace: 'nowrap' }}>
+              Apply to all bookings
+            </span>
+          </button>
+          <span style={{ fontSize: 11, color: '#A8A29E' }}>
+            {applyAll
+              ? `Same time slot for all ${state.slotCount} bookings`
+              : `Use the same time slot for all ${state.slotCount} bookings`}
+          </span>
+        </div>
       </div>
 
-      {panelSlotConfigs.map(cfg => (
-        <div key={cfg.index} style={{ marginBottom: 36 }}>
-          {!applyAll && (
-            <p style={{ fontSize: 12, fontWeight: 700, color: '#78716C', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 12 }}>
-              Slot {cfg.index}
-            </p>
-          )}
-          <SlotPickerForSlot
-            slotIndex={cfg.index}
-            tenant={tenant}
-            tenantLoading={tenantLoading}
-            dates={dates}
-            wh={wh}
-            cutoff={cutoff}
-            isTodayPastCutoff={isTodayPastCutoff}
-            periods={periods}
-            onDateSelect={iso => handleDateSelect(cfg.index, iso)}
-            onSlotSelect={slot => handleSlotSelect(cfg.index, slot)}
-          />
-        </div>
-      ))}
-    </div>
-  )
-}
+      {/* Tab bar */}
+      {(() => {
+        const allDone = state.slotConfigs.every(c => !!c.selectedSlotId)
+        return (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+            {state.slotConfigs.map((cfg, i) => {
+              const done   = !!cfg.selectedSlotId
+              const active = activeSlot === i
+              const bg = active
+                ? (allDone ? '#16A34A' : 'var(--brand-color, #FC6514)')
+                : '#F3F4F6'
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setActiveSlot(i)}
+                  style={{
+                    padding: '8px 20px', borderRadius: 999, border: 'none',
+                    background: bg,
+                    color: active ? '#fff' : '#6B7280',
+                    fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    fontFamily: 'inherit', transition: 'all 0.15s',
+                  }}
+                >
+                  {done && (
+                    <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
+                      <path d="M1 5L4.5 8.5L11 1" stroke={active ? '#fff' : '#22C55E'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                  Slot {i + 1}
+                </button>
+              )
+            })}
+          </div>
+        )
+      })()}
 
-// ─── Apply-all toggle (same pattern as Steps 2/3) ─────────────────────────────
-function ApplyAllToggle({ on, onToggle, slotCount, field }: { on: boolean; onToggle: () => void; slotCount: number; field: string }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-      <button type="button" onClick={onToggle}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 12px', borderRadius: 9999,
-          background: on ? 'rgba(252,101,20,0.10)' : 'rgba(0,0,0,0.06)',
-          border: `1.5px solid ${on ? 'rgba(252,101,20,0.30)' : 'rgba(0,0,0,0.12)'}`, cursor: 'pointer', transition: 'all 0.15s' }}>
-        <span style={{ position: 'relative', width: 28, height: 16, borderRadius: 9999, background: on ? 'var(--brand-color,#FC6514)' : '#D1D5DB', display: 'inline-block', flexShrink: 0, transition: 'background 0.15s' }}>
-          <span style={{ position: 'absolute', top: 2, left: on ? 14 : 2, width: 12, height: 12, borderRadius: 9999, background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.18)', transition: 'left 0.15s' }} />
-        </span>
-        <span style={{ fontSize: 12, fontWeight: 600, color: on ? 'var(--brand-color,#FC6514)' : '#6B7280', whiteSpace: 'nowrap' }}>Apply to all bookings</span>
-      </button>
-      <span style={{ fontSize: 11, color: '#A8A29E' }}>
-        {on ? `Same ${field} for all ${slotCount} bookings` : `Use the same ${field} for all ${slotCount} bookings`}
-      </span>
+      {/* Active slot picker */}
+      {activeCfg4 && (
+        <SlotPickerForSlot
+          slotIndex={activeCfg4.index}
+          tenant={tenant}
+          tenantLoading={tenantLoading}
+          dates={dates}
+          wh={wh}
+          cutoff={cutoff}
+          isTodayPastCutoff={isTodayPastCutoff}
+          periods={periods}
+          onDateSelect={iso => handleDateSelect(activeCfg4.index, iso)}
+          onSlotSelect={slot => handleSlotSelect(activeCfg4.index, slot)}
+        />
+      )}
     </div>
   )
 }
@@ -408,13 +475,16 @@ function DateStrip({ dates, selectedDate, wh, cutoff, isTodayPastCutoff, onSelec
   onSelect: (iso: string) => void
 }) {
   return (
-    <div style={{ display: 'flex', gap: 8, marginBottom: 32, overflowX: 'auto', paddingBottom: 4 }}>
+    <div style={{ overflowX: 'auto', overflowY: 'visible', marginBottom: 28 }}>
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'nowrap', paddingTop: 12, paddingBottom: 8, paddingRight: 12 }}>
       {dates.map(d => {
         const sel            = selectedDate === d.iso
         const dayCfg         = wh?.[d.dayKey]
         const closedDay      = dayCfg ? !dayCfg.enabled : false
         const cutoffDisabled = d.isToday && isTodayPastCutoff
         const disabled       = closedDay || cutoffDisabled
+        // Short day name: MON, TUE, etc.
+        const shortDay = d.dayFull.slice(0, 3).toUpperCase()
         return (
           <button key={d.iso} type="button"
             onClick={() => {
@@ -422,35 +492,60 @@ function DateStrip({ dates, selectedDate, wh, cutoff, isTodayPastCutoff, onSelec
               else if (closedDay) toast(`${d.dayFull} is not a working day — no slots available.`, 'info')
               else onSelect(d.iso)
             }}
-            style={{ flex: '0 0 80px', width: 80, height: 96, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '12px 4px 10px', borderRadius: 12, textAlign: 'center', transition: 'all 0.18s ease', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.38 : 1, border: `1.5px solid ${sel ? 'var(--brand-color)' : '#8B8B8B'}`, background: sel ? 'rgba(var(--brand-rgb),0.06)' : '#fff', boxShadow: sel ? '0 0 0 1px var(--brand-color),0 4px 14px rgba(var(--brand-rgb),0.18)' : 'none' }}>
-            <p style={{ fontSize: 11, fontWeight: sel ? 700 : 500, marginBottom: 6, color: sel ? 'var(--brand-color)' : '#101010', transition: 'all 0.18s ease', width: '100%', overflow: 'visible', textOverflow: 'clip', whiteSpace: 'nowrap' }}>{d.dayFull}</p>
-            <p className="slot-num" style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1, color: '#101010' }}>{d.num}</p>
-            <div style={{ height: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
-              {d.isToday && cutoffDisabled && cutoff ? <p style={{ fontSize: 9, color: '#EF4444', lineHeight: 1.2, margin: 0 }}>After {cutoff}</p>
-                : d.isToday ? <div style={{ width: 5, height: 5, borderRadius: 9999, background: 'var(--brand-color)' }} /> : null}
-            </div>
+            style={{
+              position: 'relative', flex: '0 0 64px', width: 64,
+              padding: '10px 0', borderRadius: 12, textAlign: 'center',
+              transition: 'all 0.15s ease', cursor: disabled ? 'not-allowed' : 'pointer',
+              opacity: disabled ? 0.38 : 1,
+              border: sel ? '2px solid var(--brand-color)' : '1.5px solid rgba(0,0,0,0.08)',
+              background: sel ? 'rgba(252,101,20,0.04)' : '#fff',
+              boxShadow: 'none', boxSizing: 'border-box',
+            }}
+          >
+            <p style={{ fontSize: 11, fontWeight: 600, color: sel ? 'var(--brand-color)' : '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+              {shortDay}
+            </p>
+            <p style={{ fontSize: 22, fontWeight: 800, color: sel ? 'var(--brand-color)' : '#1C1917', lineHeight: 1, fontFamily: 'inherit' }}>
+              {d.num}
+            </p>
+            {d.isToday && !cutoffDisabled && (
+              <div style={{ width: 4, height: 4, borderRadius: 999, background: 'var(--brand-color)', margin: '6px auto 0' }} />
+            )}
+            {d.isToday && cutoffDisabled && cutoff && (
+              <p style={{ fontSize: 9, color: '#EF4444', lineHeight: 1.2, margin: '4px 0 0' }}>After {cutoff}</p>
+            )}
+            {sel && (
+              <div style={{ position: 'absolute', top: -7, right: -7, width: 18, height: 18, borderRadius: 999, background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: '#fff', fontSize: 10, fontWeight: 800, lineHeight: 1 }}>✓</span>
+              </div>
+            )}
           </button>
         )
       })}
     </div>
+    </div>
   )
 }
 
-function SlotGroup({ label, icon, slots, selectedId, onSelect }: {
-  label: string; icon: string; slots: TimeSlot[]; selectedId: string | null; onSelect: (s: TimeSlot) => void
+function SlotGroup({ label, slots, selectedId, onSelect }: {
+  label: string; icon?: string; slots: TimeSlot[]; selectedId: string | null; onSelect: (s: TimeSlot) => void
 }) {
   return (
-    <div style={{ marginBottom: 32 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <Icon name={icon} size={18} style={{ color: 'var(--brand-color)', flexShrink: 0 }} />
-        <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1C1917' }}>{label}</h3>
+    <div style={{ marginBottom: 28 }}>
+      {/* Section header — clean label + thin divider, no icon */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 12px' }}>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#9CA3AF', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+          {label}
+        </span>
+        <div style={{ flex: 1, height: 1, background: '#F3F4F6' }} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
         {slots.map(slot => {
           const full      = slot.busyness === 'full' || slot.busyness === 'closed'
           const selected  = slot.id === selectedId
-          const remaining = Math.max(0, slot.capacity - slot.confirmed - slot.held)
-          const remainColor = full ? '#EF4444' : remaining === 0 ? '#EF4444' : remaining <= 5 ? 'var(--brand-color)' : '#16A34A'
+          const available = Math.max(0, slot.capacity - slot.confirmed - slot.held)
+          const fillPct   = slot.capacity > 0 ? ((slot.capacity - available) / slot.capacity) * 100 : 100
+          const barColor  = available <= 2 ? '#EF4444' : 'var(--brand-color, #FC6514)'
 
           return (
             <button
@@ -460,35 +555,36 @@ function SlotGroup({ label, icon, slots, selectedId, onSelect }: {
               onClick={() => !full && onSelect(slot)}
               style={{
                 width: '100%', position: 'relative', display: 'flex', flexDirection: 'column',
-                padding: 16, borderRadius: 16, textAlign: 'left', transition: 'all 0.18s ease',
-                background: selected ? 'rgba(var(--brand-rgb),0.05)' : '#fff',
-                border: `1.5px solid ${selected ? 'var(--brand-color)' : '#C8C8C8'}`,
-                boxShadow: selected ? '0 0 0 1px var(--brand-color),0 4px 14px rgba(var(--brand-rgb),0.12)' : 'none',
+                padding: '14px 18px', borderRadius: 12, textAlign: 'left',
+                transition: 'all 0.15s ease', boxSizing: 'border-box', fontFamily: 'inherit',
+                border: selected ? '2px solid var(--brand-color)' : '1.5px solid rgba(0,0,0,0.08)',
+                background: full ? '#FAFAFA' : selected ? 'rgba(252,101,20,0.03)' : '#fff',
                 cursor: full ? 'not-allowed' : 'pointer',
-                opacity: full ? 0.45 : 1,
-                boxSizing: 'border-box',
+                opacity: full ? 0.5 : 1,
               }}
             >
-              <p className="slot-num" style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 10, color: full ? '#EF4444' : '#1C1917' }}>
-                {slot.startTime}
-              </p>
-
-              {selected ? (
-                <div style={{ marginTop: 'auto' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 18, height: 18, borderRadius: 9999, background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
-                        <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--brand-color)' }}>Selected</span>
+              {/* Time + check/full indicator */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: full ? '#9CA3AF' : '#1C1917' }}>
+                  {slot.startTime}
+                </span>
+                {selected && (
+                  <div style={{ width: 20, height: 20, borderRadius: 999, background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="10" height="8" viewBox="0 0 12 10" fill="none">
+                      <path d="M1 5L4.5 8.5L11 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
                   </div>
-                </div>
-              ) : (
-                <p style={{ fontSize: 13, fontWeight: 500, marginTop: 'auto', color: remainColor }}>
-                  {full ? 'All Spots Booked' : `${remaining} Spots available`}
-                </p>
-              )}
+                )}
+                {full && !selected && <span style={{ fontSize: 11, fontWeight: 600, color: '#EF4444' }}>Full</span>}
+              </div>
+              {/* Capacity bar */}
+              <div style={{ height: 3, borderRadius: 999, background: '#F3F4F6', marginBottom: 6 }}>
+                <div style={{ height: '100%', borderRadius: 999, width: `${fillPct}%`, background: barColor, transition: 'width 0.2s' }} />
+              </div>
+              {/* Spots label */}
+              <span style={{ fontSize: 11, color: full ? '#EF4444' : available <= 2 ? '#EF4444' : '#6B7280', fontWeight: 500 }}>
+                {full ? 'No spots available' : `${available} spot${available !== 1 ? 's' : ''} left`}
+              </span>
             </button>
           )
         })}

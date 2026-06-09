@@ -13,7 +13,9 @@ import ReportsPage      from './pages/reception/ReportsPage'
 import VisitorLogPage  from './pages/reception/VisitorLogPage'
 import SettingsPage         from './pages/reception/SettingsPage'
 import BookingDetailPage   from './pages/reception/BookingDetailPage'
+import NewBookingPage  from './pages/reception/NewBookingPage'
 import KioskPage       from './pages/KioskPage'
+import ModulesPage     from './pages/ModulesPage'
 import NotFound        from './pages/NotFound'
 import ReceptionGuard  from './components/ReceptionGuard'
 
@@ -32,6 +34,7 @@ export default function App() {
         <Route path="/bookings"      element={<MyBookingsPage />} />
         {/* /book sits inside PublicLayout for the nav bar; wizard CSS hides the footer */}
         <Route path="/book"          element={<BookPage />} />
+        <Route path="/modules"       element={<ModulesPage />} />
       </Route>
 
       {/* Reception — guarded: must be reception_staff or reception_admin */}
@@ -39,7 +42,7 @@ export default function App() {
       <Route element={<ReceptionLayout />}>
         <Route index              element={<DashboardPage />} />
         <Route path="bookings"   element={<BookingsPage />} />
-        <Route path="bookings/new" element={<Placeholder name="New Booking" />} />
+        <Route path="bookings/new" element={<NewBookingPage />} />
         <Route path="bookings/:id" element={<BookingDetailPage />} />
         <Route path="bookings/group/:groupRef" element={<BookingDetailPage />} />
         <Route path="visitors"   element={<WalkInsPage />} />
@@ -53,6 +56,7 @@ export default function App() {
 
       {/* Kiosk — fullscreen standalone, no nav/footer */}
       <Route path="/kiosk" element={<KioskPage />} />
+
 
       {/* 404 — catch-all, must be last */}
       <Route path="*" element={<NotFound />} />

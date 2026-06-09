@@ -58,6 +58,7 @@ export default function BookingDetailPage() {
   const { id, groupRef } = useParams<{ id: string; groupRef: string }>()
   const [b, setB]         = useState<Booking | null>(null)
   const [groupSlots, setGroupSlots] = useState<Booking[]>([])  // all slots in a group
+  const [openSlot, setOpenSlot] = useState<number>(0)          // accordion: index of open slot row
   const [loading, setLoading] = useState(true)
   const [acting, setActing]   = useState('')
 
@@ -237,153 +238,156 @@ export default function BookingDetailPage() {
             </div>
           </div>
 
-          {/* Slot & Shipment — one card per slot for multi-slot groups */}
+          {/* Slot & Shipment — accordion for multi-slot groups */}
           {groupSlots.length > 1 ? (
-            groupSlots.map((slot, i) => {
-              const slotStatusStyle = STATUS_BADGE[slot.status] ?? STATUS_BADGE.scheduled
-              const comboLabel = `${slot.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · ${slot.loadType?.toUpperCase()}`
+            <div style={{ marginBottom: 16 }}>
+              <p style={SL}>SLOTS ({groupSlots.length})</p>
+              <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
+                {groupSlots.map((slot, i) => {
+                  const slotStatusStyle = STATUS_BADGE[slot.status] ?? STATUS_BADGE.scheduled
+                  const serviceLabel = `${slot.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · ${slot.loadType?.toUpperCase()}`
+                  const isOpen = openSlot === i
 
-              const downloadSlotQr = async () => {
-                const url = await generateQRDataURL(slot.referenceNumber, 220)
-                const a = document.createElement('a')
-                a.href = url
-                a.download = `${slot.referenceNumber}-QR.png`
-                a.click()
-              }
+                  const downloadSlotQr = async () => {
+                    const url = await generateQRDataURL(slot.referenceNumber, 220)
+                    const a = document.createElement('a')
+                    a.href = url
+                    a.download = `${slot.referenceNumber}-QR.png`
+                    a.click()
+                  }
 
-              const exportSlotPdf = async () => {
-                const { jsPDF } = await import('jspdf')
-                const qrUrl = await generateQRDataURL(slot.referenceNumber, 220)
-                const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-                const pw = doc.internal.pageSize.getWidth()
-                const ph = doc.internal.pageSize.getHeight()
-                let y = 18
-                doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 113, 108)
-                doc.text('BOOKING CONFIRMATION', pw / 2, y, { align: 'center' }); y += 8
-                doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 25, 23)
-                doc.text(`Slot ${i + 1} of ${groupSlots.length}`, pw / 2, y, { align: 'center' }); y += 8
-                doc.setFontSize(13); doc.setFont('courier', 'bold'); doc.setTextColor(100, 92, 80)
-                doc.text(slot.referenceNumber, pw / 2, y, { align: 'center' }); y += 10
-                if (qrUrl) { const sz = 56; doc.addImage(qrUrl, 'PNG', (pw - sz) / 2, y, sz, sz); y += sz + 6 }
-                doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139)
-                doc.text('Present this QR code at the CFS gate for check-in', pw / 2, y, { align: 'center' }); y += 10
-                doc.setDrawColor(220, 215, 210); doc.line(20, y, pw - 20, y); y += 8
-                doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 25, 23)
-                doc.text('Booking Details', 20, y); y += 6
-                doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5)
-                const rows: [string, string][] = [
-                  ['Driver',    b?.driverName || '—'],
-                  ['Service',   comboLabel],
-                  ['Date',      slot.slotDate || '—'],
-                  ['Time',      `${slot.slotStartTime} – ${slot.slotEndTime}`],
-                  ...(slot.houseBillNumber  ? [['HBL',       slot.houseBillNumber]  as [string,string]] : []),
-                  ...(slot.containerNumber  ? [['Container', slot.containerNumber]  as [string,string]] : []),
-                ]
-                for (const [label, val] of rows) {
-                  doc.setTextColor(120, 113, 108); doc.text(label, 20, y)
-                  doc.setTextColor(28, 25, 23);   doc.text(val, pw / 2, y)
-                  y += 5.5
-                }
-                doc.setFontSize(8); doc.setFont('helvetica', 'italic'); doc.setTextColor(156, 163, 175)
-                doc.text('Present this QR code at the CFS gate for check-in', pw / 2, ph - 14, { align: 'center' })
-                doc.text(`Generated ${new Date().toLocaleDateString('en-AU')}`, pw / 2, ph - 9, { align: 'center' })
-                doc.save(`${slot.referenceNumber}.pdf`)
-              }
+                  const exportSlotPdf = async () => {
+                    const { jsPDF } = await import('jspdf')
+                    const qrUrl = await generateQRDataURL(slot.referenceNumber, 220)
+                    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+                    const pw = doc.internal.pageSize.getWidth()
+                    const ph = doc.internal.pageSize.getHeight()
+                    let y = 18
+                    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 113, 108)
+                    doc.text('BOOKING CONFIRMATION', pw / 2, y, { align: 'center' }); y += 8
+                    doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 25, 23)
+                    doc.text(`Slot ${i + 1} of ${groupSlots.length}`, pw / 2, y, { align: 'center' }); y += 8
+                    doc.setFontSize(13); doc.setFont('courier', 'bold'); doc.setTextColor(100, 92, 80)
+                    doc.text(slot.referenceNumber, pw / 2, y, { align: 'center' }); y += 10
+                    if (qrUrl) { const sz = 56; doc.addImage(qrUrl, 'PNG', (pw - sz) / 2, y, sz, sz); y += sz + 6 }
+                    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139)
+                    doc.text('Present this QR code at the CFS gate for check-in', pw / 2, y, { align: 'center' }); y += 10
+                    doc.setDrawColor(220, 215, 210); doc.line(20, y, pw - 20, y); y += 8
+                    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 25, 23)
+                    doc.text('Booking Details', 20, y); y += 6
+                    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5)
+                    const rows: [string, string][] = [
+                      ['Driver',    b?.driverName || '—'],
+                      ['Service',   serviceLabel],
+                      ['Date',      slot.slotDate || '—'],
+                      ['Time',      `${slot.slotStartTime} – ${slot.slotEndTime}`],
+                      ...(slot.houseBillNumber  ? [['HBL',       slot.houseBillNumber]  as [string,string]] : []),
+                      ...(slot.containerNumber  ? [['Container', slot.containerNumber]  as [string,string]] : []),
+                    ]
+                    for (const [label, val] of rows) {
+                      doc.setTextColor(120, 113, 108); doc.text(label, 20, y)
+                      doc.setTextColor(28, 25, 23);   doc.text(val, pw / 2, y)
+                      y += 5.5
+                    }
+                    doc.setFontSize(8); doc.setFont('helvetica', 'italic'); doc.setTextColor(156, 163, 175)
+                    doc.text('Present this QR code at the CFS gate for check-in', pw / 2, ph - 14, { align: 'center' })
+                    doc.text(`Generated ${new Date().toLocaleDateString('en-AU')}`, pw / 2, ph - 9, { align: 'center' })
+                    doc.save(`${slot.referenceNumber}.pdf`)
+                  }
 
-              return (
-                <div key={slot.id} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 24, marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
-                  {/* Slot header */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                    <p style={{ fontSize: 13, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.09em', margin: 0 }}>
-                      Slot {i + 1}
-                      {slot.referenceNumber && (
-                        <span style={{ fontFamily: 'ui-monospace,monospace', fontSize: 12, fontWeight: 500, color: '#FC6514', marginLeft: 6 }}>
-                          · {slot.referenceNumber}
-                        </span>
+                  return (
+                    <div key={slot.id}>
+                      {/* Collapsed row — always visible */}
+                      <div
+                        onClick={() => setOpenSlot(isOpen ? -1 : i)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 12,
+                          padding: '14px 20px', cursor: 'pointer',
+                          borderBottom: '1px solid rgba(0,0,0,0.06)',
+                          background: '#FFFFFF',
+                          userSelect: 'none',
+                        }}
+                      >
+                        <Icon name={isOpen ? ICONS.arrowDown : ICONS.arrowRight} size={16} style={{ color: '#9CA3AF', flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', width: 52, flexShrink: 0 }}>SLOT {i + 1}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--brand-color, #FC6514)', fontFamily: 'ui-monospace,monospace', marginRight: 8 }}>{slot.referenceNumber}</span>
+                        <span style={{ fontSize: 13, color: '#6B7280' }}>{slot.slotDate} · {slot.slotStartTime}–{slot.slotEndTime}</span>
+                        <div style={{ flex: 1 }} />
+                        <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 9999, background: 'rgba(252,101,20,0.10)', color: 'var(--brand-color, #FC6514)', fontWeight: 600, marginRight: 8 }}>{serviceLabel}</span>
+                        <span style={{ ...slotStatusStyle, fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 9999 }}>{STATUS_LABEL[slot.status] ?? slot.status}</span>
+                      </div>
+
+                      {/* Expanded panel */}
+                      {isOpen && (
+                        <div style={{ padding: '20px 24px 24px', borderBottom: '1px solid rgba(0,0,0,0.06)', background: '#FFFFFF' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 32px', marginBottom: 20 }}>
+                            <FieldBlock label="Date"           value={slot.slotDate}                                    icon={ICONS.calendar} />
+                            <FieldBlock label="Time"           value={`${slot.slotStartTime} – ${slot.slotEndTime}`}   icon={ICONS.clock} />
+                            {slot.containerNumber  && <FieldBlock label="Container No."  value={slot.containerNumber}  mono icon={ICONS.container} />}
+                            {slot.containerSize    && <FieldBlock label="Container Size" value={slot.containerSize}        icon={ICONS.container} />}
+                            {slot.houseBillNumber  && <FieldBlock label="HBL"            value={slot.houseBillNumber}  mono />}
+                            {slot.entryNumber      && <FieldBlock label="Entry Number"   value={slot.entryNumber}      mono />}
+                            {slot.purpose          && <FieldBlock label="Purpose"        value={slot.purpose} />}
+                            {slot.consolidator     && <FieldBlock label="Consolidator"   value={slot.consolidator} />}
+                          </div>
+
+                          {/* Per-slot action + download row */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            {slot.status === 'scheduled' && (<>
+                              <button type="button"
+                                disabled={acting === slot.id + '-checkin'}
+                                onClick={async () => { setActing(slot.id + '-checkin'); try { await checkInBooking(slot.id); setGroupSlots(prev => { const next = prev.map(s => s.id === slot.id ? { ...s, status: 'checked_in' as any } : s); const allChecked = next.every(s => s.status === 'checked_in' || s.status === 'completed' || s.status === 'cancelled'); if (allChecked) setB(p => p ? { ...p, status: 'checked_in' as any } : p); return next }); toast('Checked in', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
+                                style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, background: 'rgba(34,197,94,0.10)', color: '#16A34A', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                {acting === slot.id + '-checkin' ? '…' : 'Check In'}
+                              </button>
+                              <button type="button"
+                                disabled={acting === slot.id + '-cancel'}
+                                onClick={async () => { setActing(slot.id + '-cancel'); try { await cancelBooking(slot.id); setGroupSlots(prev => prev.map(s => s.id === slot.id ? { ...s, status: 'cancelled' as any } : s)); if (slot.id === b?.id) setB(prev => prev ? { ...prev, status: 'cancelled' as any } : prev); toast('Cancelled', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
+                                style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.20)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                {acting === slot.id + '-cancel' ? '…' : 'Cancel Slot'}
+                              </button>
+                            </>)}
+                            {slot.status === 'checked_in' && (
+                              <button type="button"
+                                disabled={acting === slot.id + '-complete'}
+                                onClick={async () => { setActing(slot.id + '-complete'); try { await completeBooking(slot.id); setGroupSlots(prev => prev.map(s => s.id === slot.id ? { ...s, status: 'completed' as any } : s)); if (slot.id === b?.id) setB(prev => prev ? { ...prev, status: 'completed' as any } : prev); toast('Completed', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
+                                style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, background: 'rgba(107,114,128,0.10)', color: '#374151', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                {acting === slot.id + '-complete' ? '…' : 'Complete'}
+                              </button>
+                            )}
+                            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                              <button type="button" onClick={downloadSlotQr}
+                                style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 12, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}
+                                onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.28)' }}
+                                onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.14)' }}>
+                                <Icon name={ICONS.download} size={17}/> QR
+                              </button>
+                              <button type="button" onClick={exportSlotPdf}
+                                style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 12, fontWeight: 600, color: '#fff', background: 'var(--brand-color, #FC6514)', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}
+                                onMouseOver={e => { e.currentTarget.style.opacity = '0.88' }}
+                                onMouseOut={e  => { e.currentTarget.style.opacity = '1' }}>
+                                <Icon name={ICONS.document} size={17}/> PDF
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       )}
-                    </p>
-                    <span style={{ ...slotStatusStyle, fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 9999 }}>
-                      {STATUS_LABEL[slot.status] ?? slot.status}
-                    </span>
-                  </div>
-
-                  {/* Combo badge */}
-                  <div style={{ marginBottom: 16 }}>
-                    <span style={{ background: 'rgba(252,101,20,0.09)', color: '#FC6514', fontWeight: 600, fontSize: 13, padding: '4px 12px', borderRadius: 9999, display: 'inline-block' }}>
-                      {comboLabel}
-                    </span>
-                  </div>
-
-                  {/* Fields grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                    <FieldBlock label="Date"        value={slot.slotDate} />
-                    <FieldBlock label="Time"        value={`${slot.slotStartTime} – ${slot.slotEndTime}`} />
-                    {slot.containerNumber  && <FieldBlock label="Container No."  value={slot.containerNumber}  mono />}
-                    {slot.containerSize    && <FieldBlock label="Container Size" value={slot.containerSize} />}
-                    {slot.houseBillNumber  && <FieldBlock label="HBL"            value={slot.houseBillNumber}  mono />}
-                    {slot.entryNumber      && <FieldBlock label="Entry Number"   value={slot.entryNumber}      mono />}
-                    {slot.purpose          && <FieldBlock label="Purpose"        value={slot.purpose} />}
-                    {slot.consolidator     && <FieldBlock label="Consolidator"   value={slot.consolidator} />}
-                  </div>
-
-                  {/* Per-slot actions */}
-                  <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-                    {slot.status === 'scheduled' && (<>
-                      <button type="button" onClick={async () => { setActing(slot.id + '-checkin'); try { await checkInBooking(slot.id); setGroupSlots(prev => { const next = prev.map(s => s.id === slot.id ? { ...s, status: 'checked_in' as any } : s); const allChecked = next.every(s => s.status === 'checked_in' || s.status === 'completed' || s.status === 'cancelled'); if (allChecked) setB(p => p ? { ...p, status: 'checked_in' as any } : p); return next }); toast('Checked in', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
-                        disabled={acting === slot.id + '-checkin'}
-                        style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, background: 'rgba(34,197,94,0.10)', color: '#16A34A', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
-                        {acting === slot.id + '-checkin' ? '…' : 'Check In'}
-                      </button>
-                      <button type="button" onClick={async () => { setActing(slot.id + '-cancel'); try { await cancelBooking(slot.id); setGroupSlots(prev => prev.map(s => s.id === slot.id ? { ...s, status: 'cancelled' as any } : s)); if (slot.id === b?.id) setB(prev => prev ? { ...prev, status: 'cancelled' as any } : prev); toast('Cancelled', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
-                        disabled={acting === slot.id + '-cancel'}
-                        style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.20)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
-                        {acting === slot.id + '-cancel' ? '…' : 'Cancel Slot'}
-                      </button>
-                    </>)}
-                    {slot.status === 'checked_in' && (
-                      <button type="button" onClick={async () => { setActing(slot.id + '-complete'); try { await completeBooking(slot.id); setGroupSlots(prev => prev.map(s => s.id === slot.id ? { ...s, status: 'completed' as any } : s)); if (slot.id === b?.id) setB(prev => prev ? { ...prev, status: 'completed' as any } : prev); toast('Completed', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
-                        disabled={acting === slot.id + '-complete'}
-                        style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, background: 'rgba(107,114,128,0.10)', color: '#374151', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
-                        {acting === slot.id + '-complete' ? '…' : 'Complete'}
-                      </button>
-                    )}
-
-                    {/* QR / PDF downloads */}
-                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                      <button
-                        type="button"
-                        onClick={downloadSlotQr}
-                        style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 12, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', transition: 'border-color 0.12s' }}
-                        onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.28)' }}
-                        onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.14)' }}
-                      >
-                        <Icon name={ICONS.download} size={12} /> QR
-                      </button>
-                      <button
-                        type="button"
-                        onClick={exportSlotPdf}
-                        style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 12, fontWeight: 600, color: '#fff', background: 'var(--brand-color, #FC6514)', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 0.12s' }}
-                        onMouseOver={e => { e.currentTarget.style.opacity = '0.88' }}
-                        onMouseOut={e  => { e.currentTarget.style.opacity = '1' }}
-                      >
-                        <Icon name={ICONS.document} size={12} /> PDF
-                      </button>
                     </div>
-                  </div>
-                </div>
-              )
-            })
+                  )
+                })}
+              </div>
+            </div>
           ) : (
             <div style={CARD}>
               <p style={SL}>Slot &amp; Shipment</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <FieldBlock label="Date"         value={b.slotDate} />
-                <FieldBlock label="Time"         value={`${b.slotStartTime} – ${b.slotEndTime}`} />
+                <FieldBlock label="Date"         value={b.slotDate}                                    icon={ICONS.calendar} />
+                <FieldBlock label="Time"         value={`${b.slotStartTime} – ${b.slotEndTime}`}      icon={ICONS.clock} />
                 <FieldBlock label="Service"      value={b.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} />
                 <FieldBlock label="Load Type"    value={b.loadType.toUpperCase()} />
-                {b.containerNumber  && <FieldBlock label="Container No."   value={b.containerNumber}   mono />}
+                {b.containerNumber  && <FieldBlock label="Container No."   value={b.containerNumber}   mono icon={ICONS.container} />}
                 {b.houseBillNumber  && <FieldBlock label="HBL"             value={b.houseBillNumber}   mono />}
-                {b.containerSize    && <FieldBlock label="Container Size"  value={b.containerSize} />}
+                {b.containerSize    && <FieldBlock label="Container Size"  value={b.containerSize}          icon={ICONS.container} />}
                 {b.entryNumber      && <FieldBlock label="Entry Number"    value={b.entryNumber}    mono />}
                 {b.purpose          && <FieldBlock label="Purpose"         value={b.purpose} />}
                 {b.consolidator     && <FieldBlock label="Consolidator"    value={b.consolidator} />}
@@ -395,7 +399,7 @@ export default function BookingDetailPage() {
               </div>
               {b.palletType === 'chep' && (
                 <div style={{ marginTop: 14, background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.20)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <Icon name={ICONS.warning} size={15} style={{ color: '#FBBF24', flexShrink: 0, marginTop: 1 }} />
+                  <Icon name={ICONS.warning} size={18} style={{ color: '#FBBF24', flexShrink: 0, marginTop: 1 }} />
                   <div>
                     <p style={{ fontSize: 13, fontWeight: 600, color: '#B45309', marginBottom: 2 }}>CHEP Pallet Exchange</p>
                     <p style={{ fontSize: 12, color: '#92400E' }}>{b.palletCount} CHEP pallet{(b.palletCount ?? 0) > 1 ? 's' : ''} must be exchanged at collection.</p>
@@ -418,7 +422,7 @@ export default function BookingDetailPage() {
                     <div key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#F7F6F5', borderRadius: 10, padding: '10px 14px' }}>
                       {/* Left: type label + filename */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                        <Icon name={ICONS.document} size={16} style={{ color: '#78716C', flexShrink: 0 }} />
+                        <Icon name={ICONS.document} size={19} style={{ color: '#78716C', flexShrink: 0 }} />
                         <div style={{ minWidth: 0 }}>
                           <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', margin: 0 }}>
                             {fmtDocType(doc.document_type, doc.filename)}
@@ -451,10 +455,10 @@ export default function BookingDetailPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <button onClick={() => act('ics', () => refreshIcsStatus(b.id), 'ICS status refreshed', 'info')} disabled={acting === 'ics'}
                     style={{ fontSize: 12, color: '#FC6514', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500, fontFamily: 'inherit' }}>
-                    <Icon name={ICONS.refresh} size={12} />{acting === 'ics' ? 'Refreshing…' : 'Refresh ICS'}
+                    <Icon name={ICONS.refresh} size={17}/>{acting === 'ics' ? 'Refreshing…' : 'Refresh ICS'}
                   </button>
                   <a href="https://ics.abf.gov.au" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#FC6514', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
-                    Open portal <Icon name={ICONS.arrowRight} size={12} />
+                    Open portal <Icon name={ICONS.arrowRight} size={17}/>
                   </a>
                 </div>
               </div>
@@ -477,7 +481,7 @@ export default function BookingDetailPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 9999, background: idBadge.bg, color: idBadge.color, border: `1px solid ${idBadge.border}` }}>
-                      <Icon name={ICONS.check} size={12} />{idBadge.label}
+                      <Icon name={ICONS.check} size={17}/>{idBadge.label}
                     </span>
                     {checkinRecord.name_match_score != null && (
                       <span style={{ fontSize: 12, color: '#A8A29E' }}>Score: {checkinRecord.name_match_score}%</span>
@@ -530,9 +534,9 @@ export default function BookingDetailPage() {
           <div style={CARD}>
             <p style={SL}>Timeline</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 14 }}>
-              <TRow icon={ICONS.document}    iconColor="#A8A29E" label="Created"    value={fmtDateTime(b.createdAt)} />
+              <TRow icon={ICONS.calendar}   iconColor="#A8A29E" label="Created"    value={fmtDateTime(b.createdAt)} />
               {b.paymentStatus === 'paid' && <TRow icon={ICONS.check} iconColor="#22C55E" label="Payment" value="Received" valueColor="#22C55E" />}
-              {b.checkedInAt && <TRow icon={ICONS.userCheck}  iconColor="#FBBF24" label="Checked In" value={fmtDateTime(b.checkedInAt)} />}
+              {b.checkedInAt && <TRow icon={ICONS.completed}  iconColor="#FBBF24" label="Checked In" value={fmtDateTime(b.checkedInAt)} />}
               {b.completedAt && <TRow icon={ICONS.checkSquare} iconColor="#22C55E" label="Completed" value={fmtDateTime(b.completedAt)} />}
             </div>
           </div>
@@ -550,7 +554,7 @@ export default function BookingDetailPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {hasActionable && (
                     <Btn color="green" onClick={() => openAction('checkin')}>
-                      <Icon name={ICONS.userCheck} size={16} /> Check In Visitor
+                      <Icon name={ICONS.userCheck} size={19} /> Check In Visitor
                     </Btn>
                   )}
                   {hasCheckedIn && allDone && (
@@ -560,7 +564,7 @@ export default function BookingDetailPage() {
                         onClick={() => setConfirmModal(true)}
                         style={{ width: '100%', padding: '11px 16px', borderRadius: 10, border: 'none', background: 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: acting === 'complete' ? 'not-allowed' : 'pointer', opacity: acting === 'complete' ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit', transition: 'opacity 0.15s' }}
                       >
-                        <Icon name={ICONS.checkSquare} size={16} /> {acting === 'complete' ? 'Completing…' : 'Mark Complete'}
+                        <Icon name={ICONS.checkSquare} size={19} /> {acting === 'complete' ? 'Completing…' : 'Mark Complete'}
                       </button>
                       <button
                         onClick={() => openAction('checkin')}
@@ -572,12 +576,12 @@ export default function BookingDetailPage() {
                   )}
                   {hasActionable && (
                     <Btn color="ghost" onClick={() => openAction('reschedule')}>
-                      <Icon name={ICONS.calendar} size={14} /> Reschedule
+                      <Icon name={ICONS.calendar} size={17} /> Reschedule
                     </Btn>
                   )}
                   {hasActionable && (
                     <Btn color="danger" onClick={() => openAction('cancel')}>
-                      <Icon name={ICONS.close} size={14} /> Cancel Booking
+                      <Icon name={ICONS.close} size={17} /> Cancel Booking
                     </Btn>
                   )}
                 </div>
@@ -667,7 +671,7 @@ export default function BookingDetailPage() {
               onClick={() => isMulti ? setSelectedSlot(null) : closeActionModal()}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 18px', fontFamily: 'inherit' }}
             >
-              <Icon name={ICONS.arrowLeft} size={16} /> Back
+              <Icon name={ICONS.arrowLeft} size={19} /> Back
             </button>
 
             {/* Eyebrow + heading */}
@@ -772,7 +776,7 @@ export default function BookingDetailPage() {
                       setActing('')
                     }
                   }}>
-                    <Icon name={ICONS.calendar} size={14} /> Confirm Reschedule
+                    <Icon name={ICONS.calendar} size={17} /> Confirm Reschedule
                   </Btn>
                 </div>
               </>
@@ -812,7 +816,7 @@ export default function BookingDetailPage() {
                       setActing('')
                     }
                   }}>
-                    <Icon name={ICONS.close} size={14} /> Cancel Slot
+                    <Icon name={ICONS.close} size={17} /> Cancel Slot
                   </Btn>
                 </div>
               </>
@@ -832,7 +836,7 @@ export default function BookingDetailPage() {
             {['Driver identity verified', 'Documents checked', 'Cargo released'].map(item => (
               <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#1C1917' }}>
                 <span style={{ width: 20, height: 20, borderRadius: 9999, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.22)' }}>
-                  <Icon name={ICONS.check} size={11} style={{ color: '#22C55E' }} />
+                  <Icon name={ICONS.check} size={19}style={{ color: '#22C55E' }} />
                 </span>
                 {item}
               </div>
@@ -848,7 +852,7 @@ export default function BookingDetailPage() {
               await act('complete', () => completeBooking(b.id, completionNotes || undefined), `✓ ${b.driverName}'s visit completed`, 'success')
               setConfirmModal(false)
             }}>
-              <Icon name={ICONS.check} size={16} /> Confirm Complete
+              <Icon name={ICONS.check} size={19} /> Confirm Complete
             </Btn>
           </div>
         </ModalWrap>
@@ -869,16 +873,19 @@ function cssToObj(str: string): React.CSSProperties {
 function InfoRow({ label, value, icon, mono }: { label: string; value: string; icon?: string; mono?: boolean }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={RL}>{icon && <Icon name={icon} size={14} style={{ color: '#A8A29E' }} />}{label}</span>
+      <span style={RL}>{icon && <Icon name={icon} size={17} style={{ color: '#A8A29E' }} />}{label}</span>
       <span style={{ ...RV, fontFamily: mono ? 'ui-monospace,monospace' : undefined }}>{value}</span>
     </div>
   )
 }
 
-function FieldBlock({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function FieldBlock({ label, value, mono, icon }: { label: string; value: string; mono?: boolean; icon?: string }) {
   return (
     <div>
-      <p style={{ fontSize: 12, color: '#78716C', marginBottom: 3, fontWeight: 500 }}>{label}</p>
+      <p style={{ fontSize: 12, color: '#78716C', marginBottom: 3, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+        {icon && <Icon name={icon} size={19} style={{ color: '#9CA3AF', flexShrink: 0 }} />}
+        {label}
+      </p>
       <p style={{ fontSize: 14, fontWeight: 600, color: '#1C1917', fontFamily: mono ? 'ui-monospace,monospace' : undefined, margin: 0 }}>{value}</p>
     </div>
   )
@@ -896,7 +903,7 @@ function TRow({ icon, iconColor, label, value, valueColor }: { icon: string; ico
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#78716C' }}>
-        <Icon name={icon} size={13} style={{ color: iconColor }} />{label}
+        <Icon name={icon} size={19} style={{ color: iconColor }} />{label}
       </span>
       <span style={{ color: valueColor ?? '#1C1917', fontWeight: 500 }}>{value}</span>
     </div>

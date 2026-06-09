@@ -42,7 +42,7 @@ function FilterSelect({ placeholder, options, value, onChange }: {
         onClick={() => setOpen(v => !v)}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
-          fontSize: 14, padding: '6px 13px', borderRadius: 6,
+          height: 36, fontSize: 14, padding: '0 13px', borderRadius: 6,
           cursor: 'pointer', whiteSpace: 'nowrap', outline: 'none',
           transition: 'all 0.12s ease', boxSizing: 'border-box',
           background: active ? 'rgba(252,101,20,0.07)' : '#FFFFFF',
@@ -233,7 +233,7 @@ const ICS_LEGEND = [
 ]
 
 
-const FIELD = { width: '100%', padding: '10px 14px', height: 44, fontSize: 14, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, outline: 'none', boxSizing: 'border-box' as const, transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }
+const FIELD = { width: '100%', padding: '0 14px', height: 36, fontSize: 14, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, outline: 'none', boxSizing: 'border-box' as const, transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }
 
 // ─── Preset config ────────────────────────────────────────────────────────────
 type Preset = 'today' | '7d' | '30d' | 'all'
@@ -401,8 +401,9 @@ export default function BookingsPage() {
         />
       )}
 
-      {/* Filter bar — single inline row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+      {/* Filter bar — single non-wrapping row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap', overflowX: 'auto', marginBottom: 16 }}>
+        {/* All Statuses */}
         <FilterSelect
           placeholder="All Statuses"
           value={statusFilter}
@@ -414,6 +415,7 @@ export default function BookingsPage() {
             { value: 'cancelled',  label: 'Cancelled'  },
           ]}
         />
+        {/* All Services */}
         <FilterSelect
           placeholder="All Services"
           value={serviceFilter}
@@ -423,41 +425,48 @@ export default function BookingsPage() {
             { value: 'dropoff', label: 'Drop Off' },
           ]}
         />
-        <div style={{ display: 'flex', background: '#F7F6F5', borderRadius: 8, padding: 3, border: '1px solid rgba(0,0,0,0.05)', flexShrink: 0 }}>
+        {/* Today / 7 Days / 30 Days / All Time */}
+        <div style={{ display: 'flex', alignItems: 'center', background: '#F7F6F5', borderRadius: 8, padding: 3, border: '1px solid rgba(0,0,0,0.05)', flexShrink: 0, height: 36, boxSizing: 'border-box' }}>
           {PRESETS.map(p => {
             const active = preset === p.id
             return (
               <button key={p.id} type="button" onClick={() => applyPreset(p.id)}
-                style={{ padding: '6px 13px', fontSize: 14, fontWeight: active ? 700 : 500, borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all 0.15s', background: active ? '#FFFFFF' : 'transparent', color: active ? '#FC6514' : '#4B5563', boxShadow: active ? '0 1px 3px rgba(0,0,0,0.10)' : 'none', whiteSpace: 'nowrap' }}>
+                style={{ height: 30, padding: '0 13px', fontSize: 14, fontWeight: active ? 700 : 500, borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all 0.15s', background: active ? '#FFFFFF' : 'transparent', color: active ? '#FC6514' : '#4B5563', boxShadow: active ? '0 1px 3px rgba(0,0,0,0.10)' : 'none', whiteSpace: 'nowrap' }}>
                 {p.label}
               </button>
             )
           })}
         </div>
-        <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPreset('all') }} style={{ ...FIELD, width: 'auto' }} />
-        <span style={{ color: '#A8A29E' }}>→</span>
-        <input type="date" value={dateTo}   onChange={e => { setDateTo(e.target.value);   setPreset('all') }} style={{ ...FIELD, width: 'auto' }} />
+        {/* Date range */}
+        <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPreset('all') }} style={{ ...FIELD, width: 'auto', flexShrink: 0 }} />
+        <span style={{ color: '#A8A29E', flexShrink: 0 }}>→</span>
+        <input type="date" value={dateTo}   onChange={e => { setDateTo(e.target.value);   setPreset('all') }} style={{ ...FIELD, width: 'auto', flexShrink: 0 }} />
+        {/* Clear filters */}
         {hasFilters && (
           <button onClick={clearAll}
-            style={{ fontSize: 13, color: '#A8A29E', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', transition: 'color 0.15s' }}
+            style={{ fontSize: 13, color: '#A8A29E', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', transition: 'color 0.15s', flexShrink: 0, whiteSpace: 'nowrap' }}
             onMouseOver={e => (e.currentTarget.style.color = '#FC6514')}
             onMouseOut={e  => (e.currentTarget.style.color = '#A8A29E')}
           >Clear filters</button>
         )}
+        {/* Search */}
         <input
           type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Search ref, driver, HBL…"
-          style={{ ...FIELD, flex: 1, minWidth: 160 }}
+          style={{ ...FIELD, width: 200, flexShrink: 0 }}
           onFocus={e => { e.target.style.borderColor = 'rgba(252,101,20,0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(252,101,20,0.12)' }}
           onBlur={e  => { e.target.style.borderColor = 'rgba(0,0,0,0.12)'; e.target.style.boxShadow = 'none' }}
         />
-        <button onClick={exportCsv} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 44, padding: '0 16px', fontSize: 14, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.12s' }}
+        <div style={{ flex: 1 }} />
+        {/* CSV */}
+        <button onClick={exportCsv} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 16px', fontSize: 14, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.12s', flexShrink: 0 }}
           onMouseOver={e => { e.currentTarget.style.background = '#F7F6F5' }}
           onMouseOut={e  => { e.currentTarget.style.background = '#fff' }}
         >
           <Icon name={ICONS.download} size={15} /> CSV
         </button>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#A8A29E', whiteSpace: 'nowrap' }}>
+        {/* Live dot */}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#A8A29E', whiteSpace: 'nowrap', flexShrink: 0 }}>
           <span style={{ width: 7, height: 7, borderRadius: 9999, background: liveColor, display: 'inline-block', transition: 'background 0.4s' }} />
           Live
         </span>
