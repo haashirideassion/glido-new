@@ -94,15 +94,7 @@ export function ReceptionStep1ServiceType() {
           ))}
         </div>
 
-        {/* Info banner */}
-        {state.slotCount > 1 && (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: 'rgba(252,101,20,0.06)', border: '1px solid rgba(252,101,20,0.15)', borderRadius: 10, padding: '12px 16px', marginTop: 20 }}>
-            <Icon name={ICONS.info} size={16} style={{ color: '#FC6514', flexShrink: 0, marginTop: 1 }} />
-            <p style={{ fontSize: 13, color: '#92400E', margin: 0, lineHeight: 1.5 }}>
-              {state.slotCount} slots — you'll enter shipment details for each slot separately.
-            </p>
-          </div>
-        )}
+
       </div>
 
       {/* Booking For — always visible, staff enters visitor/driver details */}

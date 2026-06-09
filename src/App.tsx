@@ -10,8 +10,9 @@ import DashboardPage   from './pages/reception/DashboardPage'
 import BookingsPage    from './pages/reception/BookingsPage'
 import WalkInsPage     from './pages/reception/WalkInsPage'
 import ReportsPage      from './pages/reception/ReportsPage'
-import VisitorLogPage  from './pages/reception/VisitorLogPage'
-import SettingsPage         from './pages/reception/SettingsPage'
+import VisitorLogPage      from './pages/reception/VisitorLogPage'
+import ReportsConfigPage   from './pages/reception/ReportsConfigPage'
+import SettingsPage        from './pages/reception/SettingsPage'
 import BookingDetailPage   from './pages/reception/BookingDetailPage'
 import NewBookingPage  from './pages/reception/NewBookingPage'
 import KioskPage       from './pages/KioskPage'
@@ -48,7 +49,7 @@ export default function App() {
         <Route path="visitors"   element={<WalkInsPage />} />
         <Route path="reports"                  element={<ReportsPage />} />
         <Route path="reports/visitor-log"    element={<VisitorLogPage />} />
-        <Route path="reports/configure"      element={<VisitorLogPage />} />
+        <Route path="reports/configure"      element={<ReportsConfigPage />} />
         <Route path="reports/activity"       element={<ReportsPage />} />
         <Route path="settings"   element={<SettingsPage />} />
       </Route>

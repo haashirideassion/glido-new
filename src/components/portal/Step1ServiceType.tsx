@@ -215,33 +215,48 @@ export function Step1ServiceType() {
           </div>
 
           {expanded && (
-            <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <input
-                type="text"
-                className="wizard-field"
-                placeholder="Full Name"
-                value={modName}
-                onChange={e => setModName(e.target.value)}
-              />
-              <input
-                type="email"
-                className="wizard-field"
-                placeholder="Email"
-                value={modEmail}
-                onChange={e => setModEmail(e.target.value)}
-              />
-              <input
-                type="tel"
-                className="wizard-field"
-                placeholder="Phone (optional)"
-                value={modPhone}
-                onChange={e => setModPhone(e.target.value)}
-              />
+            <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 0 }}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', display: 'block', marginBottom: 6 }}>
+                  Your Name <span style={{ color: 'var(--brand-color, #FC6514)' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={modName}
+                  onChange={e => setModName(e.target.value)}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.12)', fontSize: 15, color: '#1C1917', background: '#fff', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }}
+                />
+                <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4, marginBottom: 0 }}>Required — min. 2 characters</p>
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', display: 'block', marginBottom: 6 }}>
+                  Email Address <span style={{ color: 'var(--brand-color, #FC6514)' }}>*</span>
+                </label>
+                <input
+                  type="email"
+                  value={modEmail}
+                  onChange={e => setModEmail(e.target.value)}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.12)', fontSize: 15, color: '#1C1917', background: '#fff', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }}
+                />
+                <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4, marginBottom: 0 }}>Booking confirmations sent here</p>
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', display: 'block', marginBottom: 6 }}>
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={modPhone}
+                  onChange={e => setModPhone(e.target.value)}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.12)', fontSize: 15, color: '#1C1917', background: '#fff', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }}
+                />
+                <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 4, marginBottom: 0 }}>Optional — for SMS notifications</p>
+              </div>
               <button
                 type="button"
                 onClick={handleDone}
                 disabled={saving}
-                style={{ alignSelf: 'flex-end', padding: '8px 20px', borderRadius: 8, background: 'var(--brand-color, #FC6514)', color: '#fff', fontWeight: 600, fontSize: 13, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, fontFamily: 'inherit' }}
+                style={{ padding: '11px 24px', borderRadius: 12, border: 'none', background: saving ? '#D1D5DB' : 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', marginTop: 8, fontFamily: 'inherit', transition: 'background 0.15s' }}
               >
                 {saving ? 'Saving…' : 'Save changes'}
               </button>
