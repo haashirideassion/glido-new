@@ -34,7 +34,7 @@ export function DayChart({ bookings, loading, capacityByHour, defaultCapacity }:
           trigger: 'axis',
           backgroundColor: 'rgba(28,25,23,0.88)',
           borderColor: 'transparent',
-          textStyle: { color: '#FCFBF8', fontFamily: 'Inter,ui-sans-serif,sans-serif', fontSize: 12 },
+          textStyle: { color: '#FCFBF8', fontFamily: 'Inter,ui-sans-serif,sans-serif', fontSize: 14 },
           axisPointer: { type: 'shadow' },
           formatter: (params: any[]) => {
             const hour  = params[0]?.axisValue ?? ''
@@ -45,8 +45,8 @@ export function DayChart({ bookings, loading, capacityByHour, defaultCapacity }:
             const pct   = cap > 0 ? Math.round((total / cap) * 100) : 0
             return [
               `<span style="font-weight:600;color:#FCFBF8">${hour}</span>`,
-              `<span style="color:rgba(252,101,20,0.80)">● Scheduled</span> ${sched}`,
-              `<span style="color:#FC6514">● Visitor</span> ${onSite}`,
+              `<span style="color:rgba(var(--brand-rgb),0.80)">● Scheduled</span> ${sched}`,
+              `<span style="color:var(--brand-color)">● Visitor</span> ${onSite}`,
               `<span style="color:#C7C3BF">— Capacity</span> ${total} / ${cap} slots (${pct}%)`,
             ].join('<br/>')
           },
@@ -54,7 +54,7 @@ export function DayChart({ bookings, loading, capacityByHour, defaultCapacity }:
         legend: {
           bottom: 0, left: 'center',
           itemWidth: 10, itemHeight: 10,
-          textStyle: { color: '#A8A29E', fontFamily: 'Inter,ui-sans-serif,sans-serif', fontSize: 11 },
+          textStyle: { color: 'var(--text-tertiary)', fontFamily: 'Inter,ui-sans-serif,sans-serif', fontSize: 13 },
           icon: 'circle',
         },
         xAxis: {
@@ -62,21 +62,21 @@ export function DayChart({ bookings, loading, capacityByHour, defaultCapacity }:
           data: HOURS.map(h => `${h}:00`),
           axisLine: { lineStyle: { color: 'rgba(214,211,209,0.5)' } },
           axisTick: { show: false },
-          axisLabel: { color: '#A8A29E', fontFamily: 'Inter,ui-sans-serif,sans-serif', fontSize: 11 },
+          axisLabel: { color: 'var(--text-tertiary)', fontFamily: 'Inter,ui-sans-serif,sans-serif', fontSize: 13 },
         },
         yAxis: {
           type: 'value', minInterval: 1,
           splitLine: { lineStyle: { color: 'rgba(0,0,0,0.06)', type: 'dashed' } },
-          axisLabel: { color: '#A8A29E', fontFamily: 'Inter,ui-sans-serif,sans-serif', fontSize: 11 },
+          axisLabel: { color: 'var(--text-tertiary)', fontFamily: 'Inter,ui-sans-serif,sans-serif', fontSize: 13 },
         },
         series: [
           {
             name: 'Scheduled', type: 'bar', stack: 'day', data: scheduled, barMaxWidth: 28,
-            itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(252,101,20,0.55)' }, { offset: 1, color: 'rgba(252,101,20,0.15)' }] }, borderRadius: [4, 4, 0, 0] },
+            itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(var(--brand-rgb),0.55)' }, { offset: 1, color: 'rgba(var(--brand-rgb),0.15)' }] }, borderRadius: [4, 4, 0, 0] },
           },
           {
             name: 'Visitor', type: 'bar', stack: 'day', data: checkedIn, barMaxWidth: 28,
-            itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: '#FC6514' }, { offset: 1, color: '#FC8A3C' }] }, borderRadius: [4, 4, 0, 0] },
+            itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'var(--brand-color)' }, { offset: 1, color: '#FC8A3C' }] }, borderRadius: [4, 4, 0, 0] },
           },
           {
             name: 'Capacity', type: 'line', data: capacity,
@@ -96,10 +96,10 @@ export function DayChart({ bookings, loading, capacityByHour, defaultCapacity }:
   }, [bookings, capacityByHour]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14, padding: '18px 20px', marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
+    <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14, padding: '18px 20px', marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-        <h2 style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', letterSpacing: '-0.01em' }}>Day at a Glance</h2>
-        <span style={{ fontSize: 11, color: '#A8A29E' }}>Today · hourly schedule</span>
+        <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', letterSpacing: '-0.01em' }}>Day at a Glance</h2>
+        <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>Today · hourly schedule</span>
       </div>
       {loading ? (
         <div style={{ height: 160, display: 'flex', alignItems: 'flex-end', gap: 6, padding: '0 4px' }}>

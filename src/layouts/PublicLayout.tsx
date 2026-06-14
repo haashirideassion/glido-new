@@ -59,6 +59,10 @@ export default function PublicLayout() {
     const b = parseInt(color.slice(5, 7), 16)
     document.documentElement.style.setProperty('--brand-color', color)
     document.documentElement.style.setProperty('--brand-rgb', `${r},${g},${b}`)
+    const luminance = (0.2126 * (r/255)**2.2 + 0.7152 * (g/255)**2.2 + 0.0722 * (b/255)**2.2)
+    const brandText = luminance > 0.18 ? '#000000' : '#ffffff'
+    document.documentElement.style.setProperty('--brand-text', brandText)
+    try { localStorage.setItem('glido_brand_color', color) } catch(e) {}
   }, [tenant?.primaryColor])
 
   // Floating pill scroll effect + liquid nav highlight
@@ -76,7 +80,7 @@ export default function PublicLayout() {
         nav.style.padding = '10px 20px'
         pill.style.maxWidth = '860px'
         pill.style.margin = '0 auto'
-        pill.style.borderRadius = '20px'
+        pill.style.borderRadius = '9999px'
         pill.style.borderColor = 'rgba(255,255,255,0.28)'
         pill.style.boxShadow = '0 1px 0 rgba(255,255,255,0.9) inset,0 4px 8px rgba(0,0,0,0.04),0 14px 36px rgba(0,0,0,0.11),0 0 0 1px rgba(0,0,0,0.05)'
       } else {
@@ -152,12 +156,12 @@ export default function PublicLayout() {
 
             <nav
               ref={wrapRef}
-              style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 2, padding: 4, background: 'rgba(0,0,0,0.045)', borderRadius: 12 }}
+              style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 2, padding: 4, background: 'rgba(0,0,0,0.045)', borderRadius: 9999 }}
             >
               <div
                 ref={hlRef}
                 style={{
-                  position: 'absolute', borderRadius: 8, background: '#fff',
+                  position: 'absolute', borderRadius: 9999, background: '#fff',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.10),0 0 0 1px rgba(0,0,0,0.06)',
                   opacity: 0, pointerEvents: 'none', zIndex: 0,
                   transition: 'opacity 0.2s ease,width 0.25s cubic-bezier(0.16,1,0.3,1),height 0.25s cubic-bezier(0.16,1,0.3,1),left 0.25s cubic-bezier(0.16,1,0.3,1),top 0.25s cubic-bezier(0.16,1,0.3,1)',
@@ -171,15 +175,15 @@ export default function PublicLayout() {
                   style={{
                     position: 'relative', zIndex: 1,
                     display: 'inline-flex', alignItems: 'center', gap: 5,
-                    padding: '7px 13px', borderRadius: 8,
-                    fontSize: 13, fontWeight: 500,
-                    color: pathname === l.to ? '#1C1917' : '#78716C',
+                    padding: '7px 13px', borderRadius: 9999,
+                    fontSize: 15, fontWeight: (pathname === l.to || (l.to === '/book' && pathname === '/visitor-login')) ? 700 : 500,
+                    color: (pathname === l.to || (l.to === '/book' && pathname === '/visitor-login')) ? 'var(--brand-color)' : '#78716C',
                     textDecoration: 'none',
                     transition: 'color 0.15s ease,transform 0.22s cubic-bezier(0.16,1,0.3,1)',
                     userSelect: 'none',
                   }}
                 >
-                  <Icon name={l.icon} size={14} style={{ opacity: 0.65 }} />
+                  <Icon name={l.icon} size={16} style={{ opacity: 0.9 }} />
                   {l.label}
                 </Link>
               ))}
@@ -189,7 +193,7 @@ export default function PublicLayout() {
               // Reception staff landed on a public page — point them back
               <Link
                 to="/reception"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 13, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.22)', borderRadius: 9999, textDecoration: 'none', flexShrink: 0, transition: 'all 0.14s ease' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.22)', borderRadius: 9999, textDecoration: 'none', flexShrink: 0, transition: 'all 0.14s ease' }}
                 onMouseOver={e => { e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.13)'; e.currentTarget.style.borderColor = 'rgba(var(--brand-rgb),0.38)' }}
                 onMouseOut={e  => { e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.07)'; e.currentTarget.style.borderColor = 'rgba(var(--brand-rgb),0.22)' }}
               >
@@ -201,9 +205,9 @@ export default function PublicLayout() {
                 <button
                   type="button"
                   onClick={() => setVisitorMenuOpen(v => !v)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 13, fontWeight: 600, color: '#1C1917', background: 'linear-gradient(160deg,#F9F8F7 0%,#EEEDEC 100%)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 9999, cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.85)', fontFamily: 'inherit' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 15, fontWeight: 600, color: '#1C1917', background: 'linear-gradient(160deg,#F9F8F7 0%,#EEEDEC 100%)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 9999, cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.85)', fontFamily: 'inherit' }}
                 >
-                  <Icon name={ICONS.user} size={13} style={{ opacity: 0.55 }} />
+                  <Icon name={ICONS.user} size={16} style={{ opacity: 0.7 }} />
                   {user.firstName ?? 'My Account'}
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.40, transition: 'transform 0.15s ease', transform: visitorMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)', flexShrink: 0 }}>
                     <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -213,9 +217,19 @@ export default function PublicLayout() {
                 {visitorMenuOpen && (
                   <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 200, minWidth: 160, background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 12, boxShadow: '0 8px 28px rgba(0,0,0,0.11),0 2px 6px rgba(0,0,0,0.06)', padding: 5 }}>
                     <Link
+                      to="/profile"
+                      onClick={() => setVisitorMenuOpen(false)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', borderRadius: 8, fontSize: 15, fontWeight: 500, color: '#1C1917', textDecoration: 'none', transition: 'background 0.12s ease' }}
+                      onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.04)')}
+                      onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <Icon name={ICONS.user} size={14} style={{ opacity: 0.55, flexShrink: 0 }} />
+                      Profile
+                    </Link>
+                    <Link
                       to="/bookings"
                       onClick={() => setVisitorMenuOpen(false)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: '#1C1917', textDecoration: 'none', transition: 'background 0.12s ease' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', borderRadius: 8, fontSize: 15, fontWeight: 500, color: '#1C1917', textDecoration: 'none', transition: 'background 0.12s ease' }}
                       onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.04)')}
                       onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
                     >
@@ -225,7 +239,7 @@ export default function PublicLayout() {
                     <button
                       type="button"
                       onClick={handleSignOut}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 10px', borderRadius: 8, fontSize: 13, fontWeight: 500, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', transition: 'background 0.12s ease' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 10px', borderRadius: 8, fontSize: 15, fontWeight: 500, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', transition: 'background 0.12s ease' }}
                       onMouseOver={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.07)')}
                       onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
                     >
@@ -240,7 +254,7 @@ export default function PublicLayout() {
               <Link
                 ref={loginRef}
                 to="/visitor-login"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 13, fontWeight: 600, color: '#1C1917', background: 'linear-gradient(160deg,#F9F8F7 0%,#EEEDEC 100%)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 9999, textDecoration: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.85)', flexShrink: 0, overflow: 'hidden', position: 'relative' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 15, fontWeight: 600, color: '#1C1917', background: 'linear-gradient(160deg,#F9F8F7 0%,#EEEDEC 100%)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 9999, textDecoration: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.85)', flexShrink: 0, overflow: 'hidden', position: 'relative' }}
               >
                 <Icon name={ICONS.users} size={13} style={{ opacity: 0.55 }} />
                 Login
@@ -264,8 +278,8 @@ export default function PublicLayout() {
               <div className="flex items-center mb-4">
                 <GlidoLogo height={20} onDark={false} />
               </div>
-              <p style={{ fontSize: 13, color: '#78716C', lineHeight: 1.7, maxWidth: 220 }}>
-                Streamlining container freight station operations — from booking to bay door.
+              <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 220 }}>
+                Streamlining container freight station operations from booking to bay door.
               </p>
               <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
                 {[ICONS.email, ICONS.ship].map(icon => (
@@ -276,7 +290,7 @@ export default function PublicLayout() {
                     onMouseOver={e => (e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.12)')}
                     onMouseOut={e  => (e.currentTarget.style.background = 'rgba(0,0,0,0.05)')}
                   >
-                    <Icon name={icon} size={14} style={{ color: '#78716C' }} />
+                    <Icon name={icon} size={14} style={{ color: 'var(--text-secondary)' }} />
                   </a>
                 ))}
               </div>
@@ -284,13 +298,13 @@ export default function PublicLayout() {
 
             {FOOTER_COLS.map(col => (
               <div key={col.heading}>
-                <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#A8A29E', marginBottom: 16 }}>{col.heading}</p>
+                <p style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 16 }}>{col.heading}</p>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {col.links.map(l => (
                     <li key={l.label}>
                       <Link
                         to={l.to}
-                        style={{ fontSize: 13, color: '#78716C', textDecoration: 'none', transition: 'color 0.15s ease' }}
+                        style={{ fontSize: 15, color: 'var(--text-secondary)', textDecoration: 'none', transition: 'color 0.15s ease' }}
                         onMouseOver={e => (e.currentTarget.style.color = '#1C1917')}
                         onMouseOut={e  => (e.currentTarget.style.color = '#78716C')}
                       >
@@ -304,8 +318,8 @@ export default function PublicLayout() {
           </div>
 
           <div style={{ paddingTop: 24, borderTop: '1px solid rgba(0,0,0,0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-            <span style={{ fontSize: 12, color: '#A8A29E' }}>© 2026 {tenant?.name || 'Glido CFS'}. All rights reserved.</span>
-            <span style={{ fontSize: 12, color: '#A8A29E' }}>{tenant?.name || 'Sydney Container Freight Station'} · Mon–Fri 06:00–18:00</span>
+            <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>© 2026 {tenant?.name || 'Glido CFS'}. All rights reserved.</span>
+            <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>{tenant?.name || 'Sydney Container Freight Station'} · Mon–Fri 06:00–18:00</span>
           </div>
         </div>
       </footer>
@@ -313,8 +327,8 @@ export default function PublicLayout() {
       <style>{`
         @media (max-width:768px) { .footer-grid { grid-template-columns:1fr 1fr!important; gap:32px!important; } }
         @media (max-width:480px) { .footer-grid { grid-template-columns:1fr!important; } }
-        .nav-link:hover { color:#1C1917!important; transform:translateY(-1.5px); }
-        .nav-link:active { color:#1C1917!important; transform:translateY(0) scale(0.96); }
+        .nav-link:hover { color:var(--brand-color)!important; transform:translateY(-1.5px); }
+        .nav-link:active { color:var(--brand-color)!important; transform:translateY(0) scale(0.96); }
         @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
       `}</style>
     </>

@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 import PublicLayout    from './layouts/PublicLayout'
 import ReceptionLayout from './layouts/ReceptionLayout'
 import LandingPage     from './pages/LandingPage'
@@ -14,53 +14,60 @@ import VisitorLogPage      from './pages/reception/VisitorLogPage'
 import ReportsConfigPage   from './pages/reception/ReportsConfigPage'
 import SettingsPage        from './pages/reception/SettingsPage'
 import BookingDetailPage   from './pages/reception/BookingDetailPage'
+import VisitorDetailPage  from './pages/reception/VisitorDetailPage'
 import NewBookingPage  from './pages/reception/NewBookingPage'
+import ProfilePage     from './pages/ProfilePage'
 import KioskPage       from './pages/KioskPage'
 import ModulesPage     from './pages/ModulesPage'
 import NotFound        from './pages/NotFound'
 import ReceptionGuard  from './components/ReceptionGuard'
 
-const Placeholder = ({ name }: { name: string }) => (
-  <div className="flex items-center justify-center min-h-[60vh] text-stone-500 text-sm">{name} (coming soon)</div>
-)
-
-export default function App() {
-  return (
-    <Routes>
-      {/* Public — shared nav + footer */}
-      <Route element={<PublicLayout />}>
-        <Route path="/"              element={<LandingPage />} />
-        <Route path="/login"         element={<StaffLoginPage />} />
-        <Route path="/visitor-login" element={<VisitorLoginPage />} />
-        <Route path="/bookings"      element={<MyBookingsPage />} />
-        {/* /book sits inside PublicLayout for the nav bar; wizard CSS hides the footer */}
-        <Route path="/book"          element={<BookPage />} />
-        <Route path="/modules"       element={<ModulesPage />} />
-      </Route>
-
-      {/* Reception — guarded: must be reception_staff or reception_admin */}
-      <Route path="/reception" element={<ReceptionGuard />}>
-      <Route element={<ReceptionLayout />}>
-        <Route index              element={<DashboardPage />} />
-        <Route path="bookings"   element={<BookingsPage />} />
-        <Route path="bookings/new" element={<NewBookingPage />} />
-        <Route path="bookings/:id" element={<BookingDetailPage />} />
-        <Route path="bookings/group/:groupRef" element={<BookingDetailPage />} />
-        <Route path="visitors"   element={<WalkInsPage />} />
-        <Route path="reports"                  element={<ReportsPage />} />
-        <Route path="reports/visitor-log"    element={<VisitorLogPage />} />
-        <Route path="reports/configure"      element={<ReportsConfigPage />} />
-        <Route path="reports/activity"       element={<ReportsPage />} />
-        <Route path="settings"   element={<SettingsPage />} />
-      </Route>
-      </Route>
-
-      {/* Kiosk — fullscreen standalone, no nav/footer */}
-      <Route path="/kiosk" element={<KioskPage />} />
-
-
-      {/* 404 — catch-all, must be last */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  )
-}
+export const router = createBrowserRouter([
+  {
+    /* Public — shared nav + footer */
+    element: <PublicLayout />,
+    children: [
+      { path: '/',              element: <LandingPage /> },
+      { path: '/login',         element: <StaffLoginPage /> },
+      { path: '/visitor-login', element: <VisitorLoginPage /> },
+      { path: '/bookings',      element: <MyBookingsPage /> },
+      { path: '/book',          element: <BookPage /> },
+      { path: '/modules',       element: <ModulesPage /> },
+      { path: '/profile',       element: <ProfilePage /> },
+    ],
+  },
+  {
+    /* Reception — guarded */
+    path: '/reception',
+    element: <ReceptionGuard />,
+    children: [
+      {
+        element: <ReceptionLayout />,
+        children: [
+          { index: true,                                   element: <DashboardPage /> },
+          { path: 'bookings',                              element: <BookingsPage /> },
+          { path: 'bookings/new',                          element: <NewBookingPage /> },
+          { path: 'bookings/:id',                          element: <BookingDetailPage /> },
+          { path: 'bookings/group/:groupRef',              element: <BookingDetailPage /> },
+          { path: 'visitors',                              element: <WalkInsPage /> },
+          { path: 'visitors/:id',                          element: <VisitorDetailPage /> },
+          { path: 'reports',                               element: <ReportsPage /> },
+          { path: 'reports/visitor-log',                   element: <VisitorLogPage /> },
+          { path: 'reports/configure',                     element: <ReportsConfigPage /> },
+          { path: 'reports/activity',                      element: <ReportsPage /> },
+          { path: 'settings',                              element: <SettingsPage /> },
+        ],
+      },
+    ],
+  },
+  {
+    /* Kiosk — fullscreen standalone */
+    path: '/kiosk',
+    element: <KioskPage />,
+  },
+  {
+    /* 404 catch-all */
+    path: '*',
+    element: <NotFound />,
+  },
+])

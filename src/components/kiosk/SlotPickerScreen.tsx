@@ -53,14 +53,14 @@ export function SlotPickerScreen() {
           </svg>
         </div>
         <h2 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: 8, color: '#1C1917', textAlign: 'center' }}>Select Your Slot</h2>
-        <p style={{ color: '#78716C', marginBottom: 28, textAlign: 'center' }}>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: 28, textAlign: 'center' }}>
           This booking has {slots.length} scheduled slots. Select the one{slots.length > 1 ? 's' : ''} you are checking in for today.
         </p>
 
         {/* Select All */}
         {slots.length > 1 && (
           <button type="button" onClick={selectAll}
-            style={{ width: '100%', marginBottom: 12, padding: '10px', fontSize: 13, fontWeight: 600, color: 'var(--brand-color,#FC6514)', background: 'rgba(var(--brand-rgb),0.07)', border: '1.5px solid rgba(var(--brand-rgb),0.25)', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ width: '100%', marginBottom: 12, padding: '10px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color,#FC6514)', background: 'rgba(var(--brand-rgb),0.07)', border: '1.5px solid rgba(var(--brand-rgb),0.25)', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
             Select All {slots.length} Slots
           </button>
         )}
@@ -86,13 +86,13 @@ export function SlotPickerScreen() {
                   <div>
                     <p style={{ fontSize: 16, fontWeight: 700, color: '#1C1917', marginBottom: 4 }}>
                       {slot.slotStartTime} – {slot.slotEndTime}
-                      <span style={{ fontSize: 13, fontWeight: 400, color: '#78716C', marginLeft: 8 }}>{slot.slotDate}</span>
+                      <span style={{ fontSize: 15, fontWeight: 400, color: 'var(--text-secondary)', marginLeft: 8 }}>{slot.slotDate}</span>
                     </p>
-                    <p style={{ fontSize: 13, color: '#78716C', marginBottom: 2 }}>
+                    <p style={{ fontSize: 15, color: 'var(--text-secondary)', marginBottom: 2 }}>
                       {slot.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {slot.loadType.toUpperCase()}
                     </p>
                     {(slot.containerNumber || slot.houseBillNumber) && (
-                      <p style={{ fontSize: 12, fontFamily: 'ui-monospace,monospace', color: '#A8A29E' }}>
+                      <p style={{ fontSize: 14, fontFamily: 'ui-monospace,monospace', color: 'var(--text-tertiary)' }}>
                         {slot.containerNumber ?? slot.houseBillNumber}
                       </p>
                     )}

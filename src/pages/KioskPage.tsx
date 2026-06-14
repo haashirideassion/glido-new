@@ -97,7 +97,7 @@ function DeviceSetupScreen({ onActivated }: { onActivated: () => void }) {
           <h1 style={{ fontSize: '2rem', fontWeight: 700, color: '#1C1917', marginBottom: 10, letterSpacing: '-0.02em' }}>
             Device Setup
           </h1>
-          <p style={{ fontSize: '1.0625rem', color: '#78716C', marginBottom: 36, lineHeight: 1.6 }}>
+          <p style={{ fontSize: '1.0625rem', color: 'var(--text-secondary)', marginBottom: 36, lineHeight: 1.6 }}>
             Enter the device token provided by your administrator
           </p>
 
@@ -136,7 +136,7 @@ function DeviceSetupScreen({ onActivated }: { onActivated: () => void }) {
           />
 
           {error && (
-            <p style={{ fontSize: 14, color: '#EF4444', marginBottom: 16, textAlign: 'left', paddingLeft: 4 }}>
+            <p style={{ fontSize: 15, color: '#EF4444', marginBottom: 16, textAlign: 'left', paddingLeft: 4 }}>
               {error}
             </p>
           )}
@@ -151,8 +151,8 @@ function DeviceSetupScreen({ onActivated }: { onActivated: () => void }) {
               height: 64,
               borderRadius: 16,
               border: 'none',
-              background: !token.trim() || loading ? '#FBD0B8' : 'var(--brand-color)',
-              color: '#fff',
+              background: !token.trim() || loading ? 'rgba(0,0,0,0.10)' : 'var(--brand-color)',
+              color: !token.trim() || loading ? 'rgba(0,0,0,0.35)' : 'var(--brand-text)',
               fontSize: 18,
               fontWeight: 700,
               cursor: !token.trim() || loading ? 'not-allowed' : 'pointer',
@@ -211,8 +211,8 @@ function ScreensaverScreen() {
           <GlidoLogo height={54} />
         </div>
         <p style={{ fontSize: '2.5rem', fontWeight: 700, marginBottom: 8, color: '#1C1917' }}>{tenant?.name || 'Sydney CFS'}</p>
-        <p style={{ fontSize: '1.125rem', color: '#78716C', marginBottom: 40 }}>Container Freight Station</p>
-        <p style={{ fontSize: '1rem', color: '#A8A29E', animation: 'pulse 2s ease-in-out infinite' }}>Tap anywhere to continue</p>
+        <p style={{ fontSize: '1.125rem', color: 'var(--text-secondary)', marginBottom: 40 }}>Container Freight Station</p>
+        <p style={{ fontSize: '1rem', color: 'var(--text-tertiary)', animation: 'pulse 2s ease-in-out infinite' }}>Tap anywhere to continue</p>
       </div>
     </div>
   )

@@ -195,14 +195,14 @@ export default function ReportsConfigPage() {
 
       {/* ABF compliance header */}
       <div style={{ background: '#1C1917', borderRadius: 12, padding: '16px 24px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(252,101,20,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <Icon name={ICONS.reports} size={20} style={{ color: '#FC6514' }} />
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(var(--brand-rgb),0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Icon name={ICONS.reports} size={20} style={{ color: 'var(--brand-color)' }} />
         </div>
         <div>
           <h1 style={{ fontSize: 16, fontWeight: 700, color: '#FFFFFF', margin: 0, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
             S.77Q Customs Depot Licensed Area — Section 77Q, Customs Act 1901
           </h1>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0', fontWeight: 500 }}>
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', margin: '2px 0 0', fontWeight: 500 }}>
             Mandatory Visitor Record Log · ABF Regulatory Compliance Requirement
           </p>
         </div>
@@ -212,13 +212,13 @@ export default function ReportsConfigPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
         {[
           { label: 'Total Visitors',    value: stats.total,     icon: ICONS.walkIn,   color: '#1C1917' },
-          { label: 'Currently On-Site', value: stats.onSite,    icon: ICONS.check,    color: '#FC6514' },
+          { label: 'Currently On-Site', value: stats.onSite,    icon: ICONS.check,    color: 'var(--brand-color)' },
           { label: 'Completed Visits',  value: stats.completed, icon: ICONS.bookings, color: '#22C55E' },
         ].map(k => (
-          <div key={k.label} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div key={k.label} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <p style={{ fontSize: 38, fontWeight: 800, color: '#1C1917', margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>{k.value}</p>
-              <p style={{ fontSize: 14, fontWeight: 600, color: '#4B5563', margin: '2px 0 0' }}>{k.label}</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-muted)', margin: '2px 0 0' }}>{k.label}</p>
             </div>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.color }}>
               <Icon name={k.icon} size={22} />
@@ -235,14 +235,14 @@ export default function ReportsConfigPage() {
               const active = from === q.from && to === q.to
               return (
                 <button key={q.label} onClick={() => { setFrom(q.from); setTo(q.to) }}
-                  style={{ padding: '8px 14px', fontSize: 14, fontWeight: 600, textDecoration: 'none', borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all 0.15s', background: active ? '#FFFFFF' : 'transparent', color: active ? '#FC6514' : '#4B5563', boxShadow: active ? '0 1px 2px rgba(0,0,0,0.08)' : 'none' }}>
+                  style={{ padding: '8px 14px', fontSize: 15, fontWeight: 600, textDecoration: 'none', borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all 0.15s', background: active ? '#FFFFFF' : 'transparent', color: active ? 'var(--brand-color)' : '#4B5563', boxShadow: active ? '0 1px 2px rgba(0,0,0,0.08)' : 'none' }}>
                   {q.label}
                 </button>
               )
             })}
           </div>
           <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={FIELD} />
-          <span style={{ fontSize: 12, color: '#A8A29E', fontWeight: 700 }}>→</span>
+          <span style={{ fontSize: 14, color: 'var(--text-tertiary)', fontWeight: 700 }}>→</span>
           <input type="date" value={to} onChange={e => setTo(e.target.value)} style={FIELD} />
           <select value={status} onChange={e => setStatus(e.target.value)} style={{ ...FIELD, background: '#fff' }}>
             <option value="">All Statuses</option>
@@ -253,7 +253,7 @@ export default function ReportsConfigPage() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <input type="text" placeholder="Search visitor, ID…" value={search} onChange={e => setSearch(e.target.value)} style={{ ...FIELD, width: 220 }} />
-          <button onClick={exportCsv} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '0 16px', height: 48, fontSize: 14, fontWeight: 600, color: '#1C1917', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'background 0.15s' }}
+          <button onClick={exportCsv} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '0 16px', height: 48, fontSize: 15, fontWeight: 600, color: '#1C1917', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'background 0.15s' }}
             onMouseOver={e => (e.currentTarget.style.background = '#F7F6F5')}
             onMouseOut={e  => (e.currentTarget.style.background = '#FFFFFF')}
           >
@@ -263,46 +263,40 @@ export default function ReportsConfigPage() {
       </div>
 
       {/* Table */}
-      <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
+      <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
         {/* Table header row */}
         <div style={{ padding: '14px 24px', borderBottom: '1px solid rgba(0,0,0,0.07)', background: 'rgba(0,0,0,0.01)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#1C1917', margin: 0 }}>
-            ABF Visitor Log <span style={{ fontWeight: 400, color: '#A8A29E', marginLeft: 6 }}>Showing {records.length} records</span>
+          <p style={{ fontSize: 15, fontWeight: 700, color: '#1C1917', margin: 0 }}>
+            ABF Visitor Log <span style={{ fontWeight: 400, color: 'var(--text-tertiary)', marginLeft: 6 }}>Showing {records.length} records</span>
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {loading && <span style={{ fontSize: 12, color: '#A8A29E' }}>Loading…</span>}
+            {loading && <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>Loading…</span>}
             <button
               onClick={() => setConfigOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 8, border: '1.5px solid rgba(0,0,0,0.08)', background: '#fff', fontSize: 13, fontWeight: 600, color: '#1C1917', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 8, border: '1.5px solid rgba(0,0,0,0.08)', background: '#fff', fontSize: 15, fontWeight: 600, color: '#1C1917', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               <Icon name={ICONS.settings} size={15} />
               Configure Report
             </button>
-            <Link
-              to="/reception/reports/visitor-log"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#6B7280', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 8, padding: '6px 12px', textDecoration: 'none' }}
-            >
-              ← Back to Log
-            </Link>
           </div>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, whiteSpace: 'nowrap' }}>
+        <div style={{ overflowX: 'auto', position: 'relative' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15, whiteSpace: 'nowrap' }}>
             <thead>
               <tr style={{ background: '#F7F6F5', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
-                {vis('date')          && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Date</th>}
-                {vis('fullName')      && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Full Name</th>}
-                {vis('address')       && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Address</th>}
-                {vis('idType')        && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>ID Type</th>}
-                {vis('idNumber')      && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>ID Number</th>}
-                {vis('dob')           && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>DOB</th>}
-                {vis('idSignedBy')    && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>ID Signed By</th>}
-                {vis('reason')        && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Reason</th>}
-                {vis('personVisited') && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Person Visited</th>}
-                {vis('checkInTime')   && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Entry Time</th>}
-                {vis('checkOutTime')  && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Exit Time</th>}
-                {vis('notes')         && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 13 }}>Notes</th>}
+                {vis('date')          && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 15 }}>Date</th>}
+                {vis('fullName')      && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 15, position: 'sticky', left: 0, zIndex: 2, background: '#F7F6F5' }}>Full Name</th>}
+                {vis('address')       && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 15 }}>Address</th>}
+                {vis('idType')        && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 15 }}>ID Type</th>}
+                {vis('idNumber')      && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 15, position: 'sticky', left: 160, zIndex: 2, background: '#F7F6F5' }}>ID Number</th>}
+                {vis('dob')           && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 15 }}>DOB</th>}
+                {vis('idSignedBy')    && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 15 }}>ID Signed By</th>}
+                {vis('reason')        && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 15 }}>Reason</th>}
+                {vis('personVisited') && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 15 }}>Person Visited</th>}
+                {vis('checkInTime')   && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 15 }}>Entry Time</th>}
+                {vis('checkOutTime')  && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 15 }}>Exit Time</th>}
+                {vis('notes')         && <th style={{ textAlign: 'left', padding: '14px 20px', color: '#374151', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: 15 }}>Notes</th>}
               </tr>
             </thead>
             <tbody>
@@ -316,17 +310,17 @@ export default function ReportsConfigPage() {
                     onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
                   >
                     {vis('date')          && <td style={{ padding: '14px 20px', color: '#1C1917', fontWeight: 500 }}>{fmtDate(r.check_in_time)}</td>}
-                    {vis('fullName')      && <td style={{ padding: '14px 20px', fontWeight: 700, color: '#1C1917' }}>{name}</td>}
-                    {vis('address')       && <td style={{ padding: '14px 20px', color: '#4B5563', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.licence_address || '—'}</td>}
-                    {vis('idType')        && <td style={{ padding: '14px 20px', color: '#4B5563' }}>{r.licence_scan_method || 'Manual'}</td>}
-                    {vis('idNumber')      && <td style={{ padding: '14px 20px', fontFamily: 'ui-monospace,monospace', color: '#FC6514', fontWeight: 700 }}>{r.licence_number || '—'}</td>}
-                    {vis('dob')           && <td style={{ padding: '14px 20px', color: '#4B5563' }}>{fmtDate(r.licence_dob)}</td>}
-                    {vis('idSignedBy')    && <td style={{ padding: '14px 20px', color: '#4B5563' }}>—</td>}
+                    {vis('fullName')      && <td style={{ padding: '14px 20px', fontWeight: 700, color: '#1C1917', position: 'sticky', left: 0, zIndex: 1, background: '#fff' }}>{name}</td>}
+                    {vis('address')       && <td style={{ padding: '14px 20px', color: 'var(--text-muted)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.licence_address || '—'}</td>}
+                    {vis('idType')        && <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>{r.licence_scan_method || 'Manual'}</td>}
+                    {vis('idNumber')      && <td style={{ padding: '14px 20px', fontFamily: 'ui-monospace,monospace', color: 'var(--brand-color)', fontWeight: 700, position: 'sticky', left: 160, zIndex: 1, background: '#fff' }}>{r.licence_number || '—'}</td>}
+                    {vis('dob')           && <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>{fmtDate(r.licence_dob)}</td>}
+                    {vis('idSignedBy')    && <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>—</td>}
                     {vis('reason')        && <td style={{ padding: '14px 20px' }}><span style={{ background: 'rgba(0,0,0,0.04)', padding: '4px 10px', borderRadius: 6, fontWeight: 600, color: '#374151' }}>{reason}</span></td>}
                     {vis('personVisited') && <td style={{ padding: '14px 20px', color: '#1C1917', fontWeight: 600 }}>{r.visit_person_name || '—'}</td>}
                     {vis('checkInTime')   && <td style={{ padding: '14px 20px', color: '#16A34A', fontWeight: 700 }}>{fmtDateTime(r.check_in_time)}</td>}
-                    {vis('checkOutTime')  && <td style={{ padding: '14px 20px', color: '#4B5563' }}>{b?.completed_at ? fmtDateTime(b.completed_at) : '—'}</td>}
-                    {vis('notes')         && <td style={{ padding: '14px 20px', color: '#4B5563' }}>—</td>}
+                    {vis('checkOutTime')  && <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>{b?.completed_at ? fmtDateTime(b.completed_at) : '—'}</td>}
+                    {vis('notes')         && <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>—</td>}
                   </tr>
                 )
               })}
@@ -336,8 +330,8 @@ export default function ReportsConfigPage() {
                     <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
                       <Icon name={ICONS.reports} size={40} style={{ color: 'rgba(0,0,0,0.1)' }} />
                     </div>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: '#78716C', margin: 0 }}>No visitor records found</p>
-                    <p style={{ fontSize: 12, color: '#A8A29E', margin: '4px 0 0' }}>Try adjusting your filters or date range.</p>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', margin: 0 }}>No visitor records found</p>
+                    <p style={{ fontSize: 14, color: 'var(--text-tertiary)', margin: '4px 0 0' }}>Try adjusting your filters or date range.</p>
                   </td>
                 </tr>
               )}
@@ -357,13 +351,13 @@ export default function ReportsConfigPage() {
             </div>
 
             {/* Visible Columns */}
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 12, margin: '0 0 12px' }}>Visible Columns</p>
+            <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', color: '#9CA3AF', textTransform: 'uppercase', marginBottom: 12, margin: '0 0 12px' }}>Visible Columns</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
               {ALL_COLUMNS.map(col => {
                 const checked = visibleColumns.includes(col.key)
                 return (
-                  <label key={col.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, border: `1.5px solid ${checked ? 'rgba(252,101,20,0.25)' : 'rgba(0,0,0,0.08)'}`, cursor: 'pointer', background: checked ? 'rgba(252,101,20,0.03)' : '#fff', transition: 'all 0.15s' }}>
-                    <span style={{ fontSize: 14, fontWeight: 500, color: '#1C1917' }}>{col.label}</span>
+                  <label key={col.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, border: `1.5px solid ${checked ? 'rgba(var(--brand-rgb),0.25)' : 'rgba(0,0,0,0.08)'}`, cursor: 'pointer', background: checked ? 'rgba(var(--brand-rgb),0.03)' : '#fff', transition: 'all 0.15s' }}>
+                    <span style={{ fontSize: 15, fontWeight: 500, color: '#1C1917' }}>{col.label}</span>
                     <input type="checkbox" checked={checked} onChange={() => toggleColumn(col.key)}
                       style={{ width: 18, height: 18, accentColor: 'var(--brand-color, #FC6514)', cursor: 'pointer' }} />
                   </label>
@@ -372,7 +366,7 @@ export default function ReportsConfigPage() {
             </div>
 
             {/* Export Settings */}
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 12px' }}>Export (CSV)</p>
+            <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', color: '#9CA3AF', textTransform: 'uppercase', margin: '0 0 12px' }}>Export (CSV)</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 32 }}>
               {([
                 { key: 'includeTenantName', label: 'Include tenant name in header' },
@@ -380,7 +374,7 @@ export default function ReportsConfigPage() {
                 { key: 'includeTimestamp',  label: 'Include generated timestamp' },
               ] as const).map(opt => (
                 <label key={opt.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, border: '1.5px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}>
-                  <span style={{ fontSize: 14, fontWeight: 500, color: '#1C1917' }}>{opt.label}</span>
+                  <span style={{ fontSize: 15, fontWeight: 500, color: '#1C1917' }}>{opt.label}</span>
                   <input type="checkbox" checked={exportConfig[opt.key]} onChange={() => toggleExport(opt.key)}
                     style={{ width: 18, height: 18, accentColor: 'var(--brand-color, #FC6514)', cursor: 'pointer' }} />
                 </label>

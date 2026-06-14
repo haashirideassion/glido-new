@@ -65,35 +65,51 @@ function generateSlotsFromConfig(
   durationMin: number,
   capacity: number,
   dbSlots: TimeSlot[],
+  periods: PeriodConfig,
+  capacityByHour?: Record<string, number>,
 ): TimeSlot[] {
-  const openMin  = timeToMin(dayCfg.open)
-  const closeMin = timeToMin(dayCfg.close)
+  // Only generate within enabled period ranges
+  const enabledRanges = Object.values(periods)
+    .filter(p => p.enabled)
+    .map(p => ({ start: timeToMin(p.start), end: timeToMin(p.end) }))
+
+  // Fallback to full open→close if no periods configured
+  if (enabledRanges.length === 0) {
+    enabledRanges.push({ start: timeToMin(dayCfg.open), end: timeToMin(dayCfg.close) })
+  }
+
   const slots: TimeSlot[] = []
 
-  for (let start = openMin; start + durationMin <= closeMin; start += durationMin) {
-    const startTime = minToTime(start)
-    const endTime   = minToTime(start + durationMin)
-    const id        = `gen-${date}-${startTime.replace(':', '')}`
+  for (const range of enabledRanges) {
+    for (let start = range.start; start + durationMin <= range.end; start += durationMin) {
+      const startTime = minToTime(start)
+      const endTime   = minToTime(start + durationMin)
+      const id        = `gen-${date}-${startTime.replace(':', '')}`
 
-    // Merge with DB slot if one exists for this exact time
-    const dbSlot = dbSlots.find(s => s.startTime === startTime)
+      // Merge with DB slot if one exists for this exact time
+      const dbSlot = dbSlots.find(s => s.startTime === startTime)
 
-    const confirmed = dbSlot?.confirmed ?? 0
-    const held      = dbSlot?.held      ?? 0
-    const busyness  = confirmed >= capacity
-      ? 'full'
-      : confirmed / capacity >= 0.6 ? 'busy' : 'available'
+      // Format slot start time as "HH:MM" to match the stored key
+      const slotKey      = `${String(Math.floor(start / 60)).padStart(2, '0')}:${String(start % 60).padStart(2, '0')}`
+      const slotCapacity = capacityByHour?.[slotKey] ?? capacity
 
-    slots.push({
-      id:        dbSlot?.id ?? id,
-      date,
-      startTime,
-      endTime,
-      capacity,
-      confirmed,
-      held,
-      busyness:  busyness as TimeSlot['busyness'],
-    })
+      const confirmed = dbSlot?.confirmed ?? 0
+      const held      = dbSlot?.held      ?? 0
+      const busyness  = confirmed >= slotCapacity
+        ? 'full'
+        : confirmed / slotCapacity >= 0.6 ? 'busy' : 'available'
+
+      slots.push({
+        id:        dbSlot?.id ?? id,
+        date,
+        startTime,
+        endTime,
+        capacity:  slotCapacity,
+        confirmed,
+        held,
+        busyness:  busyness as TimeSlot['busyness'],
+      })
+    }
   }
   return slots
 }
@@ -183,13 +199,14 @@ export function Step4ShipmentDetails() {
       if (!cancelled) dispatch({ type: 'SET_SLOTS', slots: [], loading: false })
       return
     }
-    const durationMin = tenant?.slot_duration_min     ?? 60
-    const capacity    = tenant?.max_bookings_per_slot ?? 10
+    const durationMin    = tenant?.slot_duration_min     ?? 60
+    const capacity       = tenant?.max_bookings_per_slot ?? 10
+    const capacityByHour = (tenant as any)?.slot_capacity_by_hour as Record<string, number> | undefined
     getSlotsByDate(state.selectedDate)
       .then(dbSlots => {
         if (cancelled) return
         const slots: TimeSlot[] = dayCfg?.enabled && dayCfg.open && dayCfg.close
-          ? generateSlotsFromConfig(state.selectedDate, dayCfg, durationMin, capacity, dbSlots)
+          ? generateSlotsFromConfig(state.selectedDate, dayCfg, durationMin, capacity, dbSlots, periods, capacityByHour)
           : dbSlots.map(s => ({ ...s, capacity: s.capacity > 0 ? s.capacity : capacity }))
         dispatch({ type: 'SET_SLOTS', slots, loading: false })
       })
@@ -212,12 +229,20 @@ export function Step4ShipmentDetails() {
   })()
   const dates = calendarDays(advanceDays)
 
-  // ── Single-slot UI (unchanged) ─────────────────────────────────────────────
+  // ── Single-slot UI ────────────────────────────────────────────────────────
   if (!multi) {
     const selectSlot = (slot: TimeSlot) =>
       dispatch({ type: 'SELECT_SLOT', slotId: slot.id, label: `${slot.startTime} – ${slot.endTime}` })
     const slotGroups   = groupSlotsByPeriods(state.slots, periods)
     const isLoading    = state.slotsLoading || tenantLoading
+
+    const [activePeriod, setActivePeriod] = useState<string>(() => slotGroups[0]?.key ?? 'morning')
+    useEffect(() => {
+      setActivePeriod(slotGroups[0]?.key ?? 'morning')
+    }, [state.selectedDate]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    const activeGroup = slotGroups.find(g => g.key === activePeriod) ?? slotGroups[0]
+
     return (
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
@@ -226,22 +251,27 @@ export function Step4ShipmentDetails() {
           </div>
           <div>
             <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0 }}>Pick Date &amp; Time</h2>
-            <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>Select a date and time slot and please ensure your vehicle arrives within the chosen window to avoid delays.</p>
+            <p style={{ fontSize: 15, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>Select a date and time slot and please ensure your vehicle arrives within the chosen window to avoid delays.</p>
           </div>
         </div>
         <DateStrip dates={dates} selectedDate={state.selectedDate} wh={wh} cutoff={cutoff} isTodayPastCutoff={isTodayPastCutoff}
           onSelect={iso => dispatch({ type: 'SELECT_DATE', date: iso })} />
-        {isLoading && <div style={{ textAlign: 'center', padding: '48px 0', color: '#9CA3AF', fontSize: 14 }}>Loading slots…</div>}
+        {isLoading && <div style={{ textAlign: 'center', padding: '48px 0', color: '#9CA3AF', fontSize: 15 }}>Loading slots…</div>}
         {!isLoading && state.slots.length === 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 8, padding: '48px 0', color: '#9CA3AF' }}>
             <Icon name={ICONS.calendar} size={32} style={{ opacity: 0.35 }} />
-            <p style={{ fontSize: 14 }}>No slots available for this date.</p>
+            <p style={{ fontSize: 15 }}>No slots available for this date.</p>
           </div>
         )}
-        {!isLoading && slotGroups.map(({ key, period, slots }) => (
-          <SlotGroup key={key} label={period.label}
-            slots={slots} selectedId={state.selectedSlotId} onSelect={selectSlot} />
-        ))}
+        {!isLoading && slotGroups.length > 0 && (
+          <>
+            <PeriodTabs groups={slotGroups} active={activePeriod} onChange={setActivePeriod} />
+            {activeGroup
+              ? <SlotGrid slots={activeGroup.slots} selectedId={state.selectedSlotId} onSelect={selectSlot} />
+              : <p style={{ textAlign: 'center', color: '#9CA3AF', fontSize: 15, padding: '24px 0' }}>No slots available for this period — try another.</p>
+            }
+          </>
+        )}
       </div>
     )
   }
@@ -307,7 +337,7 @@ export function Step4ShipmentDetails() {
           </div>
           <div>
             <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0 }}>Pick Date &amp; Time</h2>
-            <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>Select a date and time slot for each booking.</p>
+            <p style={{ fontSize: 15, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>Select a date and time slot for each booking.</p>
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
@@ -317,8 +347,8 @@ export function Step4ShipmentDetails() {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 7,
               padding: '5px 12px', borderRadius: 9999,
-              background: applyAll ? 'rgba(252,101,20,0.10)' : 'rgba(0,0,0,0.06)',
-              border: `1.5px solid ${applyAll ? 'rgba(252,101,20,0.30)' : 'rgba(0,0,0,0.12)'}`,
+              background: applyAll ? 'rgba(var(--brand-rgb),0.10)' : 'rgba(0,0,0,0.06)',
+              border: `1.5px solid ${applyAll ? 'rgba(var(--brand-rgb),0.30)' : 'rgba(0,0,0,0.12)'}`,
               cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit',
             }}
           >
@@ -333,11 +363,11 @@ export function Step4ShipmentDetails() {
                 background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.18)', transition: 'left 0.15s',
               }} />
             </span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: applyAll ? 'var(--brand-color, #FC6514)' : '#6B7280', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: applyAll ? 'var(--brand-color, #FC6514)' : '#6B7280', whiteSpace: 'nowrap' }}>
               Apply to all bookings
             </span>
           </button>
-          <span style={{ fontSize: 11, color: '#A8A29E' }}>
+          <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
             {applyAll
               ? `Same time slot for all ${state.slotCount} bookings`
               : `Use the same time slot for all ${state.slotCount} bookings`}
@@ -356,7 +386,7 @@ export function Step4ShipmentDetails() {
               type="button"
               onClick={() => setActiveSlot(i)}
               style={{
-                padding: '10px 24px', fontSize: 14,
+                padding: '10px 24px', fontSize: 15,
                 fontWeight: active ? 700 : 500,
                 color: active ? 'var(--brand-color, #FC6514)' : '#6B7280',
                 background: 'none', border: 'none',
@@ -427,14 +457,15 @@ function SlotPickerForSlot({ slotIndex, tenant, tenantLoading, dates, wh, cutoff
     setSlots([])
     const dayKey = getDayKey(cfg.selectedDate)
     const dayCfg = wh?.[dayKey]
-    const durationMin = tenant?.slot_duration_min     ?? 60
-    const capacity    = tenant?.max_bookings_per_slot ?? 10
+    const durationMin    = tenant?.slot_duration_min     ?? 60
+    const capacity       = tenant?.max_bookings_per_slot ?? 10
+    const capacityByHour = (tenant as any)?.slot_capacity_by_hour as Record<string, number> | undefined
     if (dayCfg && !dayCfg.enabled) { setLoading(false); return }
     getSlotsByDate(cfg.selectedDate)
       .then(dbSlots => {
         if (cancelRef.current) return
         const generated: TimeSlot[] = dayCfg?.enabled && dayCfg.open && dayCfg.close
-          ? generateSlotsFromConfig(cfg.selectedDate, dayCfg, durationMin, capacity, dbSlots)
+          ? generateSlotsFromConfig(cfg.selectedDate, dayCfg, durationMin, capacity, dbSlots, periods, capacityByHour)
           : dbSlots.map(s => ({ ...s, capacity: s.capacity > 0 ? s.capacity : capacity }))
         setSlots(generated)
       })
@@ -445,20 +476,32 @@ function SlotPickerForSlot({ slotIndex, tenant, tenantLoading, dates, wh, cutoff
 
   const slotGroups = groupSlotsByPeriods(slots, periods)
 
+  const [activePeriod, setActivePeriod] = useState<string>(() => slotGroups[0]?.key ?? 'morning')
+  useEffect(() => {
+    setActivePeriod(slotGroups[0]?.key ?? 'morning')
+  }, [cfg.selectedDate]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const activeGroup = slotGroups.find(g => g.key === activePeriod) ?? slotGroups[0]
+
   return (
     <div>
       <DateStrip dates={dates} selectedDate={cfg.selectedDate} wh={wh} cutoff={cutoff} isTodayPastCutoff={isTodayPastCutoff} onSelect={onDateSelect} />
-      {loading && <div style={{ textAlign: 'center', padding: '32px 0', color: '#9CA3AF', fontSize: 14 }}>Loading slots…</div>}
+      {loading && <div style={{ textAlign: 'center', padding: '32px 0', color: '#9CA3AF', fontSize: 15 }}>Loading slots…</div>}
       {!loading && slots.length === 0 && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '32px 0', color: '#9CA3AF' }}>
           <Icon name={ICONS.calendar} size={24} style={{ opacity: 0.35 }} />
-          <p style={{ fontSize: 14 }}>No slots available for this date.</p>
+          <p style={{ fontSize: 15 }}>No slots available for this date.</p>
         </div>
       )}
-      {!loading && slotGroups.map(({ key, period, slots: gs }) => (
-        <SlotGroup key={key} label={period.label} icon={PERIOD_ICONS[key] ?? ICONS.clock}
-          slots={gs} selectedId={cfg.selectedSlotId} onSelect={onSlotSelect} />
-      ))}
+      {!loading && slotGroups.length > 0 && (
+        <>
+          <PeriodTabs groups={slotGroups} active={activePeriod} onChange={setActivePeriod} />
+          {activeGroup
+            ? <SlotGrid slots={activeGroup.slots} selectedId={cfg.selectedSlotId} onSelect={onSlotSelect} />
+            : <p style={{ textAlign: 'center', color: '#9CA3AF', fontSize: 15, padding: '24px 0' }}>No slots available for this period — try another.</p>
+          }
+        </>
+      )}
     </div>
   )
 }
@@ -496,11 +539,11 @@ function DateStrip({ dates, selectedDate, wh, cutoff, isTodayPastCutoff, onSelec
               transition: 'all 0.15s ease', cursor: disabled ? 'not-allowed' : 'pointer',
               opacity: disabled ? 0.38 : 1,
               border: sel ? '2px solid var(--brand-color)' : '1.5px solid rgba(0,0,0,0.08)',
-              background: sel ? 'rgba(252,101,20,0.04)' : '#fff',
+              background: sel ? 'rgba(var(--brand-rgb),0.04)' : '#fff',
               boxShadow: 'none', boxSizing: 'border-box',
             }}
           >
-            <p style={{ fontSize: 11, fontWeight: 600, color: sel ? 'var(--brand-color)' : '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: sel ? 'var(--brand-color)' : '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
               {shortDay}
             </p>
             <p style={{ fontSize: 22, fontWeight: 800, color: sel ? 'var(--brand-color)' : '#1C1917', lineHeight: 1, fontFamily: 'inherit' }}>
@@ -525,6 +568,103 @@ function DateStrip({ dates, selectedDate, wh, cutoff, isTodayPastCutoff, onSelec
   )
 }
 
+// ─── Period tab bar ───────────────────────────────────────────────────────────
+function PeriodTabs({ groups, active, onChange }: {
+  groups: { key: string; period: { label: string } }[]
+  active: string
+  onChange: (key: string) => void
+}) {
+  if (groups.length === 1) {
+    return (
+      <div style={{ marginBottom: 16 }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          fontSize: 14, fontWeight: 700, color: 'var(--brand-color)',
+          background: 'rgba(var(--brand-rgb),0.08)',
+          border: '1px solid rgba(var(--brand-rgb),0.18)',
+          borderRadius: 20, padding: '4px 12px',
+          textTransform: 'uppercase', letterSpacing: '0.06em',
+        }}>
+          {groups[0].period.label.replace(' Slots', '')}
+        </span>
+      </div>
+    )
+  }
+  return (
+    <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: '#F3F4F6', borderRadius: 12, padding: 4 }}>
+      {groups.map(({ key, period }) => {
+        const sel = key === active
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onChange(key)}
+            style={{
+              flex: 1, padding: '8px 12px', borderRadius: 9, border: 'none', fontFamily: 'inherit',
+              fontSize: 15, fontWeight: sel ? 700 : 500, cursor: 'pointer',
+              background: sel ? '#fff' : 'transparent',
+              color: sel ? 'var(--brand-color)' : '#6B7280',
+              boxShadow: sel ? '0 1px 4px rgba(0,0,0,0.10)' : 'none',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {period.label.replace(' Slots', '')}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─── Flat slot grid (no section header) ──────────────────────────────────────
+function SlotGrid({ slots, selectedId, onSelect }: {
+  slots: TimeSlot[]; selectedId: string | null; onSelect: (s: TimeSlot) => void
+}) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10, marginBottom: 8 }}>
+      {slots.map(slot => {
+        const full      = slot.busyness === 'full' || slot.busyness === 'closed'
+        const selected  = slot.id === selectedId
+        const available = Math.max(0, slot.capacity - slot.confirmed - slot.held)
+        return (
+          <button
+            key={slot.id}
+            type="button"
+            disabled={full}
+            onClick={() => !full && onSelect(slot)}
+            style={{
+              width: '100%', position: 'relative', display: 'flex', flexDirection: 'column',
+              padding: '14px 18px', borderRadius: 16, textAlign: 'left',
+              transition: 'all 0.15s ease', boxSizing: 'border-box', fontFamily: 'inherit',
+              border: selected ? '2px solid var(--brand-color)' : '1.5px solid rgba(0,0,0,0.08)',
+              background: full ? '#FAFAFA' : selected ? 'rgba(var(--brand-rgb),0.03)' : '#fff',
+              cursor: full ? 'not-allowed' : 'pointer',
+              opacity: full ? 0.5 : 1,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: full ? '#9CA3AF' : '#1C1917' }}>
+                {slot.startTime}
+              </span>
+              {selected && (
+                <div style={{ width: 20, height: 20, borderRadius: 999, background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="10" height="8" viewBox="0 0 12 10" fill="none">
+                    <path d="M1 5L4.5 8.5L11 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+              )}
+              {full && !selected && <span style={{ fontSize: 13, fontWeight: 600, color: '#EF4444' }}>Full</span>}
+            </div>
+            <span style={{ fontSize: 13, color: full ? '#EF4444' : available <= 2 ? '#EF4444' : '#6B7280', fontWeight: 500 }}>
+              {full ? 'No spots available' : `${available} spot${available !== 1 ? 's' : ''} left`}
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 function SlotGroup({ label, slots, selectedId, onSelect }: {
   label: string; icon?: string; slots: TimeSlot[]; selectedId: string | null; onSelect: (s: TimeSlot) => void
 }) {
@@ -532,7 +672,7 @@ function SlotGroup({ label, slots, selectedId, onSelect }: {
     <div style={{ marginBottom: 28 }}>
       {/* Section header — clean label + thin divider, no icon */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 0 12px' }}>
-        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#9CA3AF', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', color: '#9CA3AF', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
           {label}
         </span>
         <div style={{ flex: 1, height: 1, background: '#F3F4F6' }} />
@@ -556,7 +696,7 @@ function SlotGroup({ label, slots, selectedId, onSelect }: {
                 padding: '14px 18px', borderRadius: 16, textAlign: 'left',
                 transition: 'all 0.15s ease', boxSizing: 'border-box', fontFamily: 'inherit',
                 border: selected ? '2px solid var(--brand-color)' : '1.5px solid rgba(0,0,0,0.08)',
-                background: full ? '#FAFAFA' : selected ? 'rgba(252,101,20,0.03)' : '#fff',
+                background: full ? '#FAFAFA' : selected ? 'rgba(var(--brand-rgb),0.03)' : '#fff',
                 cursor: full ? 'not-allowed' : 'pointer',
                 opacity: full ? 0.5 : 1,
               }}
@@ -573,14 +713,10 @@ function SlotGroup({ label, slots, selectedId, onSelect }: {
                     </svg>
                   </div>
                 )}
-                {full && !selected && <span style={{ fontSize: 11, fontWeight: 600, color: '#EF4444' }}>Full</span>}
-              </div>
-              {/* Capacity bar */}
-              <div style={{ height: 3, borderRadius: 999, background: '#F3F4F6', marginBottom: 6 }}>
-                <div style={{ height: '100%', borderRadius: 999, width: `${fillPct}%`, background: barColor, transition: 'width 0.2s' }} />
+                {full && !selected && <span style={{ fontSize: 13, fontWeight: 600, color: '#EF4444' }}>Full</span>}
               </div>
               {/* Spots label */}
-              <span style={{ fontSize: 11, color: full ? '#EF4444' : available <= 2 ? '#EF4444' : '#6B7280', fontWeight: 500 }}>
+              <span style={{ fontSize: 13, color: full ? '#EF4444' : available <= 2 ? '#EF4444' : '#6B7280', fontWeight: 500 }}>
                 {full ? 'No spots available' : `${available} spot${available !== 1 ? 's' : ''} left`}
               </span>
             </button>

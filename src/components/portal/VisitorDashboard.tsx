@@ -42,7 +42,7 @@ function BookingCard({ b, compact = false }: { b: Booking; compact?: boolean }) 
   return (
     <div
       x-data="{ cancelModal: false }"
-      style={`background:#FFFFFF; border:1px solid ${isUpcoming ? 'rgba(252,101,20,0.16)' : 'rgba(0,0,0,0.07)'}; border-radius:16px; padding:${compact ? '16px 18px' : '20px 22px'}; transition:box-shadow 0.15s ease; position:relative;`}
+      style={`background:#FFFFFF; border:1px solid ${isUpcoming ? 'rgba(var(--brand-rgb),0.16)' : 'rgba(0,0,0,0.07)'}; border-radius:16px; padding:${compact ? '16px 18px' : '20px 22px'}; transition:box-shadow 0.15s ease; position:relative;`}
       onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.07)'"
       onmouseout="this.style.boxShadow='none'"
     >
@@ -61,7 +61,7 @@ function BookingCard({ b, compact = false }: { b: Booking; compact?: boolean }) 
           </div>
           <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <div style="display:flex; align-items:center; gap:5px; font-size:12.5px; color:#1C1917; font-weight:500;">
-              <Icon name={ICONS.calendar} size={13} style="color:#FC6514;" />
+              <Icon name={ICONS.calendar} size={13} style="color:var(--brand-color);" />
               {b.slotDate}
             </div>
             <div style="display:flex; align-items:center; gap:5px; font-size:12.5px; color:#57534E;">
@@ -81,7 +81,7 @@ function BookingCard({ b, compact = false }: { b: Booking; compact?: boolean }) 
             <span style="font-size:13px; font-weight:700; color:#1C1917;">${b.totalAmount.toFixed(2)}</span>
           )}
           <a href={`/bookings/${b.referenceNumber}`}
-            style="display:inline-flex; align-items:center; gap:4px; font-size:11.5px; font-weight:600; color:#FC6514; text-decoration:none;"
+            style="display:inline-flex; align-items:center; gap:4px; font-size:11.5px; font-weight:600; color:var(--brand-color); text-decoration:none;"
             onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'"
           >
             View <Icon name={ICONS.arrowRight} size={11} />
@@ -161,8 +161,8 @@ export const VisitorDashboard = ({ user, upcoming, past }: Props) => {
 
         {/* ── Welcome banner ── */}
         <div style="background:linear-gradient(135deg,#1C1917 0%,#292524 100%); border-radius:20px; padding:32px 36px; margin-bottom:24px; position:relative; overflow:hidden;">
-          <div style="position:absolute; top:-20px; right:-20px; width:160px; height:160px; background:radial-gradient(circle,rgba(252,101,20,0.25) 0%,transparent 70%); pointer-events:none;" />
-          <p style="font-size:11px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:rgba(252,101,20,0.70); margin:0 0 8px;">Welcome back</p>
+          <div style="position:absolute; top:-20px; right:-20px; width:160px; height:160px; background:radial-gradient(circle,rgba(var(--brand-rgb),0.25) 0%,transparent 70%); pointer-events:none;" />
+          <p style="font-size:11px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:rgba(var(--brand-rgb),0.70); margin:0 0 8px;">Welcome back</p>
           <h1 style="font-size:clamp(1.4rem,2.5vw,1.9rem); font-weight:800; color:#fff; letter-spacing:-0.04em; margin:0 0 6px;">{firstName}</h1>
           <p style="font-size:13px; color:rgba(255,255,255,0.45); margin:0 0 24px;">{user.email}</p>
 
@@ -172,9 +172,9 @@ export const VisitorDashboard = ({ user, upcoming, past }: Props) => {
               Book a New Visit
               <Icon name={ICONS.arrowRight} size={13} />
             </a>
-            <a href="/bookings" style="display:inline-flex; align-items:center; gap:6px; padding:10px 18px; font-size:13px; font-weight:600; color:rgba(255,255,255,0.80); border:1.5px solid rgba(255,255,255,0.20); border-radius:9999px; text-decoration:none; transition:all 0.15s ease;"
+            <a href="/bookings" style="display:inline-flex; align-items:center; gap:6px; padding:10px 18px; font-size:13px; font-weight:600; color:rgba(255,255,255,); border:1.5px solid rgba(255,255,255,0.20); border-radius:9999px; text-decoration:none; transition:all 0.15s ease;"
               onmouseover="this.style.borderColor='rgba(255,255,255,0.50)'"
-              onmouseout="this.style.borderColor='rgba(255,255,255,0.20)'"
+              onmouseout="this.style.borderColor='rgba(255,255,255)'"
             >
               <Icon name={ICONS.search} size={13} />
               Look Up Booking
@@ -202,7 +202,7 @@ export const VisitorDashboard = ({ user, upcoming, past }: Props) => {
           <div style="margin-bottom:24px;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
               <span style="width:6px; height:6px; border-radius:9999px; background:#22C55E; animation:pulse-dot 2s ease-in-out infinite;" />
-              <p style="font-size:11px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#FC6514; margin:0;">Today's Visit</p>
+              <p style="font-size:11px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--brand-color); margin:0;">Today's Visit</p>
             </div>
             <BookingCard b={todayBooking} />
           </div>
@@ -215,8 +215,8 @@ export const VisitorDashboard = ({ user, upcoming, past }: Props) => {
             <p style="font-size:11px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#A8A29E; margin:0 0 12px;">Upcoming Bookings</p>
             {upcoming.filter(b => b.slotDate !== todayStr).length === 0 ? (
               <div style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:32px 20px; text-align:center;">
-                <div style="width:40px; height:40px; border-radius:11px; background:#FFF3EC; border:1px solid rgba(252,101,20,0.14); display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
-                  <Icon name={ICONS.calendar} size={18} style="color:#FC6514;" />
+                <div style="width:40px; height:40px; border-radius:11px; background:#FFF3EC; border:1px solid rgba(var(--brand-rgb),0.14); display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
+                  <Icon name={ICONS.calendar} size={18} style="color:var(--brand-color);" />
                 </div>
                 <p style="font-size:13px; font-weight:500; color:#1C1917; margin:0 0 4px;">No upcoming visits</p>
                 <p style="font-size:12px; color:#A8A29E; margin:0 0 16px;">Ready to book your next one?</p>
@@ -247,7 +247,7 @@ export const VisitorDashboard = ({ user, upcoming, past }: Props) => {
                   <BookingCard key={b.id} b={b} compact />
                 ))}
                 {past.length > 5 && (
-                  <a href="/bookings" style="text-align:center; font-size:12px; font-weight:600; color:#FC6514; text-decoration:none; padding:12px;"
+                  <a href="/bookings" style="text-align:center; font-size:12px; font-weight:600; color:var(--brand-color); text-decoration:none; padding:12px;"
                     onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'"
                   >
                     View all {past.length} bookings <Icon name={ICONS.arrowRight} size={12} />

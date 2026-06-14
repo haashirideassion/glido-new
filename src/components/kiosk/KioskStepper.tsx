@@ -7,8 +7,15 @@ const WALKIN_SCREENS:  KioskScreen[] = ['purpose', 'walkin']
 
 const BASE = 'width:56px;height:56px;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.25s ease;background:#fff;'
 const c = (active: boolean, done: boolean) => BASE + (active || done ? 'border:2.5px solid var(--brand-color);color:var(--brand-color);' : 'border:2.5px solid #C2C2C2;color:#C2C2C2;')
-const lb = (active: boolean, done: boolean): React.CSSProperties => ({ fontSize: 13, textAlign: 'center', whiteSpace: 'nowrap', fontWeight: active || done ? 700 : 400, color: active || done ? '#101010' : '#605F5F', transition: 'all 0.25s ease' })
-const line = (done: boolean): React.CSSProperties => ({ height: 3, flex: 1, borderRadius: 2, marginTop: 27, minWidth: 8, transition: 'background 0.3s ease', background: done ? 'var(--brand-color)' : '#C2C2C2' })
+const lb = (active: boolean, done: boolean): React.CSSProperties => ({ fontSize: 15, textAlign: 'center', whiteSpace: 'nowrap', fontWeight: active || done ? 700 : 400, color: active || done ? '#101010' : '#605F5F', transition: 'all 0.25s ease' })
+const line = (done: boolean, afterActive = false): React.CSSProperties => ({
+  height: 3, flex: 1, borderRadius: 2, marginTop: 27, minWidth: 8, transition: 'background 0.3s ease',
+  background: done
+    ? 'var(--brand-color)'
+    : afterActive
+    ? 'linear-gradient(to right, var(--brand-color), #C2C2C2)'
+    : '#C2C2C2',
+})
 
 function GridSvg({ side }: { side: 'left' | 'right' }) {
   return (
@@ -50,6 +57,7 @@ export function KioskStepper() {
   const isWalkIn  = WALKIN_SCREENS.includes(s)
   if (!isBooking && !isWalkIn) return null
 
+
   const back = () => {
     if (isBooking) {
       const map: Partial<Record<typeof s, typeof s>> = { lookup: 'welcome', scan: 'lookup', 'slot-picker': 'lookup', confirm: 'lookup', consent: 'confirm', idscan: 'consent' }
@@ -60,7 +68,7 @@ export function KioskStepper() {
   }
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(to right,rgba(250,115,21,0.10),rgba(255,255,255,0.05),rgba(254,230,212,0.005),rgba(250,115,21,0.03)),#fff', padding: '32px 60px 28px', borderBottom: '1px solid rgba(0,0,0,0.055)', boxShadow: '0 4px 16px rgba(0,0,0,0.04),0 1px 4px rgba(0,0,0,0.03)', flexShrink: 0 }}>
+    <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(120deg, rgba(var(--brand-rgb),0.06) 0%, rgba(var(--brand-rgb),0.02) 35%, rgba(255,255,255,0) 70%), #fff', padding: '32px 60px 28px', borderBottom: '1px solid rgba(0,0,0,0.055)', boxShadow: '0 4px 16px rgba(0,0,0,0.04),0 1px 4px rgba(0,0,0,0.03)', flexShrink: 0 }}>
 
       {/* Grid patterns */}
       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 380, pointerEvents: 'none', zIndex: 0, WebkitMaskImage: 'linear-gradient(to right,rgba(0,0,0,0.30) 0%,rgba(0,0,0,0.10) 100%)', maskImage: 'linear-gradient(to right,rgba(0,0,0,0.30) 0%,rgba(0,0,0,0.10) 100%)' }}>
@@ -72,7 +80,7 @@ export function KioskStepper() {
 
       {/* Back button */}
       <div style={{ position: 'absolute', top: 24, left: 24, zIndex: 2 }}>
-        <button onClick={back} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px 9px 14px', fontSize: 13, fontWeight: 600, color: '#374151', border: '1.5px solid #e5e7eb', borderRadius: 9999, background: '#fff', cursor: 'pointer', transition: 'all 0.15s ease' }}
+        <button onClick={back} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px 9px 14px', fontSize: 15, fontWeight: 600, color: '#374151', border: '1.5px solid #e5e7eb', borderRadius: 9999, background: '#fff', cursor: 'pointer', transition: 'all 0.15s ease' }}
           onMouseOver={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.background = '#f9fafb' }}
           onMouseOut={e  => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.background = '#fff' }}
         >
@@ -88,7 +96,7 @@ export function KioskStepper() {
         <h1 style={{ fontSize: 30, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: 8 }}>
           {isBooking ? 'Booking Check-In' : 'Walk-In Registration'}
         </h1>
-        <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.6, maxWidth: 480, margin: '0 auto' }}>
+        <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: 480, margin: '0 auto' }}>
           {isBooking
             ? 'Scan or enter your reference number to check in for your scheduled slot'
             : 'No booking? Register your visit and reception will be notified to assist you'}
@@ -100,9 +108,9 @@ export function KioskStepper() {
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', maxWidth: 560, margin: '0 auto' }}>
             <Step icon={ICONS.search} label="Find Booking" active={['lookup','scan','slot-picker'].includes(s)} done={['confirm','consent','idscan'].includes(s)} />
-            <div style={line(['confirm','consent','idscan'].includes(s))} />
+            <div style={line(['confirm','consent','idscan'].includes(s), ['lookup','scan','slot-picker'].includes(s))} />
             <Step icon={ICONS.check}  label="Confirm"      active={s === 'confirm'}              done={['consent','idscan'].includes(s)} />
-            <div style={line(['consent','idscan'].includes(s))} />
+            <div style={line(['consent','idscan'].includes(s), s === 'confirm')} />
             <Step icon={ICONS.shield} label="Verify ID"    active={['consent','idscan'].includes(s)} done={false} />
           </div>
         </div>
@@ -113,7 +121,7 @@ export function KioskStepper() {
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', maxWidth: 320, margin: '0 auto' }}>
             <Step icon={ICONS.users} label="Visit Type"   active={s === 'purpose'} done={s === 'walkin'} />
-            <div style={line(s === 'walkin')} />
+            <div style={line(s === 'walkin', s === 'purpose')} />
             <Step icon={ICONS.user}  label="Your Details" active={s === 'walkin'}  done={false} />
           </div>
         </div>

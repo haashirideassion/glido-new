@@ -24,18 +24,18 @@ function last7Days(): string[] {
 
 const STATUS_COLORS: Record<string, string> = {
   completed:   '#22C55E',
-  confirmed:   '#FC6514',
+  confirmed:   'var(--brand-color)',
   checked_in:  '#FC8A3C',
   cancelled:   '#DC2626',
   pending:     '#D97706',
   pending_eft: '#2563EB',
-  no_show:     '#A8A29E',
+  no_show:     '#433F3D',
   scheduled:   '#64748B',
 }
 
 const STATUS_STYLE: Record<string, string> = {
   confirmed:    'background:rgba(34,197,94,0.12); color:#22C55E; border:1px solid rgba(34,197,94,0.22);',
-  checked_in:   'background:rgba(252,101,20,0.12); color:#FC6514; border:1px solid rgba(252,101,20,0.25);',
+  checked_in:   'background:rgba(var(--brand-rgb),0.12); color:var(--brand-color); border:1px solid rgba(var(--brand-rgb),0.25);',
   completed:    'background:rgba(148,163,184,0.10); color:#78716C; border:1px solid rgba(148,163,184,0.20);',
   cancelled:    'background:rgba(239,68,68,0.10); color:#EF4444; border:1px solid rgba(239,68,68,0.22);',
   pending:      'background:rgba(251,191,36,0.10); color:#FBBF24; border:1px solid rgba(251,191,36,0.22);',
@@ -49,7 +49,7 @@ const EC_THEME = `
   var FONT = "'Inter', ui-sans-serif, system-ui, sans-serif";
   var DARK = '#1C1917';
   var DARK2 = 'rgba(28,25,23,0.65)';
-  var ORANGE = '#FC6514';
+  var ORANGE = 'var(--brand-color)';
   var GRID_LINE = 'rgba(0,0,0,0.06)';
   var AXIS_LABEL = '#78716C';
   var TOOLTIP_BG = 'rgba(28,25,23,0.92)';
@@ -121,7 +121,7 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
               value={from || ''}
               placeholder="From"
               style="font-size:16px; padding:10px 16px; height:48px; border:1px solid rgba(0,0,0,0.10); border-radius:8px; background:#F7F6F5; color:#1C1917; outline:none; cursor:pointer;"
-              onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'"
+              onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'"
             />
             <span style="font-size:14px; color:#4B5563;">→</span>
             <input
@@ -130,7 +130,7 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
               value={to || ''}
               placeholder="To"
               style="font-size:16px; padding:10px 16px; height:48px; border:1px solid rgba(0,0,0,0.10); border-radius:8px; background:#F7F6F5; color:#1C1917; outline:none; cursor:pointer;"
-              onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'"
+              onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'"
             />
             <button type="submit" style="padding:0 24px; height:48px; font-size:15px; font-weight:600; background:#1C1917; color:#fff; border:none; border-radius:8px; cursor:pointer; transition:opacity 0.15s ease;"
               onmouseover="this.style.opacity='0.80'" onmouseout="this.style.opacity='1'"
@@ -159,7 +159,7 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
           { label: 'Total Bookings', value: bookings.length,                                      color: '#1C1917' },
           { label: 'Completed',      value: bookings.filter(b => b.status === 'completed').length, color: '#22C55E' },
           { label: 'Cancelled',      value: bookings.filter(b => b.status === 'cancelled').length, color: '#EF4444' },
-          { label: 'Scheduled',      value: bookings.filter(b => b.status === 'scheduled').length, color: '#78716C' },
+          { label: 'Scheduled',      value: bookings.filter(b => b.status === 'scheduled').length, color: 'var(--text-secondary)' },
         ].map(s => (
           <div
             key={s.label}
@@ -225,11 +225,11 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
                 <tr
                   key={b.id}
                   style={`border-top:1px solid rgba(0,0,0,0.05); ${i % 2 !== 0 ? 'background:rgba(0,0,0,0.01);' : ''} cursor:pointer; transition:background 0.1s ease;`}
-                  onmouseover="this.style.background='rgba(252,101,20,0.03)'"
+                  onmouseover="this.style.background='rgba(var(--brand-rgb),0.03)'"
                   onmouseout={`this.style.background='${i % 2 !== 0 ? 'rgba(0,0,0,0.01)' : 'transparent'}'`}
                   onclick={`window.location.href='/reception/bookings/${b.id}'`}
                 >
-                  <td style="padding:14px 20px; font-family:ui-monospace,monospace; font-size:16px; font-weight:700; color:#FC6514; white-space:nowrap;">{b.referenceNumber}</td>
+                  <td style="padding:14px 20px; font-family:ui-monospace,monospace; font-size:16px; font-weight:700; color:var(--brand-color); white-space:nowrap;">{b.referenceNumber}</td>
                   <td style="padding:14px 20px; font-size:15px; color:#4B5563; white-space:nowrap;">{b.slotDate}</td>
                   <td style="padding:14px 20px; font-size:15px; color:#4B5563; white-space:nowrap;">{b.slotStartTime} – {b.slotEndTime}</td>
                   <td style="padding:14px 20px; font-size:16px; font-weight:600; color:#1C1917; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{b.driverName}</td>
@@ -254,10 +254,10 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
                   <td colspan={8} style="padding:48px 20px; text-align:center;">
                     <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
                       <div style="width:44px; height:44px; border-radius:12px; background:#F7F6F5; border:1px solid rgba(0,0,0,0.07); display:flex; align-items:center; justify-content:center;">
-                        <Icon name={ICONS.reports} size={20} style="color:#A8A29E;" />
+                        <Icon name={ICONS.reports} size={20} style="color:#433F3D;" />
                       </div>
                       <p style="font-size:13px; font-weight:500; color:#78716C; margin:0;">No bookings in this range</p>
-                      <p style="font-size:12px; color:#A8A29E; margin:0;">Try adjusting the date filter or <a href="/reception/reports" style="color:#FC6514; text-decoration:none;">clear filters</a></p>
+                      <p style="font-size:12px;c3F3D; margin:0;">Try adjusting the date filter or <a href="/reception/reports" style="color:var(--brand-color); text-decoration:none;">clear filters</a></p>
                     </div>
                   </td>
                 </tr>
@@ -369,8 +369,8 @@ window._gExportCsv = function() {
     var donut = echarts.init(document.getElementById('chart-status'), null, { renderer:'svg' });
     donut.setOption({
       tooltip: { trigger:'item', backgroundColor:TOOLTIP_BG, borderColor:TOOLTIP_BORDER, borderWidth:1, padding:[8,12], textStyle:{color:TOOLTIP_TEXT,fontFamily:FONT,fontSize:12}, formatter:'{b}: <b>{c}</b> ({d}%)' },
-      legend: { orient:'vertical', right:0, top:'center', itemWidth:8, itemHeight:8, borderRadius:4, textStyle:{color:'#78716C',fontFamily:FONT,fontSize:11} },
-      series:[{ type:'pie', radius:['52%','78%'], center:['38%','50%'], avoidLabelOverlap:false, label:{show:false}, labelLine:{show:false}, emphasis:{scale:true,scaleSize:4,itemStyle:{shadowBlur:12,shadowColor:'rgba(252,101,20,0.25)'}}, data:statusNames.map(function(name,i){return{value:statusVals[i],name:name,itemStyle:{color:statusColors[i],borderRadius:3}};}) }]
+      legend: { orient:'vertical', right:0, top:'center', itemWidth:8, itemHeight:8, borderRadius:4, textStyle:{color:'var(--text-secondary)',fontFamily:FONT,fontSize:11} },
+      series:[{ type:'pie', radius:['52%','78%'], center:['38%','50%'], avoidLabelOverlap:false, label:{show:false}, labelLine:{show:false}, emphasis:{scale:true,scaleSize:4,itemStyle:{shadowBlur:12,shadowColor:'rgba(var(--brand-rgb),0.25)'}}, data:statusNames.map(function(name,i){return{value:statusVals[i],name:name,itemStyle:{color:statusColors[i],borderRadius:3}};}) }]
     });
 
     /* Hourly area */
@@ -391,7 +391,7 @@ window._gExportCsv = function() {
       yAxis: { type:'category', data:['Pick Up','Drop Off','FCL','LCL'], axisLine:{show:false}, axisTick:{show:false}, axisLabel:{color:'#57534E',fontFamily:FONT,fontSize:12} },
       xAxis: { type:'value', max:total, axisLine:{show:false}, axisTick:{show:false}, axisLabel:{show:false}, splitLine:{show:false} },
       series:[
-        { type:'bar', data:[${pickupCount},${dropoffCount},${fclCount},${lclCount}], barMaxWidth:24, itemStyle:{ borderRadius:[0,6,6,0], color:function(p){var c=[DARK,'rgba(28,25,23,0.70)','rgba(28,25,23,0.50)','rgba(28,25,23,0.30)'];return c[p.dataIndex]||DARK;} }, label:{ show:true, position:'right', formatter:function(p){return p.value+' ('+Math.round(p.value/total*100)+'%)';}, color:'#78716C', fontFamily:FONT, fontSize:11 } },
+        { type:'bar', data:[${pickupCount},${dropoffCount},${fclCount},${lclCount}], barMaxWidth:24, itemStyle:{ borderRadius:[0,6,6,0], color:function(p){var c=[DARK,'rgba(28,25,23,0.70)','rgba(28,25,23,0.50)','rgba(28,25,23,0.30)'];return c[p.dataIndex]||DARK;} }, label:{ show:true, position:'right', formatter:function(p){return p.value+' ('+Math.round(p.value/total*100)+'%)';}, color:'var(--text-secondary)', fontFamily:FONT, fontSize:11 } },
         { type:'bar', data:[total-${pickupCount},total-${dropoffCount},total-${fclCount},total-${lclCount}], barMaxWidth:24, itemStyle:{color:'rgba(0,0,0,0.06)',borderRadius:[0,6,6,0]}, label:{show:false}, emphasis:{disabled:true}, stack:'nope' }
       ]
     });

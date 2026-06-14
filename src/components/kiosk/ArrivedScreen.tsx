@@ -20,7 +20,7 @@ export function ArrivedScreen() {
       <p style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 4, color: '#16A34A' }}>
         {state.arrivedVisitorName || 'Welcome'}
       </p>
-      <p style={{ color: '#78716C', marginBottom: 24 }}>
+      <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>
         {isWalkIn
           ? 'Your visit has been logged. Reception has been notified and will assist you shortly.'
           : 'Your arrival has been recorded. Reception has been notified.'}
@@ -29,15 +29,15 @@ export function ArrivedScreen() {
       {/* Booking reference — only for booked check-ins */}
       {state.lookupResult?.ref && (
         <div style={{ marginBottom: 20, padding: '16px 32px', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-          <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#A8A29E', marginBottom: 4 }}>Booking Reference</p>
-          <p style={{ fontFamily: 'ui-monospace,monospace', fontWeight: 700, fontSize: '1.5rem', color: '#FC6514' }}>{state.lookupResult.ref}</p>
+          <p style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: 4 }}>Booking Reference</p>
+          <p style={{ fontFamily: 'ui-monospace,monospace', fontWeight: 700, fontSize: '1.5rem', color: 'var(--brand-color)' }}>{state.lookupResult.ref}</p>
         </div>
       )}
 
       {/* Walk-in confirmation card */}
       {isWalkIn && state.arrivedVisitorName && (
         <div style={{ marginBottom: 20, padding: '16px 32px', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-          <p style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#A8A29E', marginBottom: 4 }}>Registered Visitor</p>
+          <p style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: 4 }}>Registered Visitor</p>
           <p style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1C1917' }}>{state.arrivedVisitorName}</p>
         </div>
       )}
@@ -47,14 +47,14 @@ export function ArrivedScreen() {
           <>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, textAlign: 'left', padding: '12px 20px', background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: 12 }}>
               <Icon name={ICONS.warning} size={18} style={{ color: '#D97706', marginTop: 2, flexShrink: 0 }} />
-              <p style={{ fontSize: 14, color: '#92400E' }}>
+              <p style={{ fontSize: 15, color: '#92400E' }}>
                 <strong style={{ color: '#78350F' }}>CHEP pallets: </strong>
                 Ensure CHEP pallets are clearly separated before entering the depot.
               </p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, textAlign: 'left', padding: '12px 20px', background: 'rgba(252,101,20,0.05)', border: '1px solid rgba(252,101,20,0.18)', borderRadius: 12 }}>
-              <Icon name={ICONS.arrowRight} size={18} style={{ color: '#FC6514', marginTop: 2, flexShrink: 0 }} />
-              <p style={{ fontSize: 14, color: '#78716C' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, textAlign: 'left', padding: '12px 20px', background: 'rgba(var(--brand-rgb),0.05)', border: '1px solid rgba(var(--brand-rgb),0.18)', borderRadius: 12 }}>
+              <Icon name={ICONS.arrowRight} size={18} style={{ color: 'var(--brand-color)', marginTop: 2, flexShrink: 0 }} />
+              <p style={{ fontSize: 15, color: 'var(--text-secondary)' }}>
                 <strong style={{ color: '#1C1917' }}>Bay assignment: </strong>
                 Proceed to the reception window for bay directions.
               </p>
@@ -62,9 +62,9 @@ export function ArrivedScreen() {
           </>
         )}
         {isWalkIn && (
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, textAlign: 'left', padding: '12px 20px', background: 'rgba(252,101,20,0.05)', border: '1px solid rgba(252,101,20,0.18)', borderRadius: 12 }}>
-            <Icon name={ICONS.arrowRight} size={18} style={{ color: '#FC6514', marginTop: 2, flexShrink: 0 }} />
-            <p style={{ fontSize: 14, color: '#78716C' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, textAlign: 'left', padding: '12px 20px', background: 'rgba(var(--brand-rgb),0.05)', border: '1px solid rgba(var(--brand-rgb),0.18)', borderRadius: 12 }}>
+            <Icon name={ICONS.arrowRight} size={18} style={{ color: 'var(--brand-color)', marginTop: 2, flexShrink: 0 }} />
+            <p style={{ fontSize: 15, color: 'var(--text-secondary)' }}>
               <strong style={{ color: '#1C1917' }}>Next step: </strong>
               Please proceed to the reception desk — a staff member will assist you.
             </p>
@@ -72,7 +72,7 @@ export function ArrivedScreen() {
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#A8A29E' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 15, color: 'var(--text-tertiary)' }}>
         <span>Returning to home screen in</span>
         <span style={{ fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#1C1917', fontSize: '1rem', fontVariantNumeric: 'tabular-nums' }}>{countdown}</span>
         <span>sec</span>

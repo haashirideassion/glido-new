@@ -52,7 +52,7 @@ export function WelcomeScreen() {
           }
         </div>
         <h1 style={{ fontSize: '3rem', fontWeight: 800, marginBottom: 8, color: '#1C1917' }}>{tenant?.name || 'Sydney CFS'}</h1>
-        <p style={{ fontSize: '1.25rem', color: '#78716C' }}>Container Freight Station</p>
+        <p style={{ fontSize: '1.25rem', color: 'var(--text-secondary)' }}>Container Freight Station</p>
         <p style={{ fontSize: '1.5rem', fontFamily: 'ui-monospace,monospace', fontWeight: 600, marginTop: 12, color: '#1C1917', fontVariantNumeric: 'tabular-nums' }}>{time}</p>
       </div>
 
@@ -69,10 +69,10 @@ export function WelcomeScreen() {
 
       {todayHours && (
         <div style={{ marginTop: 40, borderRadius: 16, padding: '12px 24px', textAlign: 'center', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.07)' }}>
-          <p style={{ fontSize: 14, color: '#78716C', fontWeight: 600 }}>{todayHours}</p>
+          <p style={{ fontSize: 15, color: 'var(--text-secondary)', fontWeight: 600 }}>{todayHours}</p>
         </div>
       )}
-      <p style={{ marginTop: 24, fontSize: 14, color: '#A8A29E' }}>Need help? Speak to our reception team.</p>
+      <p style={{ marginTop: 24, fontSize: 15, color: 'var(--text-tertiary)' }}>Need help? Speak to our reception team.</p>
     </div>
   )
 }

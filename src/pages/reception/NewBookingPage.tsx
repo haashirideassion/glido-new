@@ -184,20 +184,20 @@ function ConfirmedScreen() {
   }
 
   return (
-    <div style={{ minHeight: 'calc(100vh - 56px)', background: '#F3F2F0', padding: '40px 24px 64px' }}>
+    <div style={{ minHeight: 'calc(100vh - 56px)', background: 'var(--surface-tint)', padding: '40px 24px 64px' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
 
         {/* Success banner */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderRadius: 12, padding: '16px 20px', marginBottom: 32, background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.22)' }}>
           <div style={{ width: 40, height: 40, borderRadius: 9999, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(180deg,#4ADE80 0%,#16A34A 100%)', boxShadow: '0 4px 12px rgba(34,197,94,0.35)' }}>
-            <Icon name={ICONS.check} size={20} style={{ color: '#fff' }} />
+            <Icon name={ICONS.check} size={20} style={{ color: 'var(--brand-text)' }} />
           </div>
           <div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#22C55E' }}>
+            <p style={{ fontSize: 15, fontWeight: 600, color: '#22C55E' }}>
               {multi ? `${rawRefs.length} Bookings Created` : 'Booking Created'}
             </p>
             <p
-              style={{ fontSize: 12, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#78716C', marginTop: 2, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+              style={{ fontSize: 14, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: 'var(--text-secondary)', marginTop: 2, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}
               onClick={copyRef}
               title="Click to copy"
             >{multi ? rawRefs.map(r => r.ref).join(' · ') : ref}</p>
@@ -290,8 +290,8 @@ function ConfirmedScreen() {
               }
 
               return (
-                <div key={r} style={{ flex: '1 1 200px', minWidth: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 16px', background: '#fff', borderRadius: 16, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Slot {i + 1}</p>
+                <div key={r} style={{ flex: '1 1 200px', minWidth: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 16px', background: '#fff', borderRadius: 16, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Slot {i + 1}</p>
                   {url ? (
                     <img src={url} alt={`QR for ${r}`} width={160} height={160} style={{ borderRadius: 8 }} />
                   ) : r ? (
@@ -308,7 +308,7 @@ function ConfirmedScreen() {
                       </p>
                     </div>
                   )}
-                  <p style={{ fontSize: 11, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#1C1917', marginTop: 10 }}>{r}</p>
+                  <p style={{ fontSize: 13, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#1C1917', marginTop: 10 }}>{r}</p>
                   <p style={{ fontSize: 10, color: '#64748B', marginTop: 4 }}>
                     {cfg?.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {(cfg?.loadType ?? '').toUpperCase()}
                   </p>
@@ -318,7 +318,7 @@ function ConfirmedScreen() {
                     <button
                       onClick={downloadSlotQr}
                       disabled={!url}
-                      style={{ flex: 1, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '0 10px', fontSize: 11, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 9, cursor: url ? 'pointer' : 'not-allowed', opacity: url ? 1 : 0.45, whiteSpace: 'nowrap', transition: 'all 0.13s' }}
+                      style={{ flex: 1, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '0 10px', fontSize: 13, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 9, cursor: url ? 'pointer' : 'not-allowed', opacity: url ? 1 : 0.45, whiteSpace: 'nowrap', transition: 'all 0.13s' }}
                       onMouseOver={e => { if (url) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.28)' }}
                       onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.14)' }}
                     >
@@ -327,7 +327,7 @@ function ConfirmedScreen() {
                     </button>
                     <button
                       onClick={exportSlotPdf}
-                      style={{ flex: 1, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '0 10px', fontSize: 11, fontWeight: 600, color: '#fff', background: 'var(--brand-color)', border: 'none', borderRadius: 9, cursor: 'pointer', boxShadow: '0 2px 6px rgba(var(--brand-rgb),0.30)', whiteSpace: 'nowrap', transition: 'all 0.13s' }}
+                      style={{ flex: 1, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '0 10px', fontSize: 13, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 9, cursor: 'pointer', boxShadow: '0 2px 6px rgba(var(--brand-rgb),0.30)', whiteSpace: 'nowrap', transition: 'all 0.13s' }}
                       onMouseOver={e => { e.currentTarget.style.opacity = '0.88' }}
                       onMouseOut={e  => { e.currentTarget.style.opacity = '1' }}
                     >
@@ -346,7 +346,7 @@ function ConfirmedScreen() {
 
           {/* QR Code — single slot only */}
           {!multi && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', background: '#fff', borderRadius: 16, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', background: '#fff', borderRadius: 16, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
             {qrUrl ? (
               <img src={qrUrl} alt={`QR code for ${ref}`} width={220} height={220} style={{ borderRadius: 8 }} />
             ) : ref ? (
@@ -358,20 +358,20 @@ function ConfirmedScreen() {
               /* ref is empty — booking may not have returned a reference_number */
               <div style={{ width: 220, height: 220, borderRadius: 8, background: '#FEF2F2', border: '1.5px dashed #FCA5A5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 16 }}>
                 <Icon name={ICONS.qrCode} size={40} style={{ color: '#FCA5A5' }} />
-                <p style={{ fontSize: 11, fontWeight: 600, color: '#EF4444', textAlign: 'center', lineHeight: 1.4 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#EF4444', textAlign: 'center', lineHeight: 1.4 }}>
                   QR unavailable — reference number missing
                 </p>
               </div>
             )}
-            <p style={{ fontSize: 12, fontWeight: 500, color: '#64748B', marginTop: 14 }}>Give this QR code to the driver for kiosk check-in</p>
-            <p style={{ fontSize: 12, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#1C1917', marginTop: 4 }}>{ref}</p>
+            <p style={{ fontSize: 14, fontWeight: 500, color: '#64748B', marginTop: 14 }}>Give this QR code to the driver for kiosk check-in</p>
+            <p style={{ fontSize: 14, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#1C1917', marginTop: 4 }}>{ref}</p>
 
             {/* Download actions */}
             <div style={{ display: 'flex', flexDirection: 'row', gap: 12, width: '100%', marginTop: 18 }}>
               <button
                 onClick={downloadQr}
                 disabled={!qrUrl}
-                style={{ flex: 1, height: 48, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '0 14px', fontSize: 12, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 9, cursor: qrUrl ? 'pointer' : 'not-allowed', opacity: qrUrl ? 1 : 0.45, whiteSpace: 'nowrap', transition: 'all 0.13s' }}
+                style={{ flex: 1, height: 48, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '0 14px', fontSize: 14, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 9, cursor: qrUrl ? 'pointer' : 'not-allowed', opacity: qrUrl ? 1 : 0.45, whiteSpace: 'nowrap', transition: 'all 0.13s' }}
                 onMouseOver={e => { if (qrUrl) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.28)' }}
                 onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.14)' }}
               >
@@ -380,7 +380,7 @@ function ConfirmedScreen() {
               </button>
               <button
                 onClick={exportPdf}
-                style={{ flex: 1, height: 48, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '0 14px', fontSize: 12, fontWeight: 600, color: '#fff', background: 'var(--brand-color)', border: 'none', borderRadius: 9, cursor: 'pointer', boxShadow: '0 2px 6px rgba(var(--brand-rgb),0.30)', whiteSpace: 'nowrap', transition: 'all 0.13s' }}
+                style={{ flex: 1, height: 48, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '0 14px', fontSize: 14, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 9, cursor: 'pointer', boxShadow: '0 2px 6px rgba(var(--brand-rgb),0.30)', whiteSpace: 'nowrap', transition: 'all 0.13s' }}
                 onMouseOver={e => { e.currentTarget.style.opacity = '0.88' }}
                 onMouseOut={e  => { e.currentTarget.style.opacity = '1' }}
               >
@@ -397,7 +397,7 @@ function ConfirmedScreen() {
             {/* Booking details */}
             <div style={{ borderRadius: 12, padding: 16, background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
               <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748B', marginBottom: 12 }}>Booking Details</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: 14 }}>
                 {[
                   { label: 'Driver',   value: state.driverName || state.guestName },
                   { label: 'Service',  value: state.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off' },
@@ -419,7 +419,7 @@ function ConfirmedScreen() {
             {charges.total > 0 && (
               <div style={{ borderRadius: 12, padding: 16, background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748B', marginBottom: 12 }}>Charges</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 14 }}>
                   {charges.storageCharge > 0    && <ChargeRow label="Storage"      val={charges.storageCharge} />}
                   {charges.shrinkWrapCharge > 0  && <ChargeRow label="Shrink wrap"  val={charges.shrinkWrapCharge} />}
                   {charges.slotFee > 0           && <ChargeRow label="Slot fee"     val={charges.slotFee} />}
@@ -443,8 +443,8 @@ function ConfirmedScreen() {
             {/* EFT details */}
             {isEft && (
               <div style={{ borderRadius: 12, padding: 16, background: 'rgba(var(--brand-rgb),0.06)', border: '1px solid rgba(var(--brand-rgb),0.20)' }}>
-                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--brand-color)', marginBottom: 10 }}>Transfer details</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'rgba(var(--brand-rgb),0.65)' }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--brand-color)', marginBottom: 10 }}>Transfer details</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 14, color: 'rgba(var(--brand-rgb),0.65)' }}>
                   {Object.entries({ Bank: tenant?.eftBankName || '—', BSB: tenant?.eftBsb || '—', 'Account No.': tenant?.eftAccountNumber || '—', 'Account Name': tenant?.eftAccountName || '—', Reference: ref }).map(([k, v]) => (
                     <div key={k} style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>{k}</span>
@@ -461,12 +461,12 @@ function ConfirmedScreen() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 32, justifyContent: 'center' }}>
           <button
             onClick={() => { dispatch({ type: 'RESET' }); window.location.href = '/reception/bookings/new' }}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', fontSize: 13, fontWeight: 600, color: '#fff', background: 'var(--brand-color)', border: 'none', borderRadius: 9999, cursor: 'pointer', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 9999, cursor: 'pointer', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)' }}
           >
             <Icon name={ICONS.add} size={14} />
             Create Another Booking
           </button>
-          <Link to="/reception/bookings" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 20px', fontSize: 13, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 9999, textDecoration: 'none', transition: 'all 0.15s' }}>
+          <Link to="/reception/bookings" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 20px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 9999, textDecoration: 'none', transition: 'all 0.15s' }}>
             <Icon name={ICONS.search} size={14} />
             Back to Bookings
           </Link>
@@ -479,7 +479,7 @@ function ConfirmedScreen() {
 
 function ChargeRow({ label, val }: { label: string; val: number }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#78716C' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
       <span>{label}</span><span>${val.toFixed(2)}</span>
     </div>
   )

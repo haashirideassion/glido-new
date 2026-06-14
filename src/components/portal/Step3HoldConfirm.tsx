@@ -64,7 +64,7 @@ export function Step3HoldConfirm() {
           </div>
           <div>
             <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0 }}>Cargo type</h2>
-            <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>
+            <p style={{ fontSize: 15, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>
               {multi
                 ? 'Select FCL or LCL for each slot.'
                 : 'Select whether your shipment is FCL or LCL — this determines which details we ask for next.'}
@@ -93,7 +93,7 @@ export function Step3HoldConfirm() {
                 type="button"
                 onClick={() => setActiveSlot(i)}
                 style={{
-                  padding: '10px 24px', fontSize: 14,
+                  padding: '10px 24px', fontSize: 15,
                   fontWeight: active ? 700 : 500,
                   color: active ? 'var(--brand-color, #FC6514)' : '#6B7280',
                   background: 'none', border: 'none',
@@ -149,8 +149,8 @@ function ApplyAllToggle({ on, onToggle, slotCount, field }: {
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 7,
           padding: '5px 12px', borderRadius: 9999,
-          background: on ? 'rgba(252,101,20,0.10)' : 'rgba(0,0,0,0.06)',
-          border: `1.5px solid ${on ? 'rgba(252,101,20,0.30)' : 'rgba(0,0,0,0.12)'}`,
+          background: on ? 'rgba(var(--brand-rgb),0.10)' : 'rgba(0,0,0,0.06)',
+          border: `1.5px solid ${on ? 'rgba(var(--brand-rgb),0.30)' : 'rgba(0,0,0,0.12)'}`,
           cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit',
         }}
       >
@@ -165,11 +165,11 @@ function ApplyAllToggle({ on, onToggle, slotCount, field }: {
             background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.18)', transition: 'left 0.15s',
           }} />
         </span>
-        <span style={{ fontSize: 12, fontWeight: 600, color: on ? 'var(--brand-color, #FC6514)' : '#6B7280', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: on ? 'var(--brand-color, #FC6514)' : '#6B7280', whiteSpace: 'nowrap' }}>
           Apply to all bookings
         </span>
       </button>
-      <span style={{ fontSize: 11, color: '#A8A29E' }}>
+      <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
         {on
           ? `${field} selected for all ${slotCount} bookings`
           : `Use the same ${field} for all ${slotCount} bookings`}
@@ -191,7 +191,7 @@ function LoadCard({ selected, onClick, icon, label, sub, bullets }: {
         display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
         padding: '20px 18px 18px', borderRadius: 16,
         border: selected ? '2px solid var(--brand-color, #FC6514)' : '1.5px solid rgba(0,0,0,0.08)',
-        background: selected ? 'rgba(252,101,20,0.04)' : '#fff',
+        background: selected ? 'rgba(var(--brand-rgb),0.04)' : '#fff',
         cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s ease',
         width: '100%', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none',
       }}
@@ -212,24 +212,13 @@ function LoadCard({ selected, onClick, icon, label, sub, bullets }: {
         width: 112, height: 112, borderRadius: 24,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         marginBottom: 14, flexShrink: 0,
-        background: selected ? 'rgba(252,101,20,0.8)' : '#F3F4F6',
+        background: selected ? 'rgba(var(--brand-rgb),0.8)' : '#F3F4F6',
         color: selected ? '#fff' : '#6B7280', transition: 'all 0.15s ease',
       }}>
         {icon}
       </div>
       <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 2, lineHeight: 1.2 }}>{label}</p>
-      <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 12, lineHeight: 1.3 }}>{sub}</p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-        {bullets.map(b => (
-          <span key={b} style={{
-            fontSize: 11, padding: '3px 8px', borderRadius: 6,
-            background: selected ? 'rgba(252,101,20,0.10)' : '#F3F4F6',
-            color: selected ? 'var(--brand-color, #FC6514)' : '#6B7280', fontWeight: 500,
-          }}>
-            {b}
-          </span>
-        ))}
-      </div>
+      <p style={{ fontSize: 14, color: '#9CA3AF', marginBottom: 4, lineHeight: 1.3 }}>{sub}</p>
     </button>
   )
 }

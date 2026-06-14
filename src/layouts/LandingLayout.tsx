@@ -125,13 +125,13 @@ export const LandingLayout: FC<Props> = ({ title = 'Home', children }) => {
         {/* ── Instant preloader — runs before body renders ── */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function(){
-            var D='#1C232C',O='#FF6610',O2='#FC6514';
+            var D='#1C232C',O='#FF6610',O2='var(--brand-color)';
             /* Only show full preloader on first visit per session */
             var firstVisit = !sessionStorage.getItem('g-visited');
             if (firstVisit) sessionStorage.setItem('g-visited','1');
             var s=document.createElement('style');
             s.textContent='#g-pl-overlay{position:fixed;inset:0;z-index:99998;background:#fff;pointer-events:none}'
-              +'#g-pl-bar{position:fixed;top:0;left:0;height:4px;width:0%;background:linear-gradient(90deg,'+O2+',#FF9500);box-shadow:0 0 10px rgba(252,101,20,0.5);z-index:100000}'
+              +'#g-pl-bar{position:fixed;top:0;left:0;height:4px;width:0%;background:linear-gradient(90deg,'+O2+',#FF9500);box-shadow:0 0 10px rgba(var(--brand-rgb),0.5);z-index:100000}'
               +(firstVisit ? '#g-pl-logo-wrap{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:99999;pointer-events:none}' : '');
             document.head.appendChild(s);
             /* Subsequent navigations: only show thin progress bar, no overlay or logo */
@@ -250,7 +250,7 @@ export const LandingLayout: FC<Props> = ({ title = 'Home', children }) => {
                   <GlidoLogo height={20} onDark={false} />
                 </div>
                 <p style="font-size:13px; color:#78716C; line-height:1.7; max-width:220px;">
-                  Streamlining container freight station operations — from booking to bay door.
+                  Streamlining container freight station operations from booking to bay door.
                 </p>
                 <div style="display:flex; gap:12px; margin-top:20px;">
                   {[
@@ -261,7 +261,7 @@ export const LandingLayout: FC<Props> = ({ title = 'Home', children }) => {
                       key={s.icon}
                       href={s.href}
                       style="width:32px; height:32px; border-radius:8px; background:rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; transition:background 0.15s ease;"
-                      onmouseover="this.style.background='rgba(252,101,20,0.12)'"
+                      onmouseover="this.style.background='rgba(var(--brand-rgb),0.12)'"
                       onmouseout="this.style.background='rgba(0,0,0,0.05)'"
                     >
                       <Icon name={s.icon} size={14} style="color:#78716C;" />

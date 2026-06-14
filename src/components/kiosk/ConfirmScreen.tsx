@@ -10,7 +10,7 @@ export function ConfirmScreen() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', overflowY: 'auto' }}>
       <div style={{ width: '100%', maxWidth: 448, textAlign: 'center' }}>
         <h2 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: 4, color: '#1C1917' }}>Booking Found</h2>
-        <p style={{ color: '#78716C', marginBottom: 32 }}>Please confirm this is your booking</p>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: 32 }}>Please confirm this is your booking</p>
 
         <div style={{ textAlign: 'left', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)', marginBottom: 24 }}>
           {[
@@ -19,8 +19,8 @@ export function ConfirmScreen() {
             { label: 'Slot',      val: r.slot,    mono: false },
             { label: 'Service',   val: r.service, mono: false },
           ].map(row => (
-            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, padding: '6px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-              <span style={{ color: '#A8A29E' }}>{row.label}</span>
+            <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, padding: '6px 0', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+              <span style={{ color: 'var(--text-tertiary)' }}>{row.label}</span>
               <span style={{ fontWeight: 600, fontFamily: row.mono ? 'ui-monospace,monospace' : undefined, color: row.mono ? 'var(--brand-color)' : '#1C1917' }}>{row.val}</span>
             </div>
           ))}

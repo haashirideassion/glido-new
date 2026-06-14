@@ -18,6 +18,7 @@ export interface Booking {
   slotEndTime: string        // HH:MM
   guestName?: string         // if guest booking
   guestPhone?: string
+  companyName?: string
   driverName: string         // person physically visiting
   driverPhone?: string
   houseBillNumber?: string   // HBL — required for LCL
@@ -53,6 +54,8 @@ export interface Booking {
   bookingGroupId?:     string
   slotIndex?:          number
   groupReference?:     string   // human-readable master ref, same across all slots in a group
+  // Booking origin
+  bookingSource?:      'self_booking' | 'guest' | 'reception_booking'
   tenantId: string
   createdAt: string
   updatedAt: string

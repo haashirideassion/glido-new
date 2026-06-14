@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { usePageTitle } from '@/lib/usePageTitle'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { getBookings, getBookingsByDateRange, cancelBooking } from '@/lib/db/bookings'
 import { supabase } from '@/lib/supabase'
 import { Icon, ICONS } from '@/lib/Icon'
@@ -22,7 +22,9 @@ function FilterSelect({ placeholder, options, value, onChange }: {
   onChange: (v: string) => void
 }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [dropPos, setDropPos] = useState<{ top: number; left: number } | null>(null)
+  const ref    = useRef<HTMLDivElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
   const allOpts = [{ value: '', label: placeholder }, ...options]
   const label = allOpts.find(o => o.value === value)?.label ?? placeholder
   const active = value !== ''
@@ -35,19 +37,28 @@ function FilterSelect({ placeholder, options, value, onChange }: {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  const handleOpen = () => {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect()
+      setDropPos({ top: r.bottom + 5, left: r.left })
+    }
+    setOpen(v => !v)
+  }
+
   return (
     <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen(v => !v)}
+        onClick={handleOpen}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
-          height: 36, fontSize: 14, padding: '0 13px', borderRadius: 6,
+          height: 36, fontSize: 15, padding: '0 13px', borderRadius: 6,
           cursor: 'pointer', whiteSpace: 'nowrap', outline: 'none',
           transition: 'all 0.12s ease', boxSizing: 'border-box',
-          background: active ? 'rgba(252,101,20,0.07)' : '#FFFFFF',
-          border: `1px solid ${active ? 'rgba(252,101,20,0.30)' : 'rgba(0,0,0,0.12)'}`,
-          color: active ? '#FC6514' : '#1C1917',
+          background: active ? 'rgba(var(--brand-rgb),0.07)' : '#FFFFFF',
+          border: `1px solid ${active ? 'rgba(var(--brand-rgb),0.30)' : 'rgba(0,0,0,0.12)'}`,
+          color: active ? 'var(--brand-color)' : '#1C1917',
           fontFamily: 'inherit',
         }}
       >
@@ -60,12 +71,12 @@ function FilterSelect({ placeholder, options, value, onChange }: {
         </svg>
       </button>
 
-      {open && (
+      {open && dropPos && (
         <div style={{
-          position: 'absolute', top: 'calc(100% + 5px)', left: 0, zIndex: 300,
+          position: 'fixed', top: dropPos.top, left: dropPos.left, zIndex: 9999,
           minWidth: 160, background: '#FFFFFF',
           border: '1px solid rgba(0,0,0,0.09)', borderRadius: 12,
-          boxShadow: '0 8px 28px rgba(0,0,0,0.11),0 2px 6px rgba(0,0,0,0.06)',
+          boxShadow: '0 8px 28px rgba(0,0,0,0.06),0 2px 6px rgba(0,0,0,0.03)',
           padding: 5,
         }}>
           {allOpts.map(opt => {
@@ -80,8 +91,8 @@ function FilterSelect({ placeholder, options, value, onChange }: {
                   width: '100%', padding: '8px 10px', borderRadius: 8,
                   border: 'none', cursor: 'pointer', textAlign: 'left',
                   fontSize: 15, fontFamily: 'inherit',
-                  background: selected ? 'rgba(252,101,20,0.08)' : 'transparent',
-                  color: selected ? '#FC6514' : '#1C1917',
+                  background: selected ? 'rgba(var(--brand-rgb),0.08)' : 'transparent',
+                  color: selected ? 'var(--brand-color)' : '#1C1917',
                   transition: 'background 0.12s ease',
                 }}
                 onMouseOver={e => { if (!selected) e.currentTarget.style.background = 'rgba(0,0,0,0.04)' }}
@@ -101,6 +112,23 @@ function FilterSelect({ placeholder, options, value, onChange }: {
         </div>
       )}
     </div>
+  )
+}
+
+// ─── Source badge ────────────────────────────────────────────────────────────
+const SOURCE_BADGE: Record<string, { label: string; bg: string; color: string }> = {
+  self_booking:      { label: 'Self Booking',      bg: 'rgba(37,99,235,0.08)', color: '#2563EB' },
+  guest:             { label: 'Guest',              bg: 'rgba(0,0,0,0.05)',     color: 'var(--text-secondary)' },
+  reception_booking: { label: 'Reception Booking', bg: 'rgba(234,179,8,0.10)', color: '#A16207' },
+}
+
+function SourceBadge({ source }: { source?: string | null }) {
+  if (!source) return null
+  const s = SOURCE_BADGE[source] ?? SOURCE_BADGE.guest
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '3px 8px', borderRadius: 9999, background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>
+      {s.label}
+    </span>
   )
 }
 
@@ -137,7 +165,7 @@ function KpiSkeleton() {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 24 }}>
       {KPI_TILES.map(t => (
-        <div key={t.key} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 18, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
+        <div key={t.key} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 18, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: '#F3F3F2', animation: 'pulse 1.5s ease-in-out infinite' }} />
             <div style={{ width: 56, height: 26, borderRadius: 8, background: '#F3F3F2', animation: 'pulse 1.5s ease-in-out infinite' }} />
@@ -165,16 +193,16 @@ function BookingKpiTiles({ bookings, prevBookings, hasPrev }: {
         const badge = hasPrev ? pctBadge(curr[t.key as KpiKey], prev[t.key as KpiKey]) : null
         return (
           <div key={t.key}
-            style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 18, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)', transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1),box-shadow 0.2s ease' }}
-            onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.10),0 2px 6px rgba(0,0,0,0.06)' }}
-            onMouseOut={e  => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}
+            style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 18, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1),box-shadow 0.2s ease' }}
+            onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.05),0 2px 6px rgba(0,0,0,0.03)' }}
+            onMouseOut={e  => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
               <div style={{ width: 40, height: 40, borderRadius: 12, background: t.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `1px solid ${t.iconFg}22` }}>
                 <Icon name={t.icon} size={20} style={{ color: t.iconFg }} />
               </div>
               {badge ? (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '4px 10px', borderRadius: 8, fontSize: 13, fontWeight: 700, background: badge.up ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)', color: badge.up ? '#16A34A' : '#DC2626', border: `1px solid ${badge.up ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}` }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '4px 10px', borderRadius: 8, fontSize: 15, fontWeight: 700, background: badge.up ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)', color: badge.up ? '#16A34A' : '#DC2626', border: `1px solid ${badge.up ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}` }}>
                   {badge.text !== 'New' && <Icon name={badge.up ? ICONS.arrowUp : ICONS.arrowDown} size={11} />}
                   {badge.text}
                 </div>
@@ -183,8 +211,8 @@ function BookingKpiTiles({ bookings, prevBookings, hasPrev }: {
               )}
             </div>
             <p style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, color: '#1C1917', marginBottom: 5, fontVariantNumeric: 'tabular-nums' }}>{curr[t.key as KpiKey]}</p>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#1C1917', marginBottom: 2 }}>{t.label}</p>
-            <p style={{ fontSize: 14, color: '#4B5563', margin: 0 }}>{t.sub}</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#1C1917', marginBottom: 2 }}>{t.label}</p>
+            <p style={{ fontSize: 15, color: 'var(--text-muted)', margin: 0 }}>{t.sub}</p>
           </div>
         )
       })}
@@ -198,7 +226,7 @@ function TableSkeleton() {
     <tbody>
       {Array.from({ length: 5 }).map((_, i) => (
         <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-          {[90, 120, 100, 90, 70, 60, 70, 20].map((w, j) => (
+          {[90, 120, 100, 90, 70, 60, 90, 20].map((w, j) => (
             <td key={j} style={{ padding: '17px 16px' }}>
               <div style={{ width: w, height: 14, borderRadius: 4, background: '#F3F3F2', animation: 'pulse 1.5s ease-in-out infinite' }} />
             </td>
@@ -209,18 +237,33 @@ function TableSkeleton() {
   )
 }
 
-const STATUS_LABEL: Record<string, string> = { scheduled: 'Scheduled', checked_in: 'Checked In', completed: 'Completed', cancelled: 'Cancelled' }
-const STATUS_STYLE: Record<string, React.CSSProperties> = {
-  scheduled:  { background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE' },
-  checked_in: { background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0' },
-  completed:  { background: '#F9FAFB', color: '#6B7280', border: '1px solid #E5E7EB' },
-  cancelled:  { background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' },
+const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; border: string; icon: string }> = {
+  scheduled: {
+    label: 'Scheduled',
+    bg: '#EFF6FF', color: '#2563EB', border: '#BFDBFE',
+    icon: 'M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+  },
+  checked_in: {
+    label: 'Checked In',
+    bg: '#F0FDF4', color: '#16A34A', border: '#BBF7D0',
+    icon: 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+  },
+  completed: {
+    label: 'Completed',
+    bg: '#F9FAFB', color: '#374151', border: '#E5E7EB',
+    icon: 'M10.125 2.25h-4.5c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125v-9M10.125 2.25h.375a9 9 0 0 1 9 9v.375M10.125 2.25A3.375 3.375 0 0 1 13.5 5.625v1.5c0 .621.504 1.125 1.125 1.125h1.5a3.375 3.375 0 0 1 3.375 3.375M9 15l2.25 2.25L15 12',
+  },
+  cancelled: {
+    label: 'Cancelled',
+    bg: '#FEF2F2', color: '#DC2626', border: '#FECACA',
+    icon: 'M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+  },
 }
 const ICS_LABEL: Record<string, string> = { cleared: 'Cleared', held: 'Held', examination: 'Examination', pending: 'Pending', unavailable: 'N/A' }
 const ICS_BAR_COLOR: Record<string, string> = {
   cleared:     '#16A34A',
   held:        '#DC2626',
-  examination: '#FC6514',
+  examination: 'var(--brand-color)',
   pending:     '#94A3B8',
   unavailable: '#E5E7EB',
 }
@@ -233,7 +276,7 @@ const ICS_LEGEND = [
 ]
 
 
-const FIELD = { width: '100%', padding: '0 14px', height: 36, fontSize: 14, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, outline: 'none', boxSizing: 'border-box' as const, transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }
+const FIELD = { width: '100%', padding: '0 14px', height: 36, fontSize: 15, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, outline: 'none', boxSizing: 'border-box' as const, transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }
 
 // ─── Preset config ────────────────────────────────────────────────────────────
 type Preset = 'today' | '7d' | '30d' | 'all'
@@ -255,20 +298,34 @@ function presetDates(p: Preset): { from: string; to: string } {
 export default function BookingsPage() {
   usePageTitle('Glido | Bookings')
 
+  const [searchParams] = useSearchParams()
+  const _initialPreset: Preset = searchParams.get('filter') === 'today' ? 'today' : '30d'
   const [bookings,     setBookings]     = useState<Booking[]>([])
   const [prevBookings, setPrevBookings] = useState<Booking[]>([])
   const [loading,      setLoading]      = useState(true)
   const [kpiLoading,   setKpiLoading]   = useState(true)
-  const [preset,       setPreset]       = useState<Preset>('30d')
+  const [preset,       setPreset]       = useState<Preset>(_initialPreset)
   const [search,       setSearch]       = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [serviceFilter,setServiceFilter]= useState('')
-  const [dateFrom,     setDateFrom]     = useState(() => daysAgo(30))
+  const [dateFrom,     setDateFrom]     = useState(() => _initialPreset === 'today' ? todaySydney() : daysAgo(30))
   const [dateTo,       setDateTo]       = useState(() => todaySydney())
   const [liveColor,    setLiveColor]    = useState('#22C55E')
   const [cancelTarget, setCancelTarget] = useState<Booking | null>(null)
   const [cancelling,   setCancelling]   = useState(false)
+  const [openPopover,  setOpenPopover]  = useState<string | null>(null)
+  const PAGE_SIZE = 15
+  const [page, setPage] = useState(1)
+  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleMouseEnter = (id: string) => {
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
+    setOpenPopover(id)
+  }
+  const handleMouseLeave = () => {
+    hoverTimeout.current = setTimeout(() => setOpenPopover(null), 300)
+  }
   const navigate = useNavigate()
+
 
   const confirmCancel = async () => {
     if (!cancelTarget) return
@@ -321,6 +378,7 @@ export default function BookingsPage() {
   }, [dateFrom, dateTo])
 
   useEffect(() => { load() }, [load])
+  useEffect(() => { setPage(1) }, [statusFilter, serviceFilter, search, dateFrom, dateTo])
   useEffect(() => {
     const channel = supabase
       .channel('bookings-page')
@@ -349,14 +407,20 @@ export default function BookingsPage() {
     groupMap.get(key)!.push(b)
   }
   // One display row per group — primary = first slot; worst status surfaces to top
-  const groupedRows = [...groupMap.values()].map(slots => {
-    const primary = slots[0]
-    const worstStatus = slots.reduce((worst, s) =>
-      (STATUS_RANK[s.status] ?? 9) < (STATUS_RANK[worst] ?? 9) ? s.status : worst,
-      primary.status
-    )
-    return { primary, slots, worstStatus, slotCount: slots.length }
-  })
+  // Hide groups only when ALL slots are checked in (not just one)
+  const groupedRows = [...groupMap.values()]
+    .filter(slots => !slots.every(s => s.status === 'checked_in'))
+    .map(slots => {
+      const primary = slots[0]
+      const worstStatus = slots.reduce((worst, s) =>
+        (STATUS_RANK[s.status] ?? 9) < (STATUS_RANK[worst] ?? 9) ? s.status : worst,
+        primary.status
+      )
+      return { primary, slots, worstStatus, slotCount: slots.length }
+    })
+
+  const totalPages = Math.max(1, Math.ceil(groupedRows.length / PAGE_SIZE))
+  const pagedRows  = groupedRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const exportCsv = () => {
     const header = ['Reference', 'Date', 'Time', 'Driver', 'Service', 'HBL', 'ICS', 'Status']
@@ -401,96 +465,116 @@ export default function BookingsPage() {
         />
       )}
 
-      {/* Filter bar — single non-wrapping row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap', overflowX: 'auto', marginBottom: 16 }}>
-        {/* All Statuses */}
-        <FilterSelect
-          placeholder="All Statuses"
-          value={statusFilter}
-          onChange={setStatusFilter}
-          options={[
-            { value: 'scheduled',  label: 'Scheduled'  },
-            { value: 'checked_in', label: 'Checked In' },
-            { value: 'completed',  label: 'Completed'  },
-            { value: 'cancelled',  label: 'Cancelled'  },
-          ]}
-        />
-        {/* All Services */}
-        <FilterSelect
-          placeholder="All Services"
-          value={serviceFilter}
-          onChange={setServiceFilter}
-          options={[
-            { value: 'pickup',  label: 'Pick Up'  },
-            { value: 'dropoff', label: 'Drop Off' },
-          ]}
-        />
-        {/* Today / 7 Days / 30 Days / All Time */}
-        <div style={{ display: 'flex', alignItems: 'center', background: '#F7F6F5', borderRadius: 8, padding: 3, border: '1px solid rgba(0,0,0,0.05)', flexShrink: 0, height: 36, boxSizing: 'border-box' }}>
-          {PRESETS.map(p => {
-            const active = preset === p.id
-            return (
-              <button key={p.id} type="button" onClick={() => applyPreset(p.id)}
-                style={{ height: 30, padding: '0 13px', fontSize: 14, fontWeight: active ? 700 : 500, borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all 0.15s', background: active ? '#FFFFFF' : 'transparent', color: active ? '#FC6514' : '#4B5563', boxShadow: active ? '0 1px 3px rgba(0,0,0,0.10)' : 'none', whiteSpace: 'nowrap' }}>
-                {p.label}
-              </button>
-            )
-          })}
+      {/* ── Filter bar ── */}
+      <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+        {/* Row 1 — Primary: Search + Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', pointerEvents: 'none' }}>
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input
+              type="text" value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Search by reference, driver name or HBL…"
+              size={40}
+              style={{ height: 40, padding: '0 14px 0 38px', fontSize: 15, color: '#1C1917', background: '#fff', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: 10, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s, box-shadow 0.15s', fontFamily: 'inherit' }}
+              onFocus={e => { e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(var(--brand-rgb),0.10)' }}
+              onBlur={e  => { e.target.style.borderColor = 'rgba(0,0,0,0.12)';            e.target.style.boxShadow = 'none' }}
+            />
+          </div>
+          <div style={{ flex: 1 }} />
+          <button onClick={exportCsv}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 40, padding: '0 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 10, cursor: 'pointer', transition: 'background 0.12s', flexShrink: 0, fontFamily: 'inherit' }}
+            onMouseOver={e => { e.currentTarget.style.background = '#F7F6F5' }}
+            onMouseOut={e  => { e.currentTarget.style.background = '#fff' }}
+          >
+            <Icon name={ICONS.download} size={15} /> Export CSV
+          </button>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-tertiary)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            <span style={{ width: 7, height: 7, borderRadius: 9999, background: liveColor, display: 'inline-block', transition: 'background 0.4s' }} />
+            Live
+          </span>
         </div>
-        {/* Date range */}
-        <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPreset('all') }} style={{ ...FIELD, width: 'auto', flexShrink: 0 }} />
-        <span style={{ color: '#A8A29E', flexShrink: 0 }}>→</span>
-        <input type="date" value={dateTo}   onChange={e => { setDateTo(e.target.value);   setPreset('all') }} style={{ ...FIELD, width: 'auto', flexShrink: 0 }} />
-        {/* Clear filters */}
-        {hasFilters && (
-          <button onClick={clearAll}
-            style={{ fontSize: 13, color: '#A8A29E', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', transition: 'color 0.15s', flexShrink: 0, whiteSpace: 'nowrap' }}
-            onMouseOver={e => (e.currentTarget.style.color = '#FC6514')}
-            onMouseOut={e  => (e.currentTarget.style.color = '#A8A29E')}
-          >Clear filters</button>
-        )}
-        {/* Search */}
-        <input
-          type="text" value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Search ref, driver, HBL…"
-          style={{ ...FIELD, width: 200, flexShrink: 0 }}
-          onFocus={e => { e.target.style.borderColor = 'rgba(252,101,20,0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(252,101,20,0.12)' }}
-          onBlur={e  => { e.target.style.borderColor = 'rgba(0,0,0,0.12)'; e.target.style.boxShadow = 'none' }}
-        />
-        <div style={{ flex: 1 }} />
-        {/* CSV */}
-        <button onClick={exportCsv} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 36, padding: '0 16px', fontSize: 14, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, cursor: 'pointer', transition: 'all 0.12s', flexShrink: 0 }}
-          onMouseOver={e => { e.currentTarget.style.background = '#F7F6F5' }}
-          onMouseOut={e  => { e.currentTarget.style.background = '#fff' }}
-        >
-          <Icon name={ICONS.download} size={15} /> CSV
-        </button>
-        {/* Live dot */}
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: '#A8A29E', whiteSpace: 'nowrap', flexShrink: 0 }}>
-          <span style={{ width: 7, height: 7, borderRadius: 9999, background: liveColor, display: 'inline-block', transition: 'background 0.4s' }} />
-          Live
-        </span>
+
+        {/* Row 2 — Secondary: Filters */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap', overflowX: 'auto' }}>
+          {/* Filter dropdowns grouped */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F7F6F5', borderRadius: 9, padding: '4px 6px', border: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
+            <FilterSelect
+              placeholder="All Statuses"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: 'scheduled', label: 'Scheduled' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'cancelled', label: 'Cancelled' },
+              ]}
+            />
+            <div style={{ width: 1, height: 20, background: 'rgba(0,0,0,0.10)', flexShrink: 0 }} />
+            <FilterSelect
+              placeholder="All Services"
+              value={serviceFilter}
+              onChange={setServiceFilter}
+              options={[
+                { value: 'pickup',  label: 'Pick Up'  },
+                { value: 'dropoff', label: 'Drop Off' },
+              ]}
+            />
+          </div>
+
+          {/* Divider */}
+          <div style={{ width: 1, height: 24, background: 'rgba(0,0,0,0.08)', flexShrink: 0 }} />
+
+          {/* Time presets */}
+          <div style={{ display: 'flex', alignItems: 'center', background: '#F7F6F5', borderRadius: 9, padding: 3, border: '1px solid rgba(0,0,0,0.06)', flexShrink: 0, height: 36, boxSizing: 'border-box' }}>
+            {PRESETS.map(p => {
+              const active = preset === p.id
+              return (
+                <button key={p.id} type="button" onClick={() => applyPreset(p.id)}
+                  style={{ height: 30, padding: '0 13px', fontSize: 14, fontWeight: active ? 700 : 500, borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all 0.15s', background: active ? '#FFFFFF' : 'transparent', color: active ? 'var(--brand-color)' : '#44403C', boxShadow: active ? '0 1px 3px rgba(0,0,0,0.10)' : 'none', whiteSpace: 'nowrap', fontFamily: 'inherit' }}>
+                  {p.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Date range */}
+          <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPreset('all') }}
+            style={{ height: 36, padding: '0 12px', fontSize: 14, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', flexShrink: 0 }} />
+          <span style={{ color: 'var(--text-tertiary)', flexShrink: 0, fontSize: 14 }}>→</span>
+          <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPreset('all') }}
+            style={{ height: 36, padding: '0 12px', fontSize: 14, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', flexShrink: 0 }} />
+
+          {/* Clear filters */}
+          {hasFilters && (
+            <button onClick={clearAll}
+              style={{ fontSize: 14, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', transition: 'color 0.15s', flexShrink: 0, whiteSpace: 'nowrap', fontFamily: 'inherit' }}
+              onMouseOver={e => (e.currentTarget.style.color = 'var(--brand-color)')}
+              onMouseOut={e  => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+            >Clear filters</button>
+          )}
+        </div>
+
       </div>
 
       {/* Table */}
-      <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
+      <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.01)', flexWrap: 'wrap', gap: 8 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#374151' }}>
             {loading ? 'Loading…' : `${groupedRows.length} booking${groupedRows.length !== 1 ? 's' : ''}${filtered.length !== groupedRows.length ? ` (${filtered.length} slots)` : ''}`}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
             {/* ICS legend */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               {ICS_LEGEND.map(l => (
-                <span key={l.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#94A3B8', whiteSpace: 'nowrap' }}>
+                <span key={l.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#94A3B8', whiteSpace: 'nowrap' }}>
                   <span style={{ width: 8, height: 8, borderRadius: 9999, background: ICS_BAR_COLOR[l.key], flexShrink: 0, display: 'inline-block' }} />
                   {l.label}
                 </span>
               ))}
             </div>
-            <Link to="/reception/bookings/new" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 13, fontWeight: 600, background: 'linear-gradient(135deg,#FF7A2A,#E85A0A)', color: '#fff', borderRadius: 9999, textDecoration: 'none', boxShadow: '0 2px 8px rgba(252,101,20,0.30)' }}>
-              <Icon name={ICONS.add} size={14} /> New Booking
-            </Link>
           </div>
         </div>
 
@@ -500,7 +584,7 @@ export default function BookingsPage() {
               <thead>
                 <tr style={{ background: '#F7F6F5', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
                   {['', 'Reference', 'Driver', 'Slot', 'Service', 'HBL', 'Status', ''].map((h, i) => (
-                    <th key={i} style={{ textAlign: 'left', padding: '12px 16px', fontSize: 14, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap', ...(i === 0 ? { width: 8, padding: 0 } : {}) }}>{h}</th>
+                    <th key={i} style={{ textAlign: 'left', padding: '12px 16px', fontSize: 15, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap', ...(i === 0 ? { width: 8, padding: 0 } : {}) }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -508,9 +592,9 @@ export default function BookingsPage() {
             </table>
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: '48px 0', textAlign: 'center', color: '#A8A29E' }}>
+          <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--text-tertiary)' }}>
             <Icon name={ICONS.bookings} size={36} style={{ margin: '0 auto 10px', opacity: 0.25, display: 'block' }} />
-            <p style={{ fontSize: 14 }}>No bookings match your filters.</p>
+            <p style={{ fontSize: 15 }}>No bookings match your filters.</p>
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -518,31 +602,36 @@ export default function BookingsPage() {
               <thead>
                 <tr style={{ background: '#F7F6F5', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
                   {['', 'Reference', 'Driver', 'Slot', 'Service', 'HBL', 'Status', ''].map((h, i) => (
-                    <th key={i} style={{ textAlign: 'left', padding: '12px 16px', fontSize: 14, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap', ...(i === 0 ? { width: 8, padding: 0 } : {}) }}>{h}</th>
+                    <th key={i} style={{ textAlign: 'left', padding: '12px 16px', fontSize: 15, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap', ...(i === 0 ? { width: 8, padding: 0 } : {}) }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {groupedRows.map(({ primary: b, worstStatus, slotCount }) => {
+                {pagedRows.map(({ primary: b, worstStatus, slotCount, slots }) => {
                   const displayRef = b.groupReference ?? b.referenceNumber
-                  const rowBg = b.icsStatus === 'held' ? 'rgba(239,68,68,0.05)' : worstStatus === 'checked_in' ? 'rgba(34,197,94,0.04)' : worstStatus === 'completed' ? 'rgba(0,0,0,0.01)' : ''
-                  const statusSty = STATUS_STYLE[worstStatus] ?? STATUS_STYLE.scheduled
+                  const rowBg =
+                    b.icsStatus === 'held'       ? 'rgba(239,68,68,0.08)'  :
+                    worstStatus === 'checked_in' ? 'rgba(34,197,94,0.07)'  :
+                    worstStatus === 'completed'  ? 'rgba(0,0,0,0.025)'     :
+                    worstStatus === 'cancelled'  ? 'rgba(0,0,0,0.015)'     :
+                                                   ''
                   const navTarget = b.groupReference
                     ? `/reception/bookings/group/${b.groupReference}`
                     : `/reception/bookings/${b.id}`
                   return (
-                    <tr key={displayRef} style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', cursor: 'pointer', transition: 'background 0.12s', background: rowBg }}
-                      onMouseOver={e => (e.currentTarget.style.background = 'rgba(252,101,20,0.03)')}
+                    <tr key={displayRef} style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer', transition: 'background 0.12s', background: rowBg }}
+                      onMouseOver={e => (e.currentTarget.style.background = b.icsStatus === 'held' ? 'rgba(239,68,68,0.13)' : 'rgba(var(--brand-rgb),0.05)')}
                       onMouseOut={e  => (e.currentTarget.style.background = rowBg)}
                       onClick={() => navigate(navTarget)}
                     >
-                      <td style={{ width: 8, padding: 0, paddingLeft: 4 }}>
-                        <div style={{ width: 4, minHeight: 40, height: '100%', borderRadius: 2, background: ICS_BAR_COLOR[b.icsStatus ?? ''] ?? ICS_BAR_COLOR.unavailable }} />
+                      <td style={{ width: 10, padding: 0, paddingLeft: 4 }}>
+                        <div style={{ width: 6, minHeight: 40, height: '100%', borderRadius: 2, background: ICS_BAR_COLOR[b.icsStatus ?? ''] ?? ICS_BAR_COLOR.unavailable }} />
                       </td>
-                      <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '18px 16px', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                           <span
-                            style={{ fontFamily: 'ui-monospace,monospace', fontSize: 14, fontWeight: 700, color: '#FC6514', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                            style={{ fontFamily: 'ui-monospace,monospace', fontSize: 15, fontWeight: 700, color: 'var(--brand-color)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}
                             title="Click to copy"
                             onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(displayRef).then(() => toast('Reference copied', 'info')).catch(() => {}) }}
                           >
@@ -552,35 +641,124 @@ export default function BookingsPage() {
                             </svg>
                           </span>
                           {slotCount > 1 && (
-                            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 9999, background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE', whiteSpace: 'nowrap' }}>
-                              {slotCount} slots
-                            </span>
+                            <div style={{ position: 'relative' }}>
+                              <button
+                                onMouseEnter={() => handleMouseEnter(displayRef)}
+                                onMouseLeave={handleMouseLeave}
+                                style={{ padding: '2px 8px', borderRadius: 9999, background: 'rgba(var(--brand-rgb),0.10)', border: '1px solid rgba(var(--brand-rgb),0.22)', color: 'var(--brand-color)', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit' }}
+                              >
+                                {slotCount} slots
+                              </button>
+                              {openPopover === displayRef && (
+                                <div
+                                  onMouseEnter={() => handleMouseEnter(displayRef)}
+                                  onMouseLeave={handleMouseLeave}
+                                  style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: '10px 12px', zIndex: 9999, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: 240 }}
+                                >
+                                  <p style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>All Slot References</p>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                    {slots.map(slot => {
+                                      const navTo = b.groupReference
+                                        ? `/reception/bookings/group/${b.groupReference}`
+                                        : `/reception/bookings/${slot.id}`
+                                      return (
+                                        <div
+                                          key={slot.id}
+                                          onClick={e => { e.stopPropagation(); navigate(navTo) }}
+                                          onMouseOver={e => (e.currentTarget.style.background = '#F9FAFB')}
+                                          onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
+                                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, cursor: 'pointer', padding: '4px 6px', borderRadius: 6, transition: 'background 0.1s', background: 'transparent' }}
+                                        >
+                                          <div style={{ minWidth: 0, flex: 1 }}>
+                                            <span style={{ fontSize: 14, fontFamily: 'ui-monospace,monospace', color: 'var(--brand-color)', fontWeight: 600 }}>{slot.referenceNumber}</span>
+                                            <span style={{ fontSize: 13, color: '#9CA3AF', marginLeft: 6 }}>{slot.slotStartTime} – {slot.slotEndTime}</span>
+                                          </div>
+                                          <button
+                                            onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(slot.referenceNumber).then(() => toast('Reference copied', 'info')).catch(() => {}) }}
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: 2, flexShrink: 0 }}
+                                            title="Copy"
+                                          >
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                          </button>
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
+                        <SourceBadge source={b.bookingSource} />
+                        </div>
                       </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', margin: 0 }}>{b.driverName}</p>
-                        <p style={{ fontSize: 12, color: '#A8A29E', margin: '1px 0 0' }}>{b.driverPhone ?? '—'}</p>
+                      <td style={{ padding: '18px 16px' }}>
+                        <p style={{ fontSize: 16, fontWeight: 700, color: '#1C1917', margin: 0 }}>{b.driverName}</p>
+                        <p style={{ fontSize: 15, color: 'var(--text-tertiary)', margin: '1px 0 0' }}>{b.driverPhone ?? '—'}</p>
                       </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', whiteSpace: 'nowrap', margin: 0 }}>{b.slotStartTime} – {b.slotEndTime}</p>
-                        <p style={{ fontSize: 12, color: '#A8A29E', margin: '1px 0 0' }}>{b.slotDate}{slotCount > 1 ? ` +${slotCount - 1} more` : ''}</p>
+                      <td style={{ padding: '18px 16px' }}>
+                        <p style={{ fontSize: 16, fontWeight: 700, color: '#1C1917', whiteSpace: 'nowrap', margin: 0 }}>{b.slotStartTime} – {b.slotEndTime}</p>
+                        <p style={{ fontSize: 15, color: 'var(--text-tertiary)', margin: '1px 0 0' }}>{b.slotDate}{slotCount > 1 ? ` +${slotCount - 1} more` : ''}</p>
                       </td>
-                      <td style={{ padding: '14px 16px', fontSize: 14, fontWeight: 500, color: '#4B5563', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '18px 16px', fontSize: 15, fontWeight: 500, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                         {b.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {(b.loadType ?? '').toUpperCase()}
                       </td>
-                      <td style={{ padding: '14px 16px', fontFamily: 'ui-monospace,monospace', fontSize: 13, color: '#78716C' }}>{b.houseBillNumber ?? b.containerNumber ?? '—'}</td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <span style={{ ...statusSty, borderRadius: 20, padding: '4px 10px', fontSize: 13, fontWeight: 500, display: 'inline-flex', alignItems: 'center' }}>
-                          {STATUS_LABEL[worstStatus] ?? worstStatus}
-                        </span>
+                      <td style={{ padding: '18px 16px', fontFamily: 'ui-monospace,monospace', fontSize: 15, color: 'var(--text-secondary)' }}>{b.houseBillNumber ?? b.containerNumber ?? '—'}</td>
+                      <td style={{ padding: '18px 16px' }}>
+                        {(() => {
+                          const cfg = STATUS_CONFIG[worstStatus] ?? STATUS_CONFIG.scheduled
+                          return (
+                            <span style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`, borderRadius: 20, padding: '5px 10px 5px 8px', fontSize: 14, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                <path d={cfg.icon} />
+                              </svg>
+                              {cfg.label}
+                            </span>
+                          )
+                        })()}
                       </td>
-                      <td style={{ padding: '14px 16px', color: 'rgba(0,0,0,0.25)', fontSize: 16 }}>→</td>
+                      <td style={{ padding: '18px 16px', color: 'rgba(0,0,0,0.25)', fontSize: 16 }}>→</td>
                     </tr>
                   )
                 })}
               </tbody>
             </table>
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>
+                  Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, groupedRows.length)} of {groupedRows.length}
+                </span>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    style={{ height: 32, padding: '0 12px', fontSize: 14, fontWeight: 500, borderRadius: 7, border: '1px solid rgba(0,0,0,0.12)', background: '#fff', color: page === 1 ? '#C7C3BF' : '#1C1917', cursor: page === 1 ? 'default' : 'pointer' }}
+                  >← Prev</button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(n => n === 1 || n === totalPages || Math.abs(n - page) <= 1)
+                    .reduce<(number | '…')[]>((acc, n, idx, arr) => {
+                      if (idx > 0 && (n as number) - (arr[idx - 1] as number) > 1) acc.push('…')
+                      acc.push(n)
+                      return acc
+                    }, [])
+                    .map((n, i) => n === '…' ? (
+                      <span key={`ellipsis-${i}`} style={{ height: 32, padding: '0 8px', display: 'inline-flex', alignItems: 'center', fontSize: 14, color: 'var(--text-tertiary)' }}>…</span>
+                    ) : (
+                      <button key={n} onClick={() => setPage(n as number)}
+                        style={{ height: 32, minWidth: 32, padding: '0 10px', fontSize: 14, fontWeight: n === page ? 700 : 500, borderRadius: 7, border: '1px solid rgba(0,0,0,0.12)', background: n === page ? 'var(--brand-color)' : '#fff', color: n === page ? 'var(--brand-text)' : '#1C1917', cursor: 'pointer' }}
+                      >{n}</button>
+                    ))
+                  }
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    style={{ height: 32, padding: '0 12px', fontSize: 14, fontWeight: 500, borderRadius: 7, border: '1px solid rgba(0,0,0,0.12)', background: '#fff', color: page === totalPages ? '#C7C3BF' : '#1C1917', cursor: page === totalPages ? 'default' : 'pointer' }}
+                  >Next →</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -595,14 +773,14 @@ export default function BookingsPage() {
           onClick={e => e.stopPropagation()}
         >
           <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1C1917', marginBottom: 10, letterSpacing: '-0.02em' }}>Cancel Booking</h2>
-          <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.6, marginBottom: 24 }}>
+          <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 24 }}>
             Are you sure you want to cancel booking <strong style={{ fontFamily: 'ui-monospace,monospace', color: '#1C1917' }}>{cancelTarget.referenceNumber}</strong>? This action cannot be undone.
           </p>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
             <button
               type="button"
               onClick={() => setCancelTarget(null)}
-              style={{ padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#374151', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ padding: '9px 18px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit' }}
             >
               Keep Booking
             </button>
@@ -610,7 +788,7 @@ export default function BookingsPage() {
               type="button"
               onClick={confirmCancel}
               disabled={cancelling}
-              style={{ padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#fff', background: cancelling ? '#FCA5A5' : '#DC2626', border: 'none', borderRadius: 9, cursor: cancelling ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.13s' }}
+              style={{ padding: '9px 18px', fontSize: 15, fontWeight: 600, color: '#fff', background: cancelling ? '#FCA5A5' : '#DC2626', border: 'none', borderRadius: 9, cursor: cancelling ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.13s' }}
             >
               {cancelling ? 'Cancelling…' : 'Cancel Booking'}
             </button>

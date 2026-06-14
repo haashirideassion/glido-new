@@ -15,6 +15,22 @@ export function LookupScreen() {
 
   if (state.currentScreen !== 'lookup') return null
 
+  const formatRef = (raw: string) => {
+    const clean = raw.toUpperCase().replace(/[^A-Z0-9]/g, '')
+    const parts: string[] = []
+    if (clean.length > 0)  parts.push(clean.slice(0, 3))
+    if (clean.length > 3)  parts.push(clean.slice(3, 7))
+    if (clean.length > 7)  parts.push(clean.slice(7, 12))
+    if (clean.length > 12) parts.push(clean.slice(12, 14))
+    if (clean.length > 14) parts.push(clean.slice(14, 16))
+    return parts.join('-')
+  }
+
+  const handleRefInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatRef(e.target.value)
+    dispatch({ type: 'SET_REF_INPUT', value: formatted })
+  }
+
   const borderColor     = state.lookupError ? '#EF4444' : '#C2C2C2'
   const bg              = state.lookupError ? '#FEF2F2' : '#F7F6F5'
   const regoBorderColor = regoError ? '#EF4444' : '#C2C2C2'
@@ -66,7 +82,7 @@ export function LookupScreen() {
           <Icon name={ICONS.search} size={36} style={{ color: 'var(--brand-color)' }} />
         </div>
         <h2 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: 8, color: '#1C1917' }}>Find Your Booking</h2>
-        <p style={{ color: '#78716C', marginBottom: 28 }}>Select how you'd like to look up your booking</p>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: 28 }}>Select how you'd like to look up your booking</p>
 
         {/* Tab switcher — same pattern as ScanScreen */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 28, background: 'rgba(0,0,0,0.04)', borderRadius: 14, padding: 4 }}>
@@ -103,16 +119,17 @@ export function LookupScreen() {
               className="kiosk-input"
               style={{ width: '100%', borderRadius: 16, marginBottom: 12, border: `2px solid ${borderColor}`, background: bg, color: '#1C1917', padding: '14px 24px', textTransform: 'uppercase', letterSpacing: '0.1em' }}
               value={state.referenceInput}
-              onChange={e => dispatch({ type: 'SET_REF_INPUT', value: e.target.value.toUpperCase() })}
+              maxLength={20}
+              onChange={handleRefInput}
               onKeyDown={e => e.key === 'Enter' && performLookup()}
               onFocus={e => { e.target.style.borderColor = 'var(--brand-color)'; e.target.style.boxShadow = '0 0 0 3px rgba(var(--brand-rgb),0.12)' }}
               onBlur={e  => { e.target.style.borderColor = borderColor; e.target.style.boxShadow = 'none' }}
             />
             {state.lookupError && (
-              <p style={{ fontSize: 14, color: '#EF4444', marginBottom: 16 }}>Reference not found. Please check and try again.</p>
+              <p style={{ fontSize: 15, color: '#EF4444', marginBottom: 16 }}>Reference not found. Please check and try again.</p>
             )}
             {state.lookupLoading && (
-              <p style={{ fontSize: 14, color: 'var(--brand-color)', marginBottom: 16 }}>Looking up booking…</p>
+              <p style={{ fontSize: 15, color: 'var(--brand-color)', marginBottom: 16 }}>Looking up booking…</p>
             )}
             <button
               className="kiosk-btn kiosk-btn-primary"
@@ -140,10 +157,10 @@ export function LookupScreen() {
               onBlur={e  => { e.target.style.borderColor = regoBorderColor; e.target.style.boxShadow = 'none' }}
             />
             {regoError && (
-              <p style={{ fontSize: 14, color: '#EF4444', marginBottom: 16 }}>No booking found for that registration. Please try again.</p>
+              <p style={{ fontSize: 15, color: '#EF4444', marginBottom: 16 }}>No booking found for that registration. Please try again.</p>
             )}
             {regoLoading && (
-              <p style={{ fontSize: 14, color: 'var(--brand-color)', marginBottom: 16 }}>Looking up booking…</p>
+              <p style={{ fontSize: 15, color: 'var(--brand-color)', marginBottom: 16 }}>Looking up booking…</p>
             )}
             <button
               className="kiosk-btn kiosk-btn-primary"
@@ -158,10 +175,10 @@ export function LookupScreen() {
 
         {/* QR scanner — visible on both tabs */}
         <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid rgba(0,0,0,0.08)' }}>
-          <p style={{ fontSize: 14, color: '#A8A29E', marginBottom: 12 }}>Or scan your QR code</p>
+          <p style={{ fontSize: 15, color: 'var(--text-tertiary)', marginBottom: 12 }}>Or scan your QR code</p>
           <button
             onClick={() => goTo('scan')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--brand-color)', background: 'none', border: 'none', cursor: 'pointer' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 15, color: 'var(--brand-color)', background: 'none', border: 'none', cursor: 'pointer' }}
           >
             <Icon name={ICONS.qrCode} size={18} />
             Use QR Scanner

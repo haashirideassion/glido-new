@@ -23,7 +23,7 @@ export default function NotFound() {
 
         {/* 404 */}
         <p style={{
-          fontSize: 'clamp(5rem,20vw,9rem)', fontWeight: 800, color: '#FC6514',
+          fontSize: 'clamp(5rem,20vw,9rem)', fontWeight: 800, color: 'var(--brand-color)',
           letterSpacing: '-0.06em', lineHeight: 1, margin: '0 0 8px',
           fontVariantNumeric: 'tabular-nums',
         }}>
@@ -39,7 +39,7 @@ export default function NotFound() {
         </h1>
 
         {/* Subtext */}
-        <p style={{ fontSize: 15, color: '#78716C', lineHeight: 1.7, margin: '0 0 36px' }}>
+        <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.7, margin: '0 0 36px' }}>
           The page you're looking for doesn't exist or has been moved.
         </p>
 
@@ -50,7 +50,7 @@ export default function NotFound() {
             onClick={() => window.history.back()}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '13px 28px', fontSize: 14, fontWeight: 600, color: '#374151',
+              padding: '13px 28px', fontSize: 15, fontWeight: 600, color: '#374151',
               background: '#fff', border: '1.5px solid #e5e7eb',
               borderRadius: 9999, cursor: 'pointer', fontFamily: 'inherit',
               transition: 'border-color 0.15s ease, color 0.15s ease, transform 0.18s ease',
@@ -66,14 +66,14 @@ export default function NotFound() {
             to="/"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '13px 28px', fontSize: 14, fontWeight: 600, color: '#fff',
+              padding: '13px 28px', fontSize: 15, fontWeight: 600, color: '#fff',
               background: 'linear-gradient(135deg,#FF7A2A 0%,#E85A0A 100%)',
               borderRadius: 9999, textDecoration: 'none',
-              boxShadow: '0 2px 8px rgba(252,101,20,0.35)',
+              boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)',
               transition: 'transform 0.18s ease, box-shadow 0.18s ease',
             }}
-            onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(252,101,20,0.42)' }}
-            onMouseOut={e  => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 8px rgba(252,101,20,0.35)' }}
+            onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(var(--brand-rgb),0.42)' }}
+            onMouseOut={e  => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 8px rgba(var(--brand-rgb),0.35)' }}
           >
             Go Home
           </Link>

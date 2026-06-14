@@ -53,8 +53,8 @@ html, body {
 /* ── Kiosk button colour variants ──────────────────────────────────────────── */
 /* Primary — brand colour, respects --brand-color CSS custom property          */
 .kiosk-btn-primary {
-  background: var(--brand-color, #FC6514);
-  color: #ffffff;
+  background: var(--brand-color, var(--brand-color));
+  color: var(--brand-text);
   border: 1px solid rgba(0,0,0,0.18);
   cursor: pointer;
   box-shadow:
@@ -79,7 +79,7 @@ html, body {
 /* Secondary — white with subtle border */
 .kiosk-btn-secondary {
   background: #ffffff;
-  color: #78716C;
+  color: var(--text-secondary);
   border: 1px solid rgba(0,0,0,0.12);
   cursor: pointer;
 }
@@ -98,6 +98,6 @@ html, body {
   text-align: left;
 }
 .kiosk-option-card:hover {
-  border-color: var(--brand-color, #FC6514);
+  border-color: var(--brand-color, var(--brand-color));
   background: rgba(var(--brand-rgb, 252,101,20),0.04);
 }

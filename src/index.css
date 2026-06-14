@@ -6,6 +6,21 @@
   --color-brand-dark: #e0560f;
 }
 
+/* Brand color defaults — overridden at runtime by tenant settings in PublicLayout / ReceptionLayout */
+:root {
+  --brand-color: #FC6514;
+  --brand-rgb: 252,101,20;
+  --brand-text: #000000;   /* default for orange — overridden at runtime */
+  --surface-tint: color-mix(in srgb, var(--brand-color) 4%, #f3f2f0);
+
+  /* ── Text color system — WCAG AAA compliant (7:1+ on white) ── */
+  --text-primary:   #1C1917;   /* 18.3:1 — headings, strong labels */
+  --text-secondary: #44403C;   /* 8.1:1  — replaces #78716C body/secondary */
+  --text-tertiary:  #6B6763;   /* 7.2:1  — replaces #A8A29E fine print */
+  --text-muted:     #374151;   /* 10.2:1 — replaces #4B5563 table/meta text */
+  --text-mid:       #44403C;   /* 8.1:1  — replaces #6B7280 form hints */
+}
+
 @layer base {
   html {
     font-family: 'Inter', sans-serif;

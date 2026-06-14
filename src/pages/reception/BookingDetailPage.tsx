@@ -13,7 +13,7 @@ import {
 } from '@/lib/db/bookings'
 import type { Booking } from '@/data/types'
 
-const CARD: React.CSSProperties  = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)', marginBottom: 16 }
+const CARD: React.CSSProperties  = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 16 }
 
 /** Format a document_type value into a human-readable label.
  *  Handles: snake_case strings, numeric legacy values, nulls. */
@@ -29,8 +29,8 @@ function fmtDocType(docType: string | number | null | undefined, filename?: stri
   }
   return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
-const SL: React.CSSProperties   = { fontSize: 14, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 12 }
-const RL: React.CSSProperties   = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, color: '#4B5563' }
+const SL: React.CSSProperties   = { fontSize: 15, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 12 }
+const RL: React.CSSProperties   = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, color: 'var(--text-muted)' }
 const RV: React.CSSProperties   = { fontSize: 16, fontWeight: 600, color: '#1C1917' }
 
 const ICS_BADGE: Record<string, string> = {
@@ -44,13 +44,29 @@ const ICS_LABEL: Record<string, string> = { cleared: 'Cleared', held: 'Held', ex
 const STATUS_BADGE: Record<string, React.CSSProperties> = {
   scheduled:  { background: '#F5F5F4', color: '#57534E', border: '1px solid rgba(0,0,0,0.10)' },
   checked_in: { background: 'rgba(34,197,94,0.12)', color: '#16A34A', border: '1px solid rgba(34,197,94,0.25)' },
-  completed:  { background: '#F5F5F4', color: '#78716C', border: '1px solid rgba(0,0,0,0.08)' },
-  cancelled:  { background: 'transparent', color: '#A8A29E', border: '1px solid rgba(0,0,0,0.15)' },
+  completed:  { background: '#F5F5F4', color: 'var(--text-secondary)', border: '1px solid rgba(0,0,0,0.08)' },
+  cancelled:  { background: 'transparent', color: 'var(--text-tertiary)', border: '1px solid rgba(0,0,0,0.15)' },
 }
 const STATUS_LABEL: Record<string, string> = { scheduled: 'Scheduled', checked_in: 'Checked In', completed: 'Completed', cancelled: 'Cancelled' }
 
-const FIELD: React.CSSProperties = { width: '100%', padding: '10px 14px', fontSize: 14, color: '#1C1917', background: '#EBEBEA', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10, outline: 'none', boxSizing: 'border-box' }
-const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.target.style.borderColor = 'rgba(252,101,20,0.50)' }
+const FIELD: React.CSSProperties = { width: '100%', padding: '10px 14px', fontSize: 15, color: '#1C1917', background: '#EBEBEA', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10, outline: 'none', boxSizing: 'border-box' }
+
+const SOURCE_BADGE: Record<string, { label: string; bg: string; color: string; border: string }> = {
+  self_booking:      { label: 'Self Booking',      bg: 'rgba(37,99,235,0.08)', color: '#2563EB', border: '1px solid #BFDBFE' },
+  guest:             { label: 'Guest',              bg: 'rgba(0,0,0,0.05)',     color: 'var(--text-secondary)', border: '1px solid rgba(0,0,0,0.12)' },
+  reception_booking: { label: 'Reception Booking', bg: 'rgba(234,179,8,0.10)', color: '#A16207', border: '1px solid rgba(234,179,8,0.35)' },
+}
+
+function SourceBadge({ source }: { source?: string | null }) {
+  if (!source) return null
+  const s = SOURCE_BADGE[source] ?? SOURCE_BADGE.guest
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 14, fontWeight: 600, padding: '4px 10px', borderRadius: 9999, background: s.bg, color: s.color, border: s.border, whiteSpace: 'nowrap' }}>
+      {s.label}
+    </span>
+  )
+}
+const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)' }
 const blur  = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.target.style.borderColor = 'rgba(0,0,0,0.10)' }
 
 export default function BookingDetailPage() {
@@ -67,12 +83,10 @@ export default function BookingDetailPage() {
   const [bookingDocs,   setBookingDocs]   = useState<any[]>([])
 
   // Modal state — two-step: action selection → slot selection → action modal
-  const [confirmModal,   setConfirmModal]   = useState(false)  // Mark Complete (kept separate)
   const [selectedAction, setSelectedAction] = useState<'checkin' | 'reschedule' | 'cancel' | null>(null)
   const [selectedSlot,   setSelectedSlot]   = useState<Booking | null>(null)
 
   // Form fields
-  const [completionNotes, setCompletionNotes] = useState('')
   const [cancelReason,    setCancelReason]    = useState('')
   const [newDate,  setNewDate]  = useState('')
   const [newStart, setNewStart] = useState('')
@@ -157,13 +171,13 @@ export default function BookingDetailPage() {
   }
 
   if (loading) return (
-    <div style={{ padding: '48px 0', textAlign: 'center', color: '#A8A29E', fontSize: 14 }}>Loading…</div>
+    <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 15 }}>Loading…</div>
   )
 
   if (!b) return (
     <div style={{ padding: '48px 0', textAlign: 'center' }}>
       <p style={{ fontSize: 16, fontWeight: 600, color: '#1C1917', marginBottom: 8 }}>Booking not found</p>
-      <Link to="/reception/bookings" style={{ color: '#FC6514', textDecoration: 'none', fontSize: 14 }}>← Back to Bookings</Link>
+      <Link to="/reception/bookings" style={{ color: 'var(--brand-color)', textDecoration: 'none', fontSize: 15 }}>← Back to Bookings</Link>
     </div>
   )
 
@@ -180,12 +194,25 @@ export default function BookingDetailPage() {
 
   return (
     <div>
+      {/* ── Checked-in redirect banner ── */}
+      {b.status === 'checked_in' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.22)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Icon name={ICONS.check} size={16} style={{ color: '#16A34A', flexShrink: 0 }} />
+            <p style={{ fontSize: 15, fontWeight: 500, color: '#15803D' }}>This booking has been checked in and is now managed in the Visitors module.</p>
+          </div>
+          <Link to="/reception/visitors" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 15, fontWeight: 600, color: '#16A34A', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid rgba(34,197,94,0.35)', borderRadius: 8, padding: '6px 12px', background: '#fff' }}>
+            View in Visitors →
+          </Link>
+        </div>
+      )}
+
       {/* ── Breadcrumb + title ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <Link
             to="/reception/bookings"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 15, fontWeight: 600, color: '#4B5563', textDecoration: 'none', transition: 'color 0.14s ease' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 15, fontWeight: 600, color: 'var(--text-muted)', textDecoration: 'none', transition: 'color 0.14s ease' }}
             onMouseOver={e => (e.currentTarget.style.color = '#1C1917')}
             onMouseOut={e  => (e.currentTarget.style.color = '#4B5563')}
           >
@@ -194,9 +221,9 @@ export default function BookingDetailPage() {
             </svg>
             Bookings
           </Link>
-          <span style={{ color: 'rgba(0,0,0,0.15)', fontSize: 14 }}>/</span>
+          <span style={{ color: 'rgba(0,0,0,0.15)', fontSize: 15 }}>/</span>
           <span
-            style={{ fontFamily: 'ui-monospace,monospace', fontSize: 16, fontWeight: 700, color: '#FC6514', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            style={{ fontFamily: 'ui-monospace,monospace', fontSize: 16, fontWeight: 700, color: 'var(--brand-color)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}
             title="Click to copy"
             onClick={() => {
               const displayRef = groupSlots.length > 1 ? (b.groupReference ?? b.referenceNumber) : b.referenceNumber
@@ -208,16 +235,17 @@ export default function BookingDetailPage() {
               <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
             </svg>
           </span>
-          <span style={{ ...statusStyle, fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 9999, whiteSpace: 'nowrap' }}>
+          <span style={{ ...statusStyle, fontSize: 14, fontWeight: 600, padding: '4px 10px', borderRadius: 9999, whiteSpace: 'nowrap' }}>
             {STATUS_LABEL[b.status] ?? b.status}
           </span>
+          <SourceBadge source={b.bookingSource} />
           {groupSlots.length > 1 && (
-            <span style={{ fontSize: 12, fontWeight: 600, color: '#2563EB', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 9999, padding: '4px 10px', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#2563EB', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 9999, padding: '4px 10px', whiteSpace: 'nowrap' }}>
               {groupSlots.length} slots
             </span>
           )}
         </div>
-        <p style={{ fontSize: 14, color: '#4B5563' }}>Created {fmtDateTime(b.createdAt)}</p>
+        <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>Created {fmtDateTime(b.createdAt)}</p>
       </div>
 
       {/* ── 2-col layout ── */}
@@ -226,15 +254,29 @@ export default function BookingDetailPage() {
         {/* ── LEFT ── */}
         <div>
 
-          {/* Driver / Visitor */}
+          {/* Visitor Details */}
           <div style={CARD}>
-            <p style={SL}>Driver / Visitor</p>
+            <p style={SL}>Visitor Details</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <InfoRow label="Driver Name"  value={b.driverName}              icon={ICONS.user}  />
-              {b.driverPhone       && <InfoRow label="Phone"           value={b.driverPhone}       icon={ICONS.phone} />}
-              {b.vehicleRegistration && <InfoRow label="Vehicle Rego"  value={b.vehicleRegistration} icon={ICONS.cargo} mono />}
-              {b.guestName && b.guestName !== b.driverName && <InfoRow label="Guest Name" value={b.guestName} icon={ICONS.users} />}
-              {b.guestPhone        && <InfoRow label="Guest Phone"     value={b.guestPhone}        icon={ICONS.phone} />}
+              {b.guestName   && <InfoRow label="Full Name"    value={b.guestName}   icon={ICONS.user}     />}
+              {b.companyName && <InfoRow label="Company"      value={b.companyName} icon={ICONS.building} />}
+              {b.guestPhone  && <InfoRow label="Phone Number" value={b.guestPhone}  icon={ICONS.phone}    />}
+              {!b.guestName && !b.companyName && !b.guestPhone && (
+                <p style={{ fontSize: 15, color: 'var(--text-tertiary)' }}>No visitor details recorded</p>
+              )}
+            </div>
+          </div>
+
+          {/* Driver Details */}
+          <div style={CARD}>
+            <p style={SL}>Driver Details</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {b.driverName        && <InfoRow label="Driver Name"   value={b.driverName}           icon={ICONS.user}  />}
+              {b.driverPhone       && <InfoRow label="Phone Number"  value={b.driverPhone}          icon={ICONS.phone} />}
+              {b.vehicleRegistration && <InfoRow label="Vehicle Rego" value={b.vehicleRegistration} icon={ICONS.truck} mono />}
+              {!b.driverName && !b.driverPhone && !b.vehicleRegistration && (
+                <p style={{ fontSize: 15, color: 'var(--text-tertiary)' }}>No driver details recorded</p>
+              )}
             </div>
           </div>
 
@@ -242,7 +284,7 @@ export default function BookingDetailPage() {
           {groupSlots.length > 1 ? (
             <div style={{ marginBottom: 16 }}>
               <p style={SL}>SLOTS ({groupSlots.length})</p>
-              <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
+              <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
                 {groupSlots.map((slot, i) => {
                   const slotStatusStyle = STATUS_BADGE[slot.status] ?? STATUS_BADGE.scheduled
                   const serviceLabel = `${slot.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · ${slot.loadType?.toUpperCase()}`
@@ -309,12 +351,12 @@ export default function BookingDetailPage() {
                         }}
                       >
                         <Icon name={isOpen ? ICONS.arrowDown : ICONS.arrowRight} size={16} style={{ color: '#9CA3AF', flexShrink: 0 }} />
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', width: 52, flexShrink: 0 }}>SLOT {i + 1}</span>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--brand-color, #FC6514)', fontFamily: 'ui-monospace,monospace', marginRight: 8 }}>{slot.referenceNumber}</span>
-                        <span style={{ fontSize: 13, color: '#6B7280' }}>{slot.slotDate} · {slot.slotStartTime}–{slot.slotEndTime}</span>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: '#9CA3AF', width: 52, flexShrink: 0 }}>SLOT {i + 1}</span>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--brand-color, #FC6514)', fontFamily: 'ui-monospace,monospace', marginRight: 8 }}>{slot.referenceNumber}</span>
+                        <span style={{ fontSize: 15, color: 'var(--text-mid)' }}>{slot.slotDate} · {slot.slotStartTime}–{slot.slotEndTime}</span>
                         <div style={{ flex: 1 }} />
-                        <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 9999, background: 'rgba(252,101,20,0.10)', color: 'var(--brand-color, #FC6514)', fontWeight: 600, marginRight: 8 }}>{serviceLabel}</span>
-                        <span style={{ ...slotStatusStyle, fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 9999 }}>{STATUS_LABEL[slot.status] ?? slot.status}</span>
+                        <span style={{ fontSize: 14, padding: '3px 10px', borderRadius: 9999, background: 'rgba(var(--brand-rgb),0.10)', color: 'var(--brand-color, #FC6514)', fontWeight: 600, marginRight: 8 }}>{serviceLabel}</span>
+                        <span style={{ ...slotStatusStyle, fontSize: 14, fontWeight: 600, padding: '3px 10px', borderRadius: 9999 }}>{STATUS_LABEL[slot.status] ?? slot.status}</span>
                       </div>
 
                       {/* Expanded panel */}
@@ -337,13 +379,13 @@ export default function BookingDetailPage() {
                               <button type="button"
                                 disabled={acting === slot.id + '-checkin'}
                                 onClick={async () => { setActing(slot.id + '-checkin'); try { await checkInBooking(slot.id); setGroupSlots(prev => { const next = prev.map(s => s.id === slot.id ? { ...s, status: 'checked_in' as any } : s); const allChecked = next.every(s => s.status === 'checked_in' || s.status === 'completed' || s.status === 'cancelled'); if (allChecked) setB(p => p ? { ...p, status: 'checked_in' as any } : p); return next }); toast('Checked in', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
-                                style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, background: 'rgba(34,197,94,0.10)', color: '#16A34A', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(34,197,94,0.10)', color: '#16A34A', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
                                 {acting === slot.id + '-checkin' ? '…' : 'Check In'}
                               </button>
                               <button type="button"
                                 disabled={acting === slot.id + '-cancel'}
                                 onClick={async () => { setActing(slot.id + '-cancel'); try { await cancelBooking(slot.id); setGroupSlots(prev => prev.map(s => s.id === slot.id ? { ...s, status: 'cancelled' as any } : s)); if (slot.id === b?.id) setB(prev => prev ? { ...prev, status: 'cancelled' as any } : prev); toast('Cancelled', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
-                                style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.20)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.20)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
                                 {acting === slot.id + '-cancel' ? '…' : 'Cancel Slot'}
                               </button>
                             </>)}
@@ -351,19 +393,19 @@ export default function BookingDetailPage() {
                               <button type="button"
                                 disabled={acting === slot.id + '-complete'}
                                 onClick={async () => { setActing(slot.id + '-complete'); try { await completeBooking(slot.id); setGroupSlots(prev => prev.map(s => s.id === slot.id ? { ...s, status: 'completed' as any } : s)); if (slot.id === b?.id) setB(prev => prev ? { ...prev, status: 'completed' as any } : prev); toast('Completed', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
-                                style={{ padding: '7px 14px', fontSize: 12, fontWeight: 600, background: 'rgba(107,114,128,0.10)', color: '#374151', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
-                                {acting === slot.id + '-complete' ? '…' : 'Complete'}
+                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(107,114,128,0.10)', color: '#374151', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                {acting === slot.id + '-complete' ? '…' : 'Mark as Complete'}
                               </button>
                             )}
                             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                               <button type="button" onClick={downloadSlotQr}
-                                style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 12, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}
+                                style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 14, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}
                                 onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.28)' }}
                                 onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.14)' }}>
                                 <Icon name={ICONS.download} size={17}/> QR
                               </button>
                               <button type="button" onClick={exportSlotPdf}
-                                style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 12, fontWeight: 600, color: '#fff', background: 'var(--brand-color, #FC6514)', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}
+                                style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 14, fontWeight: 600, color: '#fff', background: 'var(--brand-color, #FC6514)', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}
                                 onMouseOver={e => { e.currentTarget.style.opacity = '0.88' }}
                                 onMouseOut={e  => { e.currentTarget.style.opacity = '1' }}>
                                 <Icon name={ICONS.document} size={17}/> PDF
@@ -401,8 +443,8 @@ export default function BookingDetailPage() {
                 <div style={{ marginTop: 14, background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.20)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <Icon name={ICONS.warning} size={18} style={{ color: '#FBBF24', flexShrink: 0, marginTop: 1 }} />
                   <div>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: '#B45309', marginBottom: 2 }}>CHEP Pallet Exchange</p>
-                    <p style={{ fontSize: 12, color: '#92400E' }}>{b.palletCount} CHEP pallet{(b.palletCount ?? 0) > 1 ? 's' : ''} must be exchanged at collection.</p>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: '#B45309', marginBottom: 2 }}>CHEP Pallet Exchange</p>
+                    <p style={{ fontSize: 14, color: '#92400E' }}>{b.palletCount} CHEP pallet{(b.palletCount ?? 0) > 1 ? 's' : ''} must be exchanged at collection.</p>
                   </div>
                 </div>
               )}
@@ -413,7 +455,7 @@ export default function BookingDetailPage() {
           <div style={CARD}>
             <p style={SL}>Documents</p>
             {bookingDocs.length === 0 ? (
-              <p style={{ fontSize: 14, color: '#A8A29E' }}>No documents uploaded</p>
+              <p style={{ fontSize: 15, color: 'var(--text-tertiary)' }}>No documents uploaded</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {bookingDocs.map((doc: any) => {
@@ -422,21 +464,21 @@ export default function BookingDetailPage() {
                     <div key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#F7F6F5', borderRadius: 10, padding: '10px 14px' }}>
                       {/* Left: type label + filename */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                        <Icon name={ICONS.document} size={19} style={{ color: '#78716C', flexShrink: 0 }} />
+                        <Icon name={ICONS.document} size={19} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
                         <div style={{ minWidth: 0 }}>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', margin: 0 }}>
+                          <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', margin: 0 }}>
                             {fmtDocType(doc.document_type, doc.filename)}
                           </p>
-                          <p style={{ fontSize: 12, color: '#78716C', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.filename}</p>
+                          <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.filename}</p>
                         </div>
                       </div>
                       {/* Right: file size + View */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                         {doc.file_size_bytes ? (
-                          <span style={{ fontSize: 11, color: '#A8A29E' }}>{(doc.file_size_bytes / 1024).toFixed(0)} KB</span>
+                          <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{(doc.file_size_bytes / 1024).toFixed(0)} KB</span>
                         ) : null}
                         <a href={publicUrl} target="_blank" rel="noopener noreferrer"
-                          style={{ fontSize: 12, fontWeight: 600, color: '#FC6514', textDecoration: 'none' }}>
+                          style={{ fontSize: 14, fontWeight: 600, color: 'var(--brand-color)', textDecoration: 'none' }}>
                           View
                         </a>
                       </div>
@@ -454,19 +496,19 @@ export default function BookingDetailPage() {
                 <p style={{ ...SL, marginBottom: 0 }}>ICS Status</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <button onClick={() => act('ics', () => refreshIcsStatus(b.id), 'ICS status refreshed', 'info')} disabled={acting === 'ics'}
-                    style={{ fontSize: 12, color: '#FC6514', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500, fontFamily: 'inherit' }}>
+                    style={{ fontSize: 14, color: 'var(--brand-color)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500, fontFamily: 'inherit' }}>
                     <Icon name={ICONS.refresh} size={17}/>{acting === 'ics' ? 'Refreshing…' : 'Refresh ICS'}
                   </button>
-                  <a href="https://ics.abf.gov.au" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: '#FC6514', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
+                  <a href="https://ics.abf.gov.au" target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, color: 'var(--brand-color)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
                     Open portal <Icon name={ICONS.arrowRight} size={17}/>
                   </a>
                 </div>
               </div>
-              <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '5px 12px', borderRadius: 9999, ...cssToObj(icsStyle) } as any}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 15, fontWeight: 600, padding: '5px 12px', borderRadius: 9999, ...cssToObj(icsStyle) } as any}>
                 {ICS_LABEL[b.icsStatus] ?? b.icsStatus}
               </span>
               {b.icsLastCheckedAt && (
-                <p style={{ fontSize: 11, color: '#A8A29E', marginTop: 8 }}>Last checked: {fmtDateTime(b.icsLastCheckedAt)}</p>
+                <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 8 }}>Last checked: {fmtDateTime(b.icsLastCheckedAt)}</p>
               )}
             </div>
           )}
@@ -476,15 +518,15 @@ export default function BookingDetailPage() {
             <div style={CARD}>
               <p style={SL}>Identity Check</p>
               {!checkinRecord ? (
-                <p style={{ fontSize: 14, color: '#A8A29E' }}>No ID scan data available</p>
+                <p style={{ fontSize: 15, color: 'var(--text-tertiary)' }}>No ID scan data available</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 9999, background: idBadge.bg, color: idBadge.color, border: `1px solid ${idBadge.border}` }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 14, fontWeight: 600, padding: '5px 12px', borderRadius: 9999, background: idBadge.bg, color: idBadge.color, border: `1px solid ${idBadge.border}` }}>
                       <Icon name={ICONS.check} size={17}/>{idBadge.label}
                     </span>
                     {checkinRecord.name_match_score != null && (
-                      <span style={{ fontSize: 12, color: '#A8A29E' }}>Score: {checkinRecord.name_match_score}%</span>
+                      <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>Score: {checkinRecord.name_match_score}%</span>
                     )}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -508,19 +550,19 @@ export default function BookingDetailPage() {
           {b.totalAmount && (
             <div style={CARD}>
               <p style={SL}>Charges</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 15 }}>
                 {(b.storageCharge ?? 0) > 0    && <CRow label={`Storage (${b.storageDays} days)`} val={`$${b.storageCharge!.toFixed(2)}`} />}
                 {(b.shrinkWrapCharge ?? 0) > 0  && <CRow label="Shrink wrap" val={`$${b.shrinkWrapCharge!.toFixed(2)}`} />}
                 {b.slotFee !== undefined          && <CRow label="Slot fee" val={`$${b.slotFee.toFixed(2)}`} />}
                 {b.gstAmount !== undefined && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#A8A29E', paddingTop: 8, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: 'var(--text-tertiary)', paddingTop: 8, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
                     <span>GST (10%)</span><span>${b.gstAmount.toFixed(2)}</span>
                   </div>
                 )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#1C1917', paddingTop: 8, borderTop: '1px solid rgba(0,0,0,0.09)', fontSize: 14 }}>
-                  <span>Total</span><span style={{ color: '#FC6514' }}>${b.totalAmount.toFixed(2)}</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#1C1917', paddingTop: 8, borderTop: '1px solid rgba(0,0,0,0.09)', fontSize: 15 }}>
+                  <span>Total</span><span style={{ color: 'var(--brand-color)' }}>${b.totalAmount.toFixed(2)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#A8A29E', marginTop: 2 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: 'var(--text-tertiary)', marginTop: 2 }}>
                   <span>{(b.paymentMethod ?? '—').toUpperCase()}</span>
                   <span style={{ color: b.paymentStatus === 'paid' ? '#22C55E' : '#FBBF24', fontWeight: 600 }}>
                     {b.paymentStatus === 'paid' ? '✓ Paid' : b.paymentStatus === 'pending_eft' ? 'EFT Pending' : b.paymentStatus}
@@ -533,11 +575,17 @@ export default function BookingDetailPage() {
           {/* Timeline */}
           <div style={CARD}>
             <p style={SL}>Timeline</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 14 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 15 }}>
               <TRow icon={ICONS.calendar}   iconColor="#A8A29E" label="Created"    value={fmtDateTime(b.createdAt)} />
               {b.paymentStatus === 'paid' && <TRow icon={ICONS.check} iconColor="#22C55E" label="Payment" value="Received" valueColor="#22C55E" />}
               {b.checkedInAt && <TRow icon={ICONS.completed}  iconColor="#FBBF24" label="Checked In" value={fmtDateTime(b.checkedInAt)} />}
               {b.completedAt && <TRow icon={ICONS.checkSquare} iconColor="#22C55E" label="Completed" value={fmtDateTime(b.completedAt)} />}
+              {b.completionNotes && (
+                <div style={{ marginTop: 4, padding: '10px 12px', background: '#F7F6F5', borderRadius: 10, borderLeft: '3px solid #22C55E' }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Completion Notes</p>
+                  <p style={{ fontSize: 15, color: '#1C1917', lineHeight: 1.5, margin: 0 }}>{b.completionNotes}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -558,21 +606,12 @@ export default function BookingDetailPage() {
                     </Btn>
                   )}
                   {hasCheckedIn && allDone && (
-                    <>
-                      <button
-                        disabled={acting === 'complete'}
-                        onClick={() => setConfirmModal(true)}
-                        style={{ width: '100%', padding: '11px 16px', borderRadius: 10, border: 'none', background: 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: acting === 'complete' ? 'not-allowed' : 'pointer', opacity: acting === 'complete' ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit', transition: 'opacity 0.15s' }}
-                      >
-                        <Icon name={ICONS.checkSquare} size={19} /> {acting === 'complete' ? 'Completing…' : 'Mark Complete'}
-                      </button>
-                      <button
-                        onClick={() => openAction('checkin')}
-                        style={{ width: '100%', marginTop: 0, padding: '11px 16px', borderRadius: 10, border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', color: '#1C1917', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-                      >
-                        Slot Actions
-                      </button>
-                    </>
+                    <button
+                      onClick={() => openAction('checkin')}
+                      style={{ width: '100%', padding: '11px 16px', borderRadius: 10, border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', color: '#1C1917', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                    >
+                      Slot Actions
+                    </button>
                   )}
                   {hasActionable && (
                     <Btn color="ghost" onClick={() => openAction('reschedule')}>
@@ -595,11 +634,11 @@ export default function BookingDetailPage() {
       {selectedAction && !selectedSlot && groupSlots.length > 1 && (
         <ModalWrap onClose={closeActionModal}>
           <div style={{ marginBottom: 20 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: '#FC6514', marginBottom: 6 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: 'var(--brand-color)', marginBottom: 6 }}>
               {ACTION_LABEL[selectedAction]}
             </p>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1C1917', marginBottom: 4 }}>Select a slot</h3>
-            <p style={{ fontSize: 13, color: '#78716C' }}>Choose which slot to {selectedAction === 'checkin' ? 'check in' : selectedAction}.</p>
+            <p style={{ fontSize: 15, color: 'var(--text-secondary)' }}>Choose which slot to {selectedAction === 'checkin' ? 'check in' : selectedAction}.</p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
@@ -627,25 +666,25 @@ export default function BookingDetailPage() {
                     transition: 'border-color 0.14s, background 0.14s',
                     fontFamily: 'inherit',
                   }}
-                  onMouseOver={e => { if (actionable) { e.currentTarget.style.borderColor = 'rgba(252,101,20,0.40)'; e.currentTarget.style.background = 'rgba(252,101,20,0.03)' } }}
+                  onMouseOver={e => { if (actionable) { e.currentTarget.style.borderColor = 'rgba(var(--brand-rgb),0.40)'; e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.03)' } }}
                   onMouseOut={e  => { e.currentTarget.style.borderColor = actionable ? 'rgba(0,0,0,0.09)' : 'rgba(0,0,0,0.06)'; e.currentTarget.style.background = actionable ? '#FAFAF9' : 'rgba(0,0,0,0.025)' }}
                 >
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Slot {i + 1}</span>
-                      <span style={{ fontFamily: 'ui-monospace,monospace', fontSize: 12, fontWeight: 600, color: '#FC6514' }}>{slot.referenceNumber}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Slot {i + 1}</span>
+                      <span style={{ fontFamily: 'ui-monospace,monospace', fontSize: 14, fontWeight: 600, color: 'var(--brand-color)' }}>{slot.referenceNumber}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 13, color: '#1C1917', fontWeight: 500 }}>{slot.slotDate} · {slot.slotStartTime}–{slot.slotEndTime}</span>
-                      <span style={{ background: 'rgba(252,101,20,0.09)', color: '#FC6514', fontWeight: 600, fontSize: 11, padding: '2px 8px', borderRadius: 9999 }}>
+                      <span style={{ fontSize: 15, color: '#1C1917', fontWeight: 500 }}>{slot.slotDate} · {slot.slotStartTime}–{slot.slotEndTime}</span>
+                      <span style={{ background: 'rgba(var(--brand-rgb),0.09)', color: 'var(--brand-color)', fontWeight: 600, fontSize: 13, padding: '2px 8px', borderRadius: 9999 }}>
                         {comboLabel}
                       </span>
-                      <span style={{ ...slotSt, fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 9999 }}>
+                      <span style={{ ...slotSt, fontSize: 13, fontWeight: 600, padding: '2px 8px', borderRadius: 9999 }}>
                         {STATUS_LABEL[slot.status] ?? slot.status}
                       </span>
                     </div>
                   </div>
-                  <svg width="16" height="16" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: '#A8A29E' }}>
+                  <svg width="16" height="16" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, color: 'var(--text-tertiary)' }}>
                     <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
@@ -669,13 +708,13 @@ export default function BookingDetailPage() {
             <button
               type="button"
               onClick={() => isMulti ? setSelectedSlot(null) : closeActionModal()}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: '#78716C', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 18px', fontFamily: 'inherit' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 0 18px', fontFamily: 'inherit' }}
             >
               <Icon name={ICONS.arrowLeft} size={19} /> Back
             </button>
 
             {/* Eyebrow + heading */}
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--brand-color, #FC6514)', textTransform: 'uppercase', margin: '0 0 6px' }}>
+            <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', color: 'var(--brand-color, #FC6514)', textTransform: 'uppercase', margin: '0 0 6px' }}>
               {ACTION_LABEL[selectedAction]}
             </p>
             <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.02em', margin: '0 0 20px' }}>
@@ -684,17 +723,17 @@ export default function BookingDetailPage() {
 
             {/* Slot card */}
             <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: '14px 16px', marginBottom: 20 }}>
-              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-color, #FC6514)', fontFamily: 'ui-monospace,monospace', letterSpacing: '0.01em', margin: '0 0 4px' }}>
+              <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--brand-color, #FC6514)', fontFamily: 'ui-monospace,monospace', letterSpacing: '0.01em', margin: '0 0 4px' }}>
                 {sl.referenceNumber}
               </p>
-              <p style={{ fontSize: 13, color: '#6B7280', margin: '0 0 10px' }}>
+              <p style={{ fontSize: 15, color: 'var(--text-mid)', margin: '0 0 10px' }}>
                 {sl.slotDate} &nbsp;·&nbsp; {sl.slotStartTime} – {sl.slotEndTime}
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                <span style={{ background: 'rgba(252,101,20,0.09)', color: '#FC6514', fontWeight: 600, fontSize: 11, padding: '2px 8px', borderRadius: 9999 }}>
+                <span style={{ background: 'rgba(var(--brand-rgb),0.09)', color: 'var(--brand-color)', fontWeight: 600, fontSize: 13, padding: '2px 8px', borderRadius: 9999 }}>
                   {comboLabel}
                 </span>
-                <span style={{ ...slotSt, fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 9999 }}>
+                <span style={{ ...slotSt, fontSize: 13, fontWeight: 600, padding: '2px 8px', borderRadius: 9999 }}>
                   {STATUS_LABEL[sl.status] ?? sl.status}
                 </span>
               </div>
@@ -703,7 +742,7 @@ export default function BookingDetailPage() {
             {/* ── Check In ── */}
             {selectedAction === 'checkin' && (
               <>
-                <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.6, margin: 0 }}>
+                <p style={{ fontSize: 15, color: 'var(--text-mid)', lineHeight: 1.6, margin: 0 }}>
                   Checking in <strong style={{ color: '#1C1917', fontWeight: 700 }}>{sl.driverName || b.driverName}</strong> will mark
                   this slot as arrived and record the exact time.
                 </p>
@@ -748,11 +787,11 @@ export default function BookingDetailPage() {
               <>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>New Date</label>
+                    <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>New Date</label>
                     <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} style={FIELD} onFocus={focus} onBlur={blur} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>New Start Time</label>
+                    <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>New Start Time</label>
                     <input type="time" value={newStart} onChange={e => setNewStart(e.target.value)} style={FIELD} onFocus={focus} onBlur={blur} />
                   </div>
                 </div>
@@ -785,11 +824,11 @@ export default function BookingDetailPage() {
             {/* ── Cancel ── */}
             {selectedAction === 'cancel' && (
               <>
-                <p style={{ fontSize: 13, color: '#78716C', marginBottom: 16, lineHeight: 1.5 }}>
+                <p style={{ fontSize: 15, color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.5 }}>
                   You are cancelling slot <strong style={{ fontFamily: 'ui-monospace,monospace', color: '#1C1917' }}>{sl.referenceNumber}</strong>. This cannot be undone.
                 </p>
                 <div style={{ marginBottom: 20 }}>
-                  <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Reason (optional)</label>
+                  <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Reason (optional)</label>
                   <textarea
                     rows={3}
                     value={cancelReason}
@@ -825,38 +864,6 @@ export default function BookingDetailPage() {
         )
       })()}
 
-      {/* ── Mark Complete modal ── */}
-      {confirmModal && (
-        <ModalWrap onClose={() => setConfirmModal(false)}>
-          <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1C1917', marginBottom: 6 }}>Complete this job?</h3>
-          <p style={{ fontSize: 13, color: '#78716C', marginBottom: 20, lineHeight: 1.5 }}>
-            Marking <strong style={{ color: '#1C1917' }}>{b.driverName}</strong>'s visit as complete. This action is final.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
-            {['Driver identity verified', 'Documents checked', 'Cargo released'].map(item => (
-              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#1C1917' }}>
-                <span style={{ width: 20, height: 20, borderRadius: 9999, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.22)' }}>
-                  <Icon name={ICONS.check} size={19}style={{ color: '#22C55E' }} />
-                </span>
-                {item}
-              </div>
-            ))}
-          </div>
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: '#A8A29E', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Completion Notes (optional)</label>
-            <textarea rows={2} value={completionNotes} onChange={e => setCompletionNotes(e.target.value)} placeholder="Any notes for records…" style={{ ...FIELD, resize: 'none' }} onFocus={focus} onBlur={blur} />
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <Btn color="ghost" onClick={() => setConfirmModal(false)}>Cancel</Btn>
-            <Btn color="brand" loading={acting === 'complete'} onClick={async () => {
-              await act('complete', () => completeBooking(b.id, completionNotes || undefined), `✓ ${b.driverName}'s visit completed`, 'success')
-              setConfirmModal(false)
-            }}>
-              <Icon name={ICONS.check} size={19} /> Confirm Complete
-            </Btn>
-          </div>
-        </ModalWrap>
-      )}
     </div>
   )
 }
@@ -873,7 +880,7 @@ function cssToObj(str: string): React.CSSProperties {
 function InfoRow({ label, value, icon, mono }: { label: string; value: string; icon?: string; mono?: boolean }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={RL}>{icon && <Icon name={icon} size={17} style={{ color: '#A8A29E' }} />}{label}</span>
+      <span style={RL}>{icon && <Icon name={icon} size={17} style={{ color: 'var(--text-tertiary)' }} />}{label}</span>
       <span style={{ ...RV, fontFamily: mono ? 'ui-monospace,monospace' : undefined }}>{value}</span>
     </div>
   )
@@ -882,18 +889,18 @@ function InfoRow({ label, value, icon, mono }: { label: string; value: string; i
 function FieldBlock({ label, value, mono, icon }: { label: string; value: string; mono?: boolean; icon?: string }) {
   return (
     <div>
-      <p style={{ fontSize: 12, color: '#78716C', marginBottom: 3, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
+      <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 3, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
         {icon && <Icon name={icon} size={19} style={{ color: '#9CA3AF', flexShrink: 0 }} />}
         {label}
       </p>
-      <p style={{ fontSize: 14, fontWeight: 600, color: '#1C1917', fontFamily: mono ? 'ui-monospace,monospace' : undefined, margin: 0 }}>{value}</p>
+      <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', fontFamily: mono ? 'ui-monospace,monospace' : undefined, margin: 0 }}>{value}</p>
     </div>
   )
 }
 
 function CRow({ label, val }: { label: string; val: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#78716C' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
       <span>{label}</span><span>{val}</span>
     </div>
   )
@@ -902,7 +909,7 @@ function CRow({ label, val }: { label: string; val: string }) {
 function TRow({ icon, iconColor, label, value, valueColor }: { icon: string; iconColor: string; label: string; value: string; valueColor?: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#78716C' }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)' }}>
         <Icon name={icon} size={19} style={{ color: iconColor }} />{label}
       </span>
       <span style={{ color: valueColor ?? '#1C1917', fontWeight: 500 }}>{value}</span>
@@ -923,13 +930,13 @@ function ModalWrap({ children, onClose }: { children: React.ReactNode; onClose: 
 
 function Btn({ color, onClick, loading, children }: { color: 'brand' | 'green' | 'ghost' | 'danger'; onClick: () => void; loading?: boolean; children: React.ReactNode }) {
   const s: Record<string, React.CSSProperties> = {
-    brand:  { background: 'var(--brand-color)', color: '#fff', border: 'none', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.30)' },
+    brand:  { background: 'var(--brand-color, #FC6514)', color: '#fff', border: 'none', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.30)' },
     green:  { background: 'linear-gradient(135deg,#22C55E,#16A34A)', color: '#fff', border: 'none', boxShadow: '0 2px 8px rgba(34,197,94,0.30)' },
     ghost:  { background: '#fff', color: '#374151', border: '1.5px solid #e5e7eb' },
     danger: { background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.25)' },
   }
   return (
-    <button onClick={onClick} disabled={loading} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 13, fontWeight: 600, borderRadius: 10, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...s[color] }}>
+    <button onClick={onClick} disabled={loading} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 15, fontWeight: 600, borderRadius: 10, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...s[color] }}>
       {children}
     </button>
   )

@@ -2,14 +2,36 @@ import { useNavigate } from 'react-router-dom'
 import { usePageTitle } from '@/lib/usePageTitle'
 import { Icon, ICONS } from '@/lib/Icon'
 
+function GridSvg({ side }: { side: 'left' | 'right' }) {
+  return (
+    <svg width="497" height="418" viewBox="0 0 497 418" fill="none" xmlns="http://www.w3.org/2000/svg"
+      style={{ position: 'absolute', [side]: 0, top: '50%', transform: 'translateY(-50%)' }}>
+      <g opacity="0.22">
+        <line x1="495.384" y1="0.5"        x2="-157" y2="0.499964"    stroke="black"/>
+        <line x1="495.384" y1="84.1426"    x2="-157" y2="84.1425"     stroke="black"/>
+        <line x1="29.8955"  y1="2.18557e-08" x2="29.8955"  y2="417"   stroke="black"/>
+        <line x1="495.384" y1="167.785"    x2="-157" y2="167.785"     stroke="black"/>
+        <line x1="123.093"  y1="2.18557e-08" x2="123.093"  y2="417"   stroke="black"/>
+        <line x1="495.384" y1="251.427"    x2="-157" y2="251.427"     stroke="black"/>
+        <line x1="216.291"  y1="2.18557e-08" x2="216.291"  y2="417"   stroke="black"/>
+        <line x1="495.384" y1="333.858"    x2="-157" y2="333.858"     stroke="black"/>
+        <line x1="309.489"  y1="2.18557e-08" x2="309.489"  y2="417"   stroke="black"/>
+        <line x1="495.384" y1="417.5"      x2="-157" y2="417.5"       stroke="black"/>
+        <line x1="402.686"  y1="2.18557e-08" x2="402.686"  y2="417"   stroke="black"/>
+        <line x1="495.884"  y1="2.18557e-08" x2="495.884"  y2="417"   stroke="black"/>
+      </g>
+    </svg>
+  )
+}
+
 const MODULES = [
   {
     label:       'Visitor Portal',
     route:       '/book',
     description: 'Book appointments, check status and manage visits',
     icon:        ICONS.calendar,
-    iconBg:      'rgba(252,101,20,0.09)',
-    iconFg:      '#FC6514',
+    iconBg:      'rgba(var(--brand-rgb),0.09)',
+    iconFg:      'var(--brand-color)',
   },
   {
     label:       'Reception',
@@ -41,14 +63,22 @@ export default function ModulesPage() {
         .module-card:hover { transform: translateY(-3px) !important; box-shadow: 0 12px 36px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.07) !important; }
       `}</style>
 
-      <div style={{ minHeight: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px' }}>
+      <div style={{ minHeight: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', background: 'linear-gradient(120deg, rgba(var(--brand-rgb),0.06) 0%, rgba(var(--brand-rgb),0.02) 35%, rgba(255,255,255,0) 70%), #fff', position: 'relative', overflow: 'hidden' }}>
+
+        {/* Grid patterns */}
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 380, pointerEvents: 'none', zIndex: 0, WebkitMaskImage: 'linear-gradient(to right,rgba(0,0,0,0.30) 0%,rgba(0,0,0,0.10) 100%)', maskImage: 'linear-gradient(to right,rgba(0,0,0,0.30) 0%,rgba(0,0,0,0.10) 100%)' }}>
+          <GridSvg side="left" />
+        </div>
+        <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 380, pointerEvents: 'none', zIndex: 0, WebkitMaskImage: 'linear-gradient(to left,rgba(0,0,0,0.30) 0%,rgba(0,0,0,0.10) 100%)', maskImage: 'linear-gradient(to left,rgba(0,0,0,0.30) 0%,rgba(0,0,0,0.10) 100%)' }}>
+          <GridSvg side="right" />
+        </div>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        <div style={{ textAlign: 'center', marginBottom: 48, position: 'relative', zIndex: 1 }}>
           <h1 style={{ fontSize: 32, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', margin: 0 }}>
             Welcome to Glido
           </h1>
-          <p style={{ fontSize: 16, color: '#78716C', marginTop: 8, margin: '8px 0 0' }}>
+          <p style={{ fontSize: 16, color: 'var(--text-secondary)', marginTop: 8, margin: '8px 0 0' }}>
             Select a module to get started
           </p>
         </div>
@@ -58,6 +88,7 @@ export default function ModulesPage() {
           className="modules-grid"
           style={{
             display: 'grid',
+            position: 'relative', zIndex: 1,
             gridTemplateColumns: 'repeat(3, 1fr)',
             gap: 24,
             width: '100%',
@@ -98,7 +129,7 @@ export default function ModulesPage() {
               </p>
 
               {/* Description */}
-              <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.55, flex: 1, marginBottom: 24 }}>
+              <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.55, flex: 1, marginBottom: 24 }}>
                 {m.description}
               </p>
 

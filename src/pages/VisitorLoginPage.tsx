@@ -6,12 +6,12 @@ import { supabase } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
 
 const FIELD: React.CSSProperties = {
-  width: '100%', padding: '11px 14px', fontSize: 14, color: '#1C1917',
+  width: '100%', padding: '11px 14px', fontSize: 15, color: '#1C1917',
   background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10,
   outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
 }
 const LABEL: React.CSSProperties = {
-  display: 'block', fontSize: 10, fontWeight: 700, color: '#78716C',
+  display: 'block', fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)',
   letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 8,
 }
 const focus = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -160,7 +160,7 @@ export default function VisitorLoginPage() {
   }
 
   const PILL_BTN = (active: boolean): React.CSSProperties => ({
-    flex: 1, padding: '9px 16px', fontSize: 13, fontWeight: 600, border: 'none',
+    flex: 1, padding: '9px 16px', fontSize: 15, fontWeight: 600, border: 'none',
     cursor: 'pointer', transition: 'all 0.18s ease', borderRadius: 9999,
     background: active ? '#fff' : 'transparent',
     color: active ? '#1C1917' : '#78716C',
@@ -168,7 +168,7 @@ export default function VisitorLoginPage() {
   })
 
   return (
-    <div style={{ minHeight: 'calc(100vh - 56px - 64px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', background: 'linear-gradient(to right,rgba(250,115,21,0.10),rgba(255,255,255,0.05),rgba(254,230,212,0.005),rgba(250,115,21,0.03)),#fff', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ minHeight: 'calc(100vh - 56px - 64px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', background: 'linear-gradient(120deg, rgba(var(--brand-rgb),0.06) 0%, rgba(var(--brand-rgb),0.02) 35%, rgba(255,255,255,0) 70%), #fff', position: 'relative', overflow: 'hidden' }}>
 
       {/* Grid patterns */}
       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 380, pointerEvents: 'none', zIndex: 0, WebkitMaskImage: 'linear-gradient(to right,rgba(0,0,0,0.30) 0%,rgba(0,0,0,0.10) 100%)', maskImage: 'linear-gradient(to right,rgba(0,0,0,0.30) 0%,rgba(0,0,0,0.10) 100%)' }}>
@@ -184,10 +184,10 @@ export default function VisitorLoginPage() {
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <div style={{ width: 52, height: 52, borderRadius: 14, background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', boxShadow: '0 4px 14px rgba(var(--brand-rgb),0.38)' }}>
-              <Icon name={ICONS.users} size={24} style={{ color: '#fff' }} />
+              <Icon name={ICONS.users} size={24} style={{ color: 'var(--brand-text)' }} />
             </div>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', marginBottom: 5 }}>Sign in to Glido</h1>
-            <p style={{ fontSize: 13, color: '#78716C', lineHeight: 1.6 }}>Book and manage your CFS visits</p>
+            <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.6 }}>Book and manage your CFS visits</p>
           </div>
 
           {/* Tab switcher */}
@@ -208,15 +208,15 @@ export default function VisitorLoginPage() {
                 <div style={{ position: 'relative' }}>
                   <input type={showSiPassword ? 'text' : 'password'} value={siPassword} onChange={e => setSiPassword(e.target.value)} placeholder="••••••••" required style={{ ...FIELD, paddingRight: 44 }} onFocus={focus} onBlur={blur} />
                   <button type="button" onClick={() => setShowSiPassword(p => !p)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#9CA3AF', display: 'flex', alignItems: 'center' }}>
-                    <Icon name={showSiPassword ? ICONS.eyeOff : ICONS.eye} size={18} />
+                    <Icon name={showSiPassword ? ICONS.eye : ICONS.eyeOff} size={18} />
                   </button>
                 </div>
               </div>
               <SubmitBtn loading={isSubmitting}>Sign In →</SubmitBtn>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6, flexWrap: 'wrap', gap: 8 }}>
-                <span style={{ fontSize: 12, color: '#A8A29E' }}>Forgot your password?</span>
-                <button type="button" onClick={() => setTab('signup')} style={{ fontSize: 12, color: 'var(--brand-color)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>Forgot your password?</span>
+                <button type="button" onClick={() => setTab('signup')} style={{ fontSize: 14, color: 'var(--brand-color)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                   Create an account instead
                 </button>
               </div>
@@ -243,7 +243,7 @@ export default function VisitorLoginPage() {
               </div>
 
               <div>
-                <label style={LABEL}>Phone <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 10, color: '#A8A29E' }}>(optional)</span></label>
+                <label style={LABEL}>Phone <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 10, color: 'var(--text-tertiary)' }}>(optional)</span></label>
                 <input type="tel" value={suPhone} onChange={e => setSuPhone(e.target.value)} placeholder="+61 4XX XXX XXX" style={FIELD} onFocus={focus} onBlur={blur} />
               </div>
 
@@ -253,7 +253,7 @@ export default function VisitorLoginPage() {
                   <div style={{ position: 'relative' }}>
                     <input type={showSuPass ? 'text' : 'password'} value={suPass} onChange={e => setSuPass(e.target.value)} placeholder="Min 8 chars" required style={{ ...FIELD, paddingRight: 44 }} onFocus={focus} onBlur={blur} />
                     <button type="button" onClick={() => setShowSuPass(p => !p)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#9CA3AF', display: 'flex', alignItems: 'center' }}>
-                      <Icon name={showSuPass ? ICONS.eyeOff : ICONS.eye} size={18} />
+                      <Icon name={showSuPass ? ICONS.eye : ICONS.eyeOff} size={18} />
                     </button>
                   </div>
                 </div>
@@ -262,14 +262,14 @@ export default function VisitorLoginPage() {
                   <div style={{ position: 'relative' }}>
                     <input type={showSuConfirm ? 'text' : 'password'} value={suConfirm} onChange={e => setSuConfirm(e.target.value)} placeholder="••••••••" required style={{ ...FIELD, paddingRight: 44 }} onFocus={focus} onBlur={blur} />
                     <button type="button" onClick={() => setShowSuConfirm(p => !p)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#9CA3AF', display: 'flex', alignItems: 'center' }}>
-                      <Icon name={showSuConfirm ? ICONS.eyeOff : ICONS.eye} size={18} />
+                      <Icon name={showSuConfirm ? ICONS.eye : ICONS.eyeOff} size={18} />
                     </button>
                   </div>
                 </div>
               </div>
 
               <div>
-                <label style={LABEL}>Company <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 10, color: '#A8A29E' }}>(optional)</span></label>
+                <label style={LABEL}>Company <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, fontSize: 10, color: 'var(--text-tertiary)' }}>(optional)</span></label>
                 <input type="text" value={suCompany} onChange={e => setSuCompany(e.target.value)} placeholder="Transport Co., Freight Forwarders…" style={FIELD} onFocus={focus} onBlur={blur} />
               </div>
 
@@ -280,17 +280,17 @@ export default function VisitorLoginPage() {
           {/* Divider + Guest */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24 }}>
             <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.08)' }} />
-            <span style={{ fontSize: 12, color: '#A8A29E', whiteSpace: 'nowrap' }}>or</span>
+            <span style={{ fontSize: 14, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>or</span>
             <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.08)' }} />
           </div>
-          <Link to={redirect} style={{ display: 'block', marginTop: 12, width: '100%', padding: 12, fontSize: 13, fontWeight: 600, color: '#78716C', background: '#fff', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: 12, textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s ease,color 0.15s ease' }}
+          <Link to={redirect} style={{ display: 'block', marginTop: 12, width: '100%', padding: 12, fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', background: '#fff', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: 12, textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s ease,color 0.15s ease' }}
             onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.28)'; e.currentTarget.style.color = '#1C1917' }}
             onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.12)'; e.currentTarget.style.color = '#78716C' }}
           >Continue as Guest</Link>
 
-          <p style={{ textAlign: 'center', fontSize: 12, color: '#A8A29E', marginTop: 20, paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+          <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--text-tertiary)', marginTop: 20, paddingTop: 16, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
             Reception staff?{' '}
-            <Link to="/login" style={{ color: '#78716C', textDecoration: 'none', fontWeight: 500 }}>Sign in here</Link>
+            <Link to="/login" style={{ color: 'var(--text-secondary)', textDecoration: 'underline', fontWeight: 500 }}>Sign in here</Link>
           </p>
         </div>
       </div>
@@ -300,7 +300,7 @@ export default function VisitorLoginPage() {
 
 function SubmitBtn({ loading, children }: { loading: boolean; children: React.ReactNode }) {
   return (
-    <button type="submit" disabled={loading} style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 600, color: '#fff', background: 'var(--brand-color)', border: 'none', borderRadius: 9999, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)', marginTop: 2, opacity: loading ? 0.7 : 1, transition: 'opacity 0.15s' }}>
+    <button type="submit" disabled={loading} style={{ width: '100%', padding: '13px 20px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 9999, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)', marginTop: 2, opacity: loading ? 0.7 : 1, transition: 'opacity 0.15s' }}>
       {loading ? (
         <>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ animation: 'spin 0.7s linear infinite', flexShrink: 0 }}>

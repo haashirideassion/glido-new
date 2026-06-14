@@ -38,7 +38,7 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
             <div>
               <label style={labelStyle}>Service</label>
-              <select name="serviceType" required style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'">
+              <select name="serviceType" required style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'">
                 <option value="">Select…</option>
                 <option value="pickup">Pick Up</option>
                 <option value="dropoff">Drop Off</option>
@@ -46,7 +46,7 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
             </div>
             <div>
               <label style={labelStyle}>Load Type</label>
-              <select name="loadType" required style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'">
+              <select name="loadType" required style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'">
                 <option value="">Select…</option>
                 <option value="lcl">LCL</option>
                 <option value="fcl">FCL</option>
@@ -61,15 +61,15 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
           <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
             <div>
               <label style={labelStyle}>Date</label>
-              <input type="date" name="slotDate" required value={today} min={today} style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+              <input type="date" name="slotDate" required value={today} min={today} style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
             </div>
             <div>
               <label style={labelStyle}>Start Time</label>
-              <input type="time" name="slotStartTime" required defaultValue="09:00" style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+              <input type="time" name="slotStartTime" required defaultValue="09:00" style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
             </div>
             <div>
               <label style={labelStyle}>End Time</label>
-              <input type="time" name="slotEndTime" required defaultValue="10:00" style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+              <input type="time" name="slotEndTime" required defaultValue="10:00" style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
             </div>
           </div>
         </div>
@@ -80,19 +80,19 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
             <div>
               <label style={labelStyle}>Driver Name <span style="color:#EF4444;">*</span></label>
-              <input type="text" name="driverName" required placeholder="Full name" style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+              <input type="text" name="driverName" required placeholder="Full name" style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
             </div>
             <div>
               <label style={labelStyle}>Driver Phone</label>
-              <input type="tel" name="driverPhone" placeholder="04xx xxx xxx" style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+              <input type="tel" name="driverPhone" placeholder="04xx xxx xxx" style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
             </div>
             <div>
               <label style={labelStyle}>Guest / Company Name</label>
-              <input type="text" name="guestName" placeholder="Forwarding agent or company" style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+              <input type="text" name="guestName" placeholder="Forwarding agent or company" style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
             </div>
             <div>
               <label style={labelStyle}>Guest Phone</label>
-              <input type="tel" name="guestPhone" placeholder="Optional" style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+              <input type="tel" name="guestPhone" placeholder="Optional" style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
             </div>
           </div>
         </div>
@@ -113,14 +113,14 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
                   name="houseBillNumber"
                   placeholder="ABCD12345678"
                   style={`${inputStyle} font-family:ui-monospace,monospace; text-transform:uppercase; flex:1; min-width:0;`}
-                  onfocus="this.style.borderColor='rgba(252,101,20,0.50)'"
+                  onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'"
                   onblur="this.style.borderColor='rgba(0,0,0,0.10)'"
                 />
                 <button
                   type="button"
                   id="mbf-lookup-btn"
                   onclick="mbfLookup()"
-                  style="flex-shrink:0; padding:0 20px; background:linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(252,101,20,0.35);"
+                  style="flex-shrink:0; padding:0 20px; background:linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap; box-shadow:0 2px 8px rgba(var(--brand-rgb),0.35);"
                   title="Look up shipment from CFS records"
                 >
                   Look Up
@@ -135,7 +135,7 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
                 name="containerNumber"
                 placeholder="ABCU1234567"
                 style={`${inputStyle} font-family:ui-monospace,monospace; text-transform:uppercase;`}
-                onfocus="this.style.borderColor='rgba(252,101,20,0.50)'"
+                onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'"
                 onblur="this.style.borderColor='rgba(0,0,0,0.10)'"
               />
             </div>
@@ -151,27 +151,27 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
             <div>
               <label style={labelStyle}>Weight (kg)</label>
               <input type="number" id="mbf-weight" name="weightKg" placeholder="0" min="0" step="0.1"
-                style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+                style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
             </div>
             <div>
               <label style={labelStyle}>Volume (CBM)</label>
               <input type="number" id="mbf-volume" name="volumeCbm" placeholder="0.0" min="0" step="0.1"
-                style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+                style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
             </div>
             <div>
               <label style={labelStyle}>Packages</label>
               <input type="number" id="mbf-packages" name="packageCount" placeholder="0" min="0"
-                style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+                style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
             </div>
             <div>
               <label style={labelStyle}>Pallets</label>
               <input type="number" id="mbf-pallets" name="palletCount" placeholder="0" min="0"
-                style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+                style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
             </div>
             <div>
               <label style={labelStyle}>Pallet Type</label>
               <select id="mbf-pallet-type" name="palletType" style={inputStyle}
-                onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'">
+                onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'">
                 <option value="">None / unknown</option>
                 <option value="chep">CHEP</option>
                 <option value="plain">Plain</option>
@@ -182,7 +182,7 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
             <div>
               <label style={labelStyle}>Storage Start</label>
               <input type="date" id="mbf-storage-start" name="storageStartDate"
-                style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+                style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
             </div>
           </div>
         </div>
@@ -193,7 +193,7 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
             <div>
               <label style={labelStyle}>Method</label>
-              <select name="paymentMethod" style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'">
+              <select name="paymentMethod" style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'">
                 <option value="">Not specified</option>
                 <option value="eft">EFT / Bank Transfer</option>
                 <option value="card">Card (on arrival)</option>
@@ -201,7 +201,7 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
             </div>
             <div>
               <label style={labelStyle}>Status</label>
-              <select name="paymentStatus" style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'">
+              <select name="paymentStatus" style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'">
                 <option value="pending">Pending</option>
                 <option value="paid">Paid</option>
                 <option value="pending_eft">EFT Pending</option>
@@ -214,9 +214,9 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
         <div style="display:flex; gap:12px; align-items:center; padding-top:4px;">
           <button
             type="submit"
-            style="display:inline-flex; align-items:center; gap:10px; padding:0 32px; height:48px; background:linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%); color:#fff; border:none; border-radius:11px; font-size:15px; font-weight:700; cursor:pointer; box-shadow:inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px rgba(252,101,20,0.40), 0 1px 3px rgba(0,0,0,0.30); transition:box-shadow 0.15s ease;"
-            onmouseover="this.style.boxShadow='inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 20px rgba(252,101,20,0.50), 0 1px 4px rgba(0,0,0,0.35)'"
-            onmouseout="this.style.boxShadow='inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px rgba(252,101,20,0.40), 0 1px 3px rgba(0,0,0,0.30)'"
+            style="display:inline-flex; align-items:center; gap:10px; padding:0 32px; height:48px; background:linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%); color:#fff; border:none; border-radius:11px; font-size:15px; font-weight:700; cursor:pointer; box-shadow:inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px rgba(var(--brand-rgb),0.40), 0 1px 3px rgba(0,0,0,0.30); transition:box-shadow 0.15s ease;"
+            onmouseover="this.style.boxShadow='inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 20px rgba(var(--brand-rgb),0.50), 0 1px 4px rgba(0,0,0,0.35)'"
+            onmouseout="this.style.boxShadow='inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px rgba(var(--brand-rgb),0.40), 0 1px 3px rgba(0,0,0,0.30)'"
           >
             <Icon name={ICONS.check} size={15} />
             Create Booking
@@ -283,7 +283,7 @@ export const ManualBookingForm = ({ savedFlash, error }: Props) => {
             held:        { label: 'ICS Hold',          bg: 'rgba(239,68,68,0.12)',  color: '#DC2626', border: 'rgba(239,68,68,0.25)' },
             examination: { label: 'Under Examination', bg: 'rgba(251,191,36,0.12)', color: '#B45309', border: 'rgba(251,191,36,0.35)' },
             pending:     { label: 'ICS Pending',       bg: 'rgba(148,163,184,0.12)',color: '#64748B', border: 'rgba(148,163,184,0.25)' },
-            unavailable: { label: 'ICS Not Checked',   bg: 'rgba(0,0,0,0.04)',      color: '#78716C', border: 'rgba(0,0,0,0.10)' },
+            unavailable: { label: 'ICS Not Checked',   bg: 'rgba(0,0,0,0.04)',      color: 'var(--text-secondary)', border: 'rgba(0,0,0,0.10)' },
           };
           var c = cfg[status] || cfg.unavailable;
           text.textContent = c.label;

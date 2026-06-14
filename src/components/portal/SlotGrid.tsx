@@ -12,7 +12,7 @@ export function SlotGrid({ slots, selectedSlotId, onSelect }: Props) {
   const evening   = slots.filter(s => parseInt(s.startTime) >= 16)
 
   if (slots.length === 0) return (
-    <p style={{ fontSize: 13, color: '#A8A29E', padding: '16px 0', textAlign: 'center' }}>No slots available for this date.</p>
+    <p style={{ fontSize: 15, color: 'var(--text-tertiary)', padding: '16px 0', textAlign: 'center' }}>No slots available for this date.</p>
   )
 
   return (
@@ -21,7 +21,7 @@ export function SlotGrid({ slots, selectedSlotId, onSelect }: Props) {
         .filter(g => g.group.length > 0)
         .map(({ label, group }) => (
           <div key={label}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#A8A29E', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 8 }}>{label}</p>
+            <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: 8 }}>{label}</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(120px,1fr))', gap: 8 }}>
               {group.map(slot => {
                 const full     = slot.busyness === 'full'
@@ -38,29 +38,29 @@ export function SlotGrid({ slots, selectedSlotId, onSelect }: Props) {
                     onClick={() => !full && onSelect(slot)}
                     style={{
                       padding: '12px 10px', borderRadius: 12, textAlign: 'left',
-                      border: `2px solid ${selected ? '#FC6514' : full ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.09)'}`,
-                      background: selected ? 'rgba(252,101,20,0.06)' : full ? '#F7F6F5' : '#fff',
+                      border: `2px solid ${selected ? 'var(--brand-color)' : full ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.09)'}`,
+                      background: selected ? 'rgba(var(--brand-rgb),0.06)' : full ? '#F7F6F5' : '#fff',
                       cursor: full ? 'not-allowed' : 'pointer',
                       opacity: full ? 0.55 : 1,
-                      boxShadow: selected ? '0 0 0 3px rgba(252,101,20,0.15)' : 'none',
+                      boxShadow: selected ? '0 0 0 3px rgba(var(--brand-rgb),0.15)' : 'none',
                       transition: 'all 0.15s ease',
                     }}
                   >
                     {/* Availability dot */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: selected ? '#FC6514' : '#1C1917', fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: selected ? 'var(--brand-color)' : '#1C1917', fontVariantNumeric: 'tabular-nums' }}>
                         {slot.startTime}
                       </span>
-                      {selected && <div style={{ width: 7, height: 7, borderRadius: 9999, background: '#FC6514' }} />}
+                      {selected && <div style={{ width: 7, height: 7, borderRadius: 9999, background: 'var(--brand-color)' }} />}
                     </div>
-                    <div style={{ fontSize: 10, color: '#A8A29E', marginBottom: 8 }}>{slot.startTime}–{slot.endTime}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 8 }}>{slot.startTime}–{slot.endTime}</div>
 
                     {/* Fill bar */}
                     <div style={{ height: 3, borderRadius: 9999, background: 'rgba(0,0,0,0.08)', overflow: 'hidden', marginBottom: 6 }}>
                       <div style={{ height: '100%', width: `${fill}%`, background: fillColor, borderRadius: 9999, transition: 'width 0.3s ease' }} />
                     </div>
 
-                    <span style={{ fontSize: 10, fontWeight: 600, color: full ? '#EF4444' : busy ? '#B45309' : '#16A34A' }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: full ? '#EF4444' : fill >= 75 ? '#D97706' : '#16A34A' }}>
                       {full ? 'Full' : `${left} left`}
                     </span>
                   </button>
@@ -75,7 +75,7 @@ export function SlotGrid({ slots, selectedSlotId, onSelect }: Props) {
         {[['#22C55E', 'Open'], ['#F59E0B', 'Filling up'], ['#EF4444', 'Full']].map(([c, l]) => (
           <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 8, height: 8, borderRadius: 9999, background: c }} />
-            <span style={{ fontSize: 11, color: '#A8A29E' }}>{l}</span>
+            <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{l}</span>
           </div>
         ))}
       </div>

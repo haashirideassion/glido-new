@@ -20,15 +20,15 @@ const ICS_LABEL: Record<string, string> = { cleared: 'Cleared', held: 'Held', ex
 const STATUS_BADGE: Record<string, React.CSSProperties> = {
   scheduled:  { background: '#F5F5F4', color: '#57534E', border: '1px solid rgba(0,0,0,0.10)' },
   checked_in: { background: 'rgba(34,197,94,0.12)', color: '#16A34A', border: '1px solid rgba(34,197,94,0.25)' },
-  completed:  { background: '#F5F5F4', color: '#78716C', border: '1px solid rgba(0,0,0,0.08)' },
-  cancelled:  { background: 'transparent', color: '#A8A29E', border: '1px solid rgba(0,0,0,0.15)' },
+  completed:  { background: '#F5F5F4', color: 'var(--text-secondary)', border: '1px solid rgba(0,0,0,0.08)' },
+  cancelled:  { background: 'transparent', color: 'var(--text-tertiary)', border: '1px solid rgba(0,0,0,0.15)' },
 }
 const STATUS_LABEL: Record<string, string> = { scheduled: 'Scheduled', checked_in: 'Checked In', completed: 'Completed', cancelled: 'Cancelled' }
 
-const SL: React.CSSProperties = { fontSize: 10, fontWeight: 700, color: '#A8A29E', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }
+const SL: React.CSSProperties = { fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }
 const PANEL: React.CSSProperties = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }
-const RL: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#78716C' }
-const RV: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: '#1C1917' }
+const RL: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: 'var(--text-secondary)' }
+const RV: React.CSSProperties = { fontSize: 14, fontWeight: 600, color: '#1C1917' }
 
 interface Props {
   booking: Booking
@@ -69,11 +69,11 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
   }
 
   const fieldStyle: React.CSSProperties = {
-    width: '100%', padding: '10px 14px', fontSize: 14, color: '#1C1917',
+    width: '100%', padding: '10px 14px', fontSize: 15, color: '#1C1917',
     background: '#EBEBEA', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10,
     outline: 'none', boxSizing: 'border-box',
   }
-  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.target.style.borderColor = 'rgba(252,101,20,0.50)' }
+  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)' }
   const blur  = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.target.style.borderColor = 'rgba(0,0,0,0.10)' }
 
   const icsStyle = ICS_BADGE[b.icsStatus ?? ''] ?? ICS_BADGE.unavailable
@@ -93,14 +93,14 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
         <div style={{ position: 'sticky', top: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px 10px 20px', borderBottom: '1px solid rgba(0,0,0,0.07)', background: '#FFFFFF', flexShrink: 0, gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <span
-              style={{ fontFamily: 'ui-monospace,monospace', fontSize: 13, fontWeight: 700, color: '#FC6514', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', flexShrink: 0 }}
+              style={{ fontFamily: 'ui-monospace,monospace', fontSize: 15, fontWeight: 700, color: 'var(--brand-color)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', flexShrink: 0 }}
               title="Click to copy"
               onClick={() => navigator.clipboard.writeText(b.referenceNumber).then(() => toast('Reference copied', 'info')).catch(() => {})}
             >
               {b.referenceNumber}
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.45 }}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             </span>
-            <span style={{ ...STATUS_BADGE[b.status] ?? STATUS_BADGE.scheduled, fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 9999, whiteSpace: 'nowrap' }}>
+            <span style={{ ...STATUS_BADGE[b.status] ?? STATUS_BADGE.scheduled, fontSize: 13, fontWeight: 600, padding: '3px 9px', borderRadius: 9999, whiteSpace: 'nowrap' }}>
               {STATUS_LABEL[b.status] ?? b.status}
             </span>
           </div>
@@ -125,7 +125,7 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
                 { label: 'Guest',  value: b.guestName || b.driverName, icon: ICONS.users },
               ].map(row => (
                 <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={RL}><Icon name={row.icon} size={13} style={{ color: '#78716C' }} />{row.label}</span>
+                  <span style={RL}><Icon name={row.icon} size={13} style={{ color: 'var(--text-secondary)' }} />{row.label}</span>
                   <span style={RV}>{row.value}</span>
                 </div>
               ))}
@@ -143,9 +143,9 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
                 { label: 'Load Type', value: (b.loadType ?? '').toUpperCase(), icon: null },
               ].map(row => (
                 <div key={row.label}>
-                  <p style={{ fontSize: 10, color: '#78716C', marginBottom: 3 }}>{row.label}</p>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', display: 'flex', alignItems: 'center', gap: 5 }}>
-                    {row.icon && <Icon name={row.icon} size={13} style={{ color: '#78716C' }} />}
+                  <p style={{ fontSize: 10, color: 'var(--text-secondary)', marginBottom: 3 }}>{row.label}</p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    {row.icon && <Icon name={row.icon} size={13} style={{ color: 'var(--text-secondary)' }} />}
                     {row.value}
                   </p>
                 </div>
@@ -173,8 +173,8 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
             <div style={{ background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.20)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <Icon name={ICONS.warning} size={16} style={{ color: '#FBBF24', flexShrink: 0, marginTop: 1 }} />
               <div>
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#B45309', marginBottom: 2 }}>CHEP Pallet Exchange</p>
-                <p style={{ fontSize: 12, color: 'rgba(180,83,9,0.75)' }}>{b.palletCount} CHEP pallet{(b.palletCount ?? 0) > 1 ? 's' : ''} must be exchanged at collection.</p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: '#B45309', marginBottom: 2 }}>CHEP Pallet Exchange</p>
+                <p style={{ fontSize: 14, color: 'rgba(180,83,9,0.75)' }}>{b.palletCount} CHEP pallet{(b.palletCount ?? 0) > 1 ? 's' : ''} must be exchanged at collection.</p>
               </div>
             </div>
           )}
@@ -184,26 +184,26 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
             <section>
               <p style={SL}>ICS Status</p>
               <div style={{ ...PANEL, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 9999, ...Object.fromEntries(icsStyle.split(';').filter(Boolean).map(s => { const [k, ...v] = s.split(':'); return [k.trim().replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase()), v.join(':').trim()] })) } as any}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '4px 10px', borderRadius: 9999, ...Object.fromEntries(icsStyle.split(';').filter(Boolean).map(s => { const [k, ...v] = s.split(':'); return [k.trim().replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase()), v.join(':').trim()] })) } as any}>
                   {ICS_LABEL[b.icsStatus] ?? b.icsStatus}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <button
                     onClick={() => act('ics', () => refreshIcsStatus(b.id), 'ICS status refreshed', 'info')}
                     disabled={loading === 'ics'}
-                    style={{ fontSize: 11, color: '#FC6514', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                    style={{ fontSize: 13, color: 'var(--brand-color)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
                   >
                     <Icon name={ICONS.refresh} size={12} />
                     {loading === 'ics' ? 'Refreshing…' : 'Refresh ICS'}
                   </button>
                   <span style={{ color: 'rgba(0,0,0,0.12)' }}>|</span>
-                  <a href="https://ics.abf.gov.au" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#FC6514', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <a href="https://ics.abf.gov.au" target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: 'var(--brand-color)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
                     Open in ICS portal <Icon name={ICONS.arrowRight} size={12} />
                   </a>
                 </div>
               </div>
               {b.icsLastCheckedAt && (
-                <p style={{ fontSize: 11, color: '#A8A29E', marginTop: 5 }}>Last checked: {fmtDateTime(b.icsLastCheckedAt)}</p>
+                <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 5 }}>Last checked: {fmtDateTime(b.icsLastCheckedAt)}</p>
               )}
             </section>
           )}
@@ -212,19 +212,19 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
           {b.totalAmount && (
             <section>
               <p style={SL}>Charges</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: 13 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: 15 }}>
                 {(b.storageCharge ?? 0) > 0     && <ChargeRow label={`Storage (${b.storageDays} days)`} val={b.storageCharge!} />}
                 {(b.shrinkWrapCharge ?? 0) > 0  && <ChargeRow label="Shrink wrap" val={b.shrinkWrapCharge!} />}
                 {b.slotFee !== undefined          && <ChargeRow label="Slot fee"    val={b.slotFee} />}
                 {b.gstAmount !== undefined && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#A8A29E', paddingTop: 6, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: 'var(--text-tertiary)', paddingTop: 6, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
                     <span>GST (10%)</span><span>${b.gstAmount.toFixed(2)}</span>
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#1C1917', paddingTop: 6, borderTop: '1px solid rgba(0,0,0,0.09)' }}>
-                  <span>Total</span><span style={{ color: '#FC6514' }}>${b.totalAmount.toFixed(2)}</span>
+                  <span>Total</span><span style={{ color: 'var(--brand-color)' }}>${b.totalAmount.toFixed(2)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#A8A29E' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: 'var(--text-tertiary)' }}>
                   <span>{(b.paymentMethod ?? '—').toUpperCase()}</span>
                   <span style={{ color: b.paymentStatus === 'paid' ? '#22C55E' : '#FBBF24', fontWeight: 500 }}>
                     {b.paymentStatus === 'paid' ? 'Paid' : b.paymentStatus === 'pending_eft' ? 'EFT Pending' : b.paymentStatus}
@@ -237,21 +237,21 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
           {/* Timeline */}
           <section>
             <p style={SL}>Timeline</p>
-            <div style={{ ...PANEL, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
+            <div style={{ ...PANEL, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={RL}><Icon name={ICONS.document} size={13} style={{ color: '#78716C' }} />Created</span>
-                <span style={{ fontSize: 11, fontWeight: 500, color: '#78716C' }}>{fmtDateTime(b.createdAt)}</span>
+                <span style={RL}><Icon name={ICONS.document} size={13} style={{ color: 'var(--text-secondary)' }} />Created</span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>{fmtDateTime(b.createdAt)}</span>
               </div>
               {b.checkedInAt && (
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={RL}><Icon name={ICONS.userCheck} size={13} style={{ color: '#FBBF24' }} />Checked In</span>
-                  <span style={{ fontSize: 11, fontWeight: 500, color: '#78716C' }}>{fmtDateTime(b.checkedInAt)}</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>{fmtDateTime(b.checkedInAt)}</span>
                 </div>
               )}
               {b.completedAt && (
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={RL}><Icon name={ICONS.checkSquare} size={13} style={{ color: '#22C55E' }} />Completed</span>
-                  <span style={{ fontSize: 11, fontWeight: 500, color: '#78716C' }}>{fmtDateTime(b.completedAt)}</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>{fmtDateTime(b.completedAt)}</span>
                 </div>
               )}
             </div>
@@ -287,16 +287,16 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
       {rescheduleModal && (
         <Modal onClose={() => setRescheduleModal(false)}>
           <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1C1917', marginBottom: 6 }}>Reschedule Booking</h3>
-          <p style={{ fontSize: 13, color: '#78716C', marginBottom: 20, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 15, color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.5 }}>
             Change the slot for <strong style={{ color: '#1C1917', fontFamily: 'ui-monospace,monospace' }}>{b.referenceNumber}</strong>.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 20 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>New Date</label>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>New Date</label>
               <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} style={fieldStyle} onFocus={focus} onBlur={blur} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>New Start Time</label>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>New Start Time</label>
               <input type="time" value={newStart} onChange={e => setNewStart(e.target.value)} style={fieldStyle} onFocus={focus} onBlur={blur} />
             </div>
           </div>
@@ -319,7 +319,7 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
       {cancelModal && (
         <Modal onClose={() => setCancelModal(false)}>
           <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1C1917', marginBottom: 6 }}>Cancel this booking?</h3>
-          <p style={{ fontSize: 13, color: '#78716C', marginBottom: 20, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 15, color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.5 }}>
             Cancelling <strong style={{ fontFamily: 'ui-monospace,monospace', color: '#1C1917' }}>{b.referenceNumber}</strong> for <strong style={{ color: '#1C1917' }}>{b.driverName}</strong>. This cannot be undone.
           </p>
           <div style={{ display: 'flex', gap: 10 }}>
@@ -338,12 +338,12 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
       {confirmModal && (
         <Modal onClose={() => setConfirmModal(false)}>
           <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1C1917', marginBottom: 6 }}>Complete this job?</h3>
-          <p style={{ fontSize: 13, color: '#78716C', marginBottom: 20, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 15, color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.5 }}>
             Marking <strong style={{ color: '#1C1917' }}>{b.driverName}</strong>'s visit as complete. This action is final.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
             {['Driver identity verified', 'Documents checked', 'Cargo released'].map(item => (
-              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#1C1917' }}>
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: '#1C1917' }}>
                 <span style={{ width: 20, height: 20, borderRadius: 9999, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.22)' }}>
                   <Icon name={ICONS.check} size={11} style={{ color: '#22C55E' }} />
                 </span>
@@ -353,7 +353,7 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'rgba(0,0,0,0.40)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 6 }}>Completion Notes (optional)</label>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'rgba(0,0,0,0.40)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 6 }}>Completion Notes (optional)</label>
               <textarea rows={2} value={completionNotes} onChange={e => setCompletionNotes(e.target.value)} placeholder="Any notes for records..." style={{ ...fieldStyle, resize: 'none' }} onFocus={focus} onBlur={blur} />
             </div>
           </div>
@@ -377,18 +377,18 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
 function Row({ label, value, icon, mono }: { label: string; value: string; icon?: string; mono?: boolean }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#78716C' }}>
-        {icon && <Icon name={icon} size={13} style={{ color: '#78716C' }} />}
+      <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: 'var(--text-secondary)' }}>
+        {icon && <Icon name={icon} size={13} style={{ color: 'var(--text-secondary)' }} />}
         {label}
       </span>
-      <span style={{ fontFamily: mono ? 'ui-monospace,monospace' : undefined, fontSize: 12, fontWeight: 600, color: mono ? '#78716C' : '#1C1917' }}>{value}</span>
+      <span style={{ fontFamily: mono ? 'ui-monospace,monospace' : undefined, fontSize: 14, fontWeight: 600, color: mono ? '#78716C' : '#1C1917' }}>{value}</span>
     </div>
   )
 }
 
 function ChargeRow({ label, val }: { label: string; val: number }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#78716C' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
       <span>{label}</span><span>${val.toFixed(2)}</span>
     </div>
   )
@@ -407,7 +407,7 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
 
 function ActionBtn({ color, onClick, loading, children }: { color: 'orange' | 'green' | 'ghost' | 'danger'; onClick: () => void; loading?: boolean; children: React.ReactNode }) {
   const styles: Record<string, React.CSSProperties> = {
-    orange: { background: 'linear-gradient(135deg,#FF7A2A,#E85A0A)', color: '#fff', border: 'none', boxShadow: '0 2px 8px rgba(252,101,20,0.30)' },
+    orange: { background: 'linear-gradient(135deg,#FF7A2A,#E85A0A)', color: '#fff', border: 'none', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.30)' },
     green:  { background: 'linear-gradient(135deg,#22C55E,#16A34A)', color: '#fff', border: 'none', boxShadow: '0 2px 8px rgba(34,197,94,0.30)' },
     ghost:  { background: '#fff', color: '#374151', border: '1.5px solid #e5e7eb' },
     danger: { background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.25)' },
@@ -416,7 +416,7 @@ function ActionBtn({ color, onClick, loading, children }: { color: 'orange' | 'g
     <button
       onClick={onClick}
       disabled={loading}
-      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 13, fontWeight: 600, borderRadius: 10, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...styles[color] }}
+      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 15, fontWeight: 600, borderRadius: 10, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...styles[color] }}
     >
       {children}
     </button>

@@ -36,7 +36,7 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
         </a>
         <span style="color:rgba(0,0,0,0.15); font-size:14px;">/</span>
         <span
-          style="font-family:ui-monospace,monospace; font-size:16px; font-weight:700; color:#FC6514; cursor:pointer; display:inline-flex; align-items:center; gap:6px;"
+          style="font-family:ui-monospace,monospace; font-size:16px; font-weight:700; color:var(--brand-color); cursor:pointer; display:inline-flex; align-items:center; gap:6px;"
           title="Click to copy"
           onclick={`navigator.clipboard.writeText('${b.referenceNumber}').then(function(){window.gToast&&window.gToast('Reference copied','info')});`}
         >
@@ -68,7 +68,7 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
               { label: 'Guest',  value: b.guestName  || b.driverName,    icon: ICONS.users  },
             ].map((row) => (
               <div key={row.label} style="display:flex; justify-content:space-between; align-items:center;">
-                <span style={RL}><Icon name={row.icon} size={14} style="color:#A8A29E;" />{row.label}</span>
+                <span style={RL}><Icon name={row.icon} size={14} style="color:#433F3D;" />{row.label}</span>
                 <span style={RV}>{row.value}</span>
               </div>
             ))}
@@ -82,13 +82,13 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
             <div>
               <p style="font-size:13px; color:#4B5563; margin-bottom:4px; font-weight:500;">Date</p>
               <p style="font-size:16px; font-weight:600; color:#1C1917; display:flex; align-items:center; gap:6px;">
-                <Icon name={ICONS.calendar} size={15} style="color:#A8A29E;" />{b.slotDate}
+                <Icon name={ICONS.calendar} size={15} style="color:#433F3D;" />{b.slotDate}
               </p>
             </div>
             <div>
               <p style="font-size:13px; color:#4B5563; margin-bottom:4px; font-weight:500;">Time</p>
               <p style="font-size:16px; font-weight:600; color:#1C1917; display:flex; align-items:center; gap:6px;">
-                <Icon name={ICONS.clock} size={15} style="color:#A8A29E;" />{b.slotStartTime} – {b.slotEndTime}
+                <Icon name={ICONS.clock} size={15} style="color:#433F3D;" />{b.slotStartTime} – {b.slotEndTime}
               </p>
             </div>
             <div>
@@ -108,25 +108,25 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
           <div style="display:flex; flex-direction:column; gap:10px;">
             {b.houseBillNumber && (
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style={RL}><Icon name={ICONS.document} size={15} style="color:#A8A29E;" />HBL</span>
+                <span style={RL}><Icon name={ICONS.document} size={15} style="color:#433F3D;" />HBL</span>
                 <span style="font-family:ui-monospace,monospace; font-size:16px; font-weight:700; color:#4B5563;">{b.houseBillNumber}</span>
               </div>
             )}
             {b.containerNumber && (
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style={RL}><Icon name={ICONS.container} size={15} style="color:#A8A29E;" />Container</span>
+                <span style={RL}><Icon name={ICONS.container} size={15} style="color:#433F3D;" />Container</span>
                 <span style="font-family:ui-monospace,monospace; font-size:16px; font-weight:700; color:#4B5563;">{b.containerNumber}</span>
               </div>
             )}
             {b.weightKg && (
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style={RL}><Icon name={ICONS.cargo} size={14} style="color:#A8A29E;" />Weight</span>
+                <span style={RL}><Icon name={ICONS.cargo} size={14} style="color:#433F3D;" />Weight</span>
                 <span style={RV}>{b.weightKg.toLocaleString()} kg</span>
               </div>
             )}
             {b.volumeCbm && (
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style={RL}><Icon name={ICONS.layers} size={14} style="color:#A8A29E;" />Volume</span>
+                <span style={RL}><Icon name={ICONS.layers} size={14} style="color:#433F3D;" />Volume</span>
                 <span style={RV}>{b.volumeCbm} CBM</span>
               </div>
             )}
@@ -162,14 +162,14 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
               <div style="display:flex; align-items:center; gap:12px;">
                 <button
                   type="button"
-                  style="font-size:12px; color:#FC6514; background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:4px; font-weight:500;"
+                  style="font-size:12px; color:var(--brand-color); background:none; border:none; cursor:pointer; display:flex; align-items:center; gap:4px; font-weight:500;"
                   hx-post={`/reception/bookings/${b.id}/refresh-ics`}
                   hx-target="#booking-detail-page"
                   hx-swap="outerHTML"
                 >
                   <Icon name={ICONS.refresh} size={12} />Refresh ICS
                 </button>
-                <a href="https://ics.abf.gov.au" target="_blank" style="font-size:12px; color:#FC6514; text-decoration:none; display:flex; align-items:center; gap:4px; font-weight:500;">
+                <a href="https://ics.abf.gov.au" target="_blank" style="font-size:12px; color:var(--brand-color); text-decoration:none; display:flex; align-items:center; gap:4px; font-weight:500;">
                   Open portal <Icon name={ICONS.arrowRight} size={12} />
                 </a>
               </div>
@@ -178,7 +178,7 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
               {ICS_LABEL[b.icsStatus]}
             </span>
             {b.icsLastCheckedAt && (
-              <p style="font-size:11px; color:#A8A29E; margin-top:8px;">
+              <p style="font-size:11px;c3F3D; margin-top:8px;">
                 Last checked: {new Date(b.icsLastCheckedAt).toLocaleString('en-AU')}
               </p>
             )}
@@ -192,7 +192,7 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
             <span style="display:inline-flex; align-items:center; gap:5px; border:1px solid rgba(34,197,94,0.22); font-size:12px; font-weight:600; padding:5px 12px; border-radius:9999px; background:rgba(34,197,94,0.10); color:#22C55E;">
               <Icon name={ICONS.check} size={12} />Name Matched
             </span>
-            <span style="font-size:12px; color:#A8A29E;">Driver licence verified at kiosk</span>
+            <span style="font-size:12px;c3F3D;">Driver licence verified at kiosk</span>
           </div>
         </div>
 
@@ -225,16 +225,16 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
                 </div>
               )}
               {b.gstAmount !== undefined && (
-                <div style="display:flex; justify-content:space-between; font-size:12px; color:#A8A29E; padding-top:8px; border-top:1px solid rgba(0,0,0,0.07);">
+                <div style="display:flex; justify-content:space-between; font-size:12px;c3F3D; padding-top:8px; border-top:1px solid rgba(0,0,0,0.07);">
                   <span>GST (10%)</span>
                   <span>${b.gstAmount.toFixed(2)}</span>
                 </div>
               )}
               <div style="display:flex; justify-content:space-between; font-weight:700; color:#1C1917; padding-top:8px; border-top:1px solid rgba(0,0,0,0.09); font-size:14px;">
                 <span>Total</span>
-                <span style="color:#FC6514;">${b.totalAmount.toFixed(2)}</span>
+                <span style="color:var(--brand-color);">${b.totalAmount.toFixed(2)}</span>
               </div>
-              <div style="display:flex; justify-content:space-between; font-size:12px; color:#A8A29E; margin-top:2px;">
+              <div style="display:flex; justify-content:space-between; font-size:12px;c3F3D; margin-top:2px;">
                 <span>{b.paymentMethod?.toUpperCase() || '—'}</span>
                 <span style={b.paymentStatus === 'paid' ? 'color:#22C55E; font-weight:600;' : 'color:#FBBF24; font-weight:600;'}>
                   {b.paymentStatus === 'paid' ? '✓ Paid' : b.paymentStatus === 'pending_eft' ? 'EFT Pending' : b.paymentStatus}
@@ -244,7 +244,7 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
             {b.paymentStatus === 'pending_eft' && (
               <button
                 type="button"
-                style="width:100%; margin-top:14px; background:rgba(252,101,20,0.10); color:#FC6514; border:1px solid rgba(252,101,20,0.25); border-radius:10px; padding:9px 16px; font-size:13px; font-weight:600; cursor:pointer;"
+                style="width:100%; margin-top:14px; background:rgba(var(--brand-rgb),0.10); color:var(--brand-color); border:1px solid rgba(var(--brand-rgb),0.25); border-radius:10px; padding:9px 16px; font-size:13px; font-weight:600; cursor:pointer;"
                 hx-post={`/reception/bookings/${b.id}/mark-eft-paid`}
                 hx-target="#booking-detail-page"
                 hx-swap="outerHTML"
@@ -260,7 +260,7 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
           <p style={SL}>Timeline</p>
           <div style="display:flex; flex-direction:column; gap:10px; font-size:14px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="display:flex; align-items:center; gap:6px; color:#78716C;"><Icon name={ICONS.document} size={13} style="color:#A8A29E;" />Created</span>
+              <span style="display:flex; align-items:center; gap:6px; color:#78716C;"><Icon name={ICONS.document} size={13} style="color:#433F3D;" />Created</span>
               <span style="color:#1C1917; font-weight:500;">{new Date(b.createdAt).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</span>
             </div>
             {b.paymentStatus === 'paid' && (
@@ -349,16 +349,16 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
             <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:20px;">
               <div>
                 <label style="display:block; font-size:10px; font-weight:700; color:#78716C; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">New Date</label>
-                <input type="date" id={`rs-date-${b.id}`} name="newDate" style="width:100%; padding:10px 14px; font-size:14px; color:#1C1917; background:#EBEBEA; border:1px solid rgba(0,0,0,0.10); border-radius:10px; outline:none; box-sizing:border-box;" onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+                <input type="date" id={`rs-date-${b.id}`} name="newDate" style="width:100%; padding:10px 14px; font-size:14px; color:#1C1917; background:#EBEBEA; border:1px solid rgba(0,0,0,0.10); border-radius:10px; outline:none; box-sizing:border-box;" onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
               </div>
               <div>
                 <label style="display:block; font-size:10px; font-weight:700; color:#78716C; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">New Start Time</label>
-                <input type="time" id={`rs-time-${b.id}`} name="newStart" style="width:100%; padding:10px 14px; font-size:14px; color:#1C1917; background:#EBEBEA; border:1px solid rgba(0,0,0,0.10); border-radius:10px; outline:none; box-sizing:border-box;" onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+                <input type="time" id={`rs-time-${b.id}`} name="newStart" style="width:100%; padding:10px 14px; font-size:14px; color:#1C1917; background:#EBEBEA; border:1px solid rgba(0,0,0,0.10); border-radius:10px; outline:none; box-sizing:border-box;" onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
               </div>
             </div>
             <div style="display:flex; gap:10px;">
               <button type="button" style="flex:1; padding:10px 16px; font-size:13px; font-weight:500; border:1px solid rgba(0,0,0,0.12); background:transparent; border-radius:10px; cursor:pointer; color:#78716C;" x-on:click="rescheduleModal = false">Cancel</button>
-              <button type="button" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 16px; font-size:13px; font-weight:600; border:none; cursor:pointer; background:linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%); color:#fff; border-radius:10px; box-shadow:0 4px 14px rgba(252,101,20,0.30);"
+              <button type="button" style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 16px; font-size:13px; font-weight:600; border:none; cursor:pointer; background:linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%); color:#fff; border-radius:10px; box-shadow:0 4px 14px rgba(var(--brand-rgb),0.30);"
                 hx-post={`/reception/bookings/${b.id}/reschedule`}
                 hx-target="#booking-detail-page"
                 hx-swap="outerHTML"
@@ -417,12 +417,12 @@ export const BookingDetailPage = ({ booking: b }: Props) => (
             </div>
             <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
               <div>
-                <label style="display:block; font-size:10px; font-weight:700; color:#A8A29E; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">Completion Notes (optional)</label>
-                <textarea id={`cn-notes-${b.id}`} name="completionNotes" rows={2} x-model="completionNotes" placeholder="Any notes for records..." style="width:100%; padding:10px 14px; font-size:13px; resize:none; box-sizing:border-box; background:#EBEBEA; border:1px solid rgba(0,0,0,0.10); border-radius:10px; outline:none;" onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'"></textarea>
+                <label style="display:block; font-size:10px; font-weight:700;c3F3D; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">Completion Notes (optional)</label>
+                <textarea id={`cn-notes-${b.id}`} name="completionNotes" rows={2} x-model="completionNotes" placeholder="Any notes for records..." style="width:100%; padding:10px 14px; font-size:13px; resize:none; box-sizing:border-box; background:#EBEBEA; border:1px solid rgba(0,0,0,0.10); border-radius:10px; outline:none;" onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'"></textarea>
               </div>
               <div>
-                <label style="display:block; font-size:10px; font-weight:700; color:#A8A29E; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">Notify Guest by Email (optional)</label>
-                <input id={`cn-email-${b.id}`} name="guestEmail" type="email" x-model="guestEmail" placeholder="guest@example.com" style="width:100%; padding:10px 14px; font-size:13px; box-sizing:border-box; background:#EBEBEA; border:1px solid rgba(0,0,0,0.10); border-radius:10px; outline:none;" onfocus="this.style.borderColor='rgba(252,101,20,0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
+                <label style="display:block; font-size:10px; font-weight:700;c3F3D; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px;">Notify Guest by Email (optional)</label>
+                <input id={`cn-email-${b.id}`} name="guestEmail" type="email" x-model="guestEmail" placeholder="guest@example.com" style="width:100%; padding:10px 14px; font-size:13px; box-sizing:border-box; background:#EBEBEA; border:1px solid rgba(0,0,0,0.10); border-radius:10px; outline:none;" onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'" onblur="this.style.borderColor='rgba(0,0,0,0.10)'" />
               </div>
             </div>
             <div style="display:flex; gap:10px;">

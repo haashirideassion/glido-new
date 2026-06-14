@@ -25,7 +25,9 @@ function rowToBooking(row: BookingRow): Booking {
     slotStartTime:      trimTime(row.slot_start_time),
     slotEndTime:        trimTime(row.slot_end_time),
     guestName:          row.guest_name ?? undefined,
+    guestEmail:         (row as any).guest_email ?? undefined,
     guestPhone:         row.guest_phone ?? undefined,
+    companyName:        (row as any).company_name ?? undefined,
     driverName:         row.driver_name,
     driverPhone:        row.driver_phone ?? undefined,
     houseBillNumber:    row.house_bill_number ?? undefined,
@@ -60,6 +62,7 @@ function rowToBooking(row: BookingRow): Booking {
     bookingGroupId:     (row as any).booking_group_id    ?? undefined,
     slotIndex:          (row as any).slot_index          ?? undefined,
     groupReference:     (row as any).group_reference     ?? undefined,
+    bookingSource:      (row as any).booking_source      ?? undefined,
     tenantId:           row.tenant_id,
     createdAt:          row.created_at,
     updatedAt:          row.updated_at,
@@ -262,7 +265,9 @@ export interface CreateBookingInput {
   driverName:        string
   driverPhone?:      string
   guestName?:        string
+  guestEmail?:       string
   guestPhone?:       string
+  companyName?:      string
   userId?:           string
   houseBillNumber?:  string
   containerNumber?:  string
@@ -322,8 +327,11 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
       slot_end_time:      input.slotEndTime,
       driver_name:        input.driverName,
       driver_phone:       input.driverPhone ?? null,
-      guest_name:         input.guestName ?? null,
+      guest_name:         input.guestName  ?? null,
+      // Only include guest_email when present — omitting it entirely avoids schema cache errors if the column doesn't exist yet
+      ...(input.guestEmail ? { guest_email: input.guestEmail } : {}),
       guest_phone:        input.guestPhone ?? null,
+      company_name:       input.companyName ?? null,
       house_bill_number:  input.houseBillNumber ?? null,
       container_number:   input.containerNumber ?? null,
       weight_kg:          input.weightKg ?? null,

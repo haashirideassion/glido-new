@@ -224,16 +224,16 @@ export default function LandingPage() {
               Book your CFS slot.<br />
               <span style={{ color: 'var(--brand-color)' }}>Skip the queue.</span>
             </h1>
-            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.58)', lineHeight: 1.78, marginBottom: 36, maxWidth: 420 }}>
-              Instant booking for drivers, forwarders, and depot teams. Scan your QR at the kiosk — straight to the bay.
+            <p style={{ fontSize: 15, color: 'rgba(255,255,255)', lineHeight: 1.78, marginBottom: 36, maxWidth: 420 }}>
+              Instant booking for drivers, forwarders, and depot teams. Scan your QR at the kiosk, straight to the bay.
             </p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <Link to="/book" className="btn-primary" style={{ padding: '13px 28px', fontSize: 14 }}>
+              <Link to="/book" className="btn-primary" style={{ padding: '13px 28px', fontSize: 15 }}>
                 <Icon name={ICONS.calendar} size={15} />
                 Book a Visit
                 <Icon name={ICONS.arrowRight} size={14} />
               </Link>
-              <Link to="/bookings" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 24px', fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.80)', border: '1.5px solid rgba(255,255,255,0.22)', borderRadius: 9999, textDecoration: 'none', transition: 'all 0.15s ease' }}
+              <Link to="/bookings" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 24px', fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.80)', border: '1.5px solid rgba(255,255,255,0.22)', borderRadius: 9999, textDecoration: 'none', transition: 'all 0.15s ease' }}
                 onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.50)'; e.currentTarget.style.color = '#fff' }}
                 onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'; e.currentTarget.style.color = 'rgba(255,255,255,0.80)' }}
               >
@@ -249,11 +249,11 @@ export default function LandingPage() {
       <section id="how-it-works" className="section-dots" style={{ padding: '96px 24px', backgroundColor: '#FFFFFF' }}>
         <div className="max-w-5xl mx-auto">
           <div className="reveal" style={{ marginBottom: 56 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--brand-color)', marginBottom: 10 }}>How it works</p>
+            <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--brand-color)', marginBottom: 10 }}>How it works</p>
             <h2 style={{ fontSize: 'clamp(1.8rem,3.2vw,2.5rem)', fontWeight: 800, color: '#1C1917', letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: 12, maxWidth: 500 }}>
               From browser to bay door in four steps
             </h2>
-            <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.75, maxWidth: 400 }}>No spreadsheets. No radio calls. The whole process is online.</p>
+            <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.75, maxWidth: 400 }}>No spreadsheets. No radio calls. The whole process is online.</p>
           </div>
 
           <div className="steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 2, background: 'rgba(0,0,0,0.06)', borderRadius: 20, overflow: 'hidden' }}>
@@ -264,13 +264,13 @@ export default function LandingPage() {
                 onMouseOut={e  => (e.currentTarget.style.background = '#FFFFFF')}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: 'rgba(var(--brand-rgb),0.35)', letterSpacing: '0.04em' }}>{step.num}</span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: '#1C1917', letterSpacing: '0.04em' }}>{step.num}</span>
                   <div style={{ width: 40, height: 40, borderRadius: 11, background: '#FFF3EC', border: '1px solid rgba(var(--brand-rgb),0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Icon name={step.icon} size={18} style={{ color: 'var(--brand-color)' }} />
                   </div>
                 </div>
-                <p style={{ fontSize: 14, fontWeight: 700, color: '#1C1917', marginBottom: 7, letterSpacing: '-0.02em' }}>{step.title}</p>
-                <p style={{ fontSize: 12.5, color: '#78716C', lineHeight: 1.65 }}>{step.desc}</p>
+                <p style={{ fontSize: 15, fontWeight: 700, color: '#1C1917', marginBottom: 7, letterSpacing: '-0.02em' }}>{step.title}</p>
+                <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.65 }}>{step.desc}</p>
               </div>
             ))}
           </div>
@@ -282,11 +282,11 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto">
           <div className="preview-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.7fr', gap: 56, alignItems: 'center' }}>
             <div className="reveal-left">
-              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--brand-color)', marginBottom: 10 }}>Operations centre</p>
+              <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--brand-color)', marginBottom: 10 }}>Operations centre</p>
               <h2 style={{ fontSize: 'clamp(1.6rem,2.8vw,2.2rem)', fontWeight: 800, color: '#1C1917', letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: 14 }}>
                 Everything reception needs in one view
               </h2>
-              <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.75, marginBottom: 28 }}>
+              <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.75, marginBottom: 28 }}>
                 Live bookings, walk-in queue, ICS hold flags, and gate activity — all updated in real time.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
@@ -296,13 +296,13 @@ export default function LandingPage() {
                       <Icon name={item.icon} size={15} style={{ color: 'var(--brand-color)' }} />
                     </div>
                     <div>
-                      <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', marginBottom: 1 }}>{item.label}</p>
-                      <p style={{ fontSize: 12, color: '#A8A29E' }}>{item.sub}</p>
+                      <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', marginBottom: 1 }}>{item.label}</p>
+                      <p style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>{item.sub}</p>
                     </div>
                   </div>
                 ))}
               </div>
-              <Link to="/reception" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: 'var(--brand-color)', textDecoration: 'none', transition: 'opacity 0.15s ease' }}
+              <Link to="/reception" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 15, fontWeight: 600, color: 'var(--brand-color)', textDecoration: 'none', transition: 'opacity 0.15s ease' }}
                 onMouseOver={e => (e.currentTarget.style.opacity = '0.75')}
                 onMouseOut={e  => (e.currentTarget.style.opacity = '1')}
               >
@@ -317,34 +317,34 @@ export default function LandingPage() {
                   <div style={{ display: 'flex', gap: 5 }}>
                     {[0.08, 0.06, 0.04].map((o, i) => <div key={i} style={{ width: 10, height: 10, borderRadius: 9999, background: `rgba(0,0,0,${o})` }} />)}
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 500, color: '#A8A29E', marginLeft: 4 }}>Reception · Dashboard</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-tertiary)', marginLeft: 4 }}>Reception · Dashboard</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span style={{ width: 5, height: 5, borderRadius: 9999, background: '#22C55E', animation: 'pulse-dot 2s ease-in-out infinite', display: 'inline-block' }} />
-                  <span style={{ fontSize: 10, color: '#A8A29E', fontWeight: 500 }}>Live</span>
+                  <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 500 }}>Live</span>
                 </div>
               </div>
               <div style={{ background: '#F7F6F5', padding: 10, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
                 {KPI_TILES.map(k => (
                   <div key={k.label} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 10, padding: '10px 12px' }}>
                     <p style={{ fontSize: 22, fontWeight: 800, color: k.c, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 2 }}>{k.val}</p>
-                    <p style={{ fontSize: 10, color: '#A8A29E', fontWeight: 500 }}>{k.label}</p>
+                    <p style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 500 }}>{k.label}</p>
                   </div>
                 ))}
               </div>
               <div style={{ background: '#FFFFFF' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 72px 80px 28px', padding: '8px 14px', borderBottom: '1px solid rgba(0,0,0,0.06)', background: '#F7F6F5' }}>
                   {['Visitor', 'Slot', 'Status', ''].map(h => (
-                    <span key={h} style={{ fontSize: 9.5, fontWeight: 700, color: '#A8A29E', letterSpacing: '0.07em', textTransform: 'uppercase' }}>{h}</span>
+                    <span key={h} style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.07em', textTransform: 'uppercase' }}>{h}</span>
                   ))}
                 </div>
                 {DASHBOARD_ROWS.map((row, ri) => (
                   <div key={ri} style={{ display: 'grid', gridTemplateColumns: '1fr 72px 80px 28px', padding: '9px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', background: ri === 3 ? 'rgba(239,68,68,0.025)' : undefined }}>
                     <div>
-                      <p style={{ fontSize: 12, fontWeight: 500, color: '#1C1917' }}>{row.name}</p>
-                      <p style={{ fontSize: 9.5, color: '#A8A29E', fontFamily: 'ui-monospace,monospace' }}>{row.ref}</p>
+                      <p style={{ fontSize: 14, fontWeight: 500, color: '#1C1917' }}>{row.name}</p>
+                      <p style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'ui-monospace,monospace' }}>{row.ref}</p>
                     </div>
-                    <span style={{ fontSize: 11, color: '#78716C', alignSelf: 'center', fontVariantNumeric: 'tabular-nums' }}>{row.time}</span>
+                    <span style={{ fontSize: 13, color: 'var(--text-secondary)', alignSelf: 'center', fontVariantNumeric: 'tabular-nums' }}>{row.time}</span>
                     <div style={{ alignSelf: 'center' }}>
                       <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 9999, background: row.sc, color: row.tc }}>{row.status}</span>
                     </div>
@@ -363,11 +363,11 @@ export default function LandingPage() {
       <section className="section-dots" style={{ padding: '96px 24px', backgroundColor: '#FFFFFF', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <div className="max-w-5xl mx-auto">
           <div className="reveal" style={{ textAlign: 'center', marginBottom: 56 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--brand-color)', marginBottom: 10 }}>Who uses Glido</p>
+            <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--brand-color)', marginBottom: 10 }}>Who uses Glido</p>
             <h2 style={{ fontSize: 'clamp(1.8rem,3.2vw,2.5rem)', fontWeight: 800, color: '#1C1917', letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: 12 }}>
               Built for everyone in the chain
             </h2>
-            <p style={{ fontSize: 14, color: '#78716C', maxWidth: 380, margin: '0 auto', lineHeight: 1.75 }}>
+            <p style={{ fontSize: 15, color: 'var(--text-secondary)', maxWidth: 380, margin: '0 auto', lineHeight: 1.75 }}>
               From the freight forwarder booking a slot to the driver scanning in — everyone benefits.
             </p>
           </div>
@@ -379,10 +379,10 @@ export default function LandingPage() {
                   <Icon name={p.icon} size={22} style={{ color: '#fff' }} />
                 </div>
                 <p style={{ fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: '-0.03em', marginBottom: 10 }}>{p.title}</p>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, marginBottom: 22 }}>{p.desc}</p>
+                <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, marginBottom: 22 }}>{p.desc}</p>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
                   {p.bullets.map((b, bi) => (
-                    <li key={b} style={{ display: 'flex', alignItems: 'center', gap: 11, fontSize: 12.5, color: 'rgba(255,255,255,0.70)' }}>
+                    <li key={b} style={{ display: 'flex', alignItems: 'center', gap: 11, fontSize: 14, color: 'rgba(255,255,255,0.70)' }}>
                       <span style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 5, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', fontVariantNumeric: 'tabular-nums', fontFamily: 'ui-monospace,monospace' }}>
                         {String(bi + 1).padStart(2, '0')}
                       </span>
@@ -400,11 +400,11 @@ export default function LandingPage() {
       <section style={{ padding: '96px 24px', background: '#F7F6F5', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
         <div className="max-w-5xl mx-auto">
           <div className="reveal" style={{ textAlign: 'center', marginBottom: 56 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--brand-color)', marginBottom: 10 }}>Built for the floor</p>
+            <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--brand-color)', marginBottom: 10 }}>Built for the floor</p>
             <h2 style={{ fontSize: 'clamp(1.8rem,3.2vw,2.5rem)', fontWeight: 800, color: '#1C1917', letterSpacing: '-0.04em', lineHeight: 1.1, marginBottom: 12 }}>
               Purpose-built for Container Freight Stations
             </h2>
-            <p style={{ fontSize: 14, color: '#78716C', maxWidth: 380, margin: '0 auto', lineHeight: 1.75 }}>Every feature solves a real operational headache.</p>
+            <p style={{ fontSize: 15, color: 'var(--text-secondary)', maxWidth: 380, margin: '0 auto', lineHeight: 1.75 }}>Every feature solves a real operational headache.</p>
           </div>
 
           {/* ICS bento hero */}
@@ -414,15 +414,15 @@ export default function LandingPage() {
                 <Icon name={ICONS.shield} size={24} style={{ color: 'var(--brand-color)' }} />
               </div>
               <p style={{ fontSize: 18, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.025em', marginBottom: 10, lineHeight: 1.25 }}>Automatic ICS clearance check</p>
-              <p style={{ fontSize: 13, color: '#78716C', lineHeight: 1.75, maxWidth: 320 }}>
+              <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.75, maxWidth: 320 }}>
                 Customs status is fetched the moment you enter your shipment number — holds flagged before they reach the gate.
               </p>
             </div>
             <div style={{ background: '#F7F6F5', borderRadius: 14, padding: '20px 24px', border: '1px solid rgba(0,0,0,0.07)' }}>
               {ICS_ROWS.map((row, ri) => (
                 <div key={ri} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: ri < 2 ? '1px solid rgba(0,0,0,0.06)' : undefined }}>
-                  <span style={{ fontSize: 12, fontFamily: 'ui-monospace,monospace', fontWeight: 600, color: '#57534E' }}>{row.ref}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 9999, background: row.sc, color: row.tc }}>{row.status}</span>
+                  <span style={{ fontSize: 14, fontFamily: 'ui-monospace,monospace', fontWeight: 600, color: '#57534E' }}>{row.ref}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, padding: '3px 10px', borderRadius: 9999, background: row.sc, color: row.tc }}>{row.status}</span>
                 </div>
               ))}
             </div>
@@ -439,8 +439,8 @@ export default function LandingPage() {
                 <div style={{ width: 42, height: 42, borderRadius: 11, background: '#FFF3EC', border: '1px solid rgba(var(--brand-rgb),0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
                   <Icon name={feat.icon} size={19} style={{ color: 'var(--brand-color)' }} />
                 </div>
-                <p style={{ fontSize: 14, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.02em', marginBottom: 7 }}>{feat.title}</p>
-                <p style={{ fontSize: 12.5, color: '#78716C', lineHeight: 1.65 }}>{feat.desc}</p>
+                <p style={{ fontSize: 15, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.02em', marginBottom: 7 }}>{feat.title}</p>
+                <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.65 }}>{feat.desc}</p>
               </div>
             ))}
           </div>
@@ -456,8 +456,8 @@ export default function LandingPage() {
                 <div style={{ width: 40, height: 40, borderRadius: 10, background: '#FFF3EC', border: '1px solid rgba(var(--brand-rgb),0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                   <Icon name={feat.icon} size={18} style={{ color: 'var(--brand-color)' }} />
                 </div>
-                <p style={{ fontSize: 14, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.02em', marginBottom: 6 }}>{feat.title}</p>
-                <p style={{ fontSize: 12.5, color: '#78716C', lineHeight: 1.65 }}>{feat.desc}</p>
+                <p style={{ fontSize: 15, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.02em', marginBottom: 6 }}>{feat.title}</p>
+                <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.65 }}>{feat.desc}</p>
               </div>
             ))}
           </div>
@@ -472,30 +472,30 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto" style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
           <div className="reveal" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 14px', borderRadius: 9999, background: 'rgba(34,197,94,0.09)', border: '1px solid rgba(34,197,94,0.22)', marginBottom: 28 }}>
             <span style={{ width: 6, height: 6, borderRadius: 9999, background: '#22C55E', animation: 'pulse-dot 2s ease-in-out infinite', display: 'inline-block' }} />
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#16A34A' }}>Accepting bookings now</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#16A34A' }}>Accepting bookings now</span>
           </div>
 
           <h2 className="reveal" data-reveal-delay="80" style={{ fontSize: 'clamp(2.2rem,4.8vw,3.5rem)', fontWeight: 800, color: '#1C1917', letterSpacing: '-0.045em', lineHeight: 1.05, marginBottom: 16 }}>
             Ready to skip<br />the queue?
           </h2>
 
-          <p className="reveal" data-reveal-delay="130" style={{ fontSize: 15, color: '#78716C', lineHeight: 1.8, marginBottom: 36, maxWidth: 360, marginLeft: 'auto', marginRight: 'auto' }}>
+          <p className="reveal" data-reveal-delay="130" style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.8, marginBottom: 36, maxWidth: 360, marginLeft: 'auto', marginRight: 'auto' }}>
             Your first booking takes under 3 minutes. No account, no calls, no paper.
           </p>
 
           <div className="reveal" data-reveal-delay="180" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/book" className="btn-primary" style={{ padding: '14px 32px', fontSize: 14 }}>
+            <Link to="/book" className="btn-primary" style={{ padding: '14px 32px', fontSize: 15 }}>
               <Icon name={ICONS.calendar} size={15} />
               Book a Visit
               <Icon name={ICONS.arrowRight} size={14} />
             </Link>
-            <Link to="/bookings" className="btn-ghost" style={{ padding: '14px 26px', fontSize: 14 }}>
+            <Link to="/bookings" className="btn-ghost" style={{ padding: '14px 26px', fontSize: 15 }}>
               <Icon name={ICONS.search} size={15} />
               Look Up Booking
             </Link>
           </div>
 
-          <p className="reveal" data-reveal-delay="230" style={{ fontSize: 12, color: '#A8A29E', marginTop: 28 }}>
+          <p className="reveal" data-reveal-delay="230" style={{ fontSize: 14, color: 'var(--text-tertiary)', marginTop: 28 }}>
             {tenant?.name || 'Sydney Container Freight Station'} · ABN 12 345 678 901
           </p>
         </div>

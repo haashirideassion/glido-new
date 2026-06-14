@@ -1,5 +1,6 @@
 import { useWizard, useHoldTimer } from '@/contexts/WizardContext'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { useBlocker } from 'react-router-dom'
 import { Icon, ICONS } from '@/lib/Icon'
 import { useTenantInfo } from '@/lib/useTenantInfo'
 import { Step1ServiceType } from './Step1ServiceType'
@@ -40,6 +41,23 @@ export default function BookingWizard() {
 
   const { holdActive, holdLabel, expiring } = useHoldTimer(handleHoldExpire)
 
+  // ── Leave-page protection ───────────────────────────────────────────────────
+  const shouldBlock = state.step > 1 && !state.bookingConfirmed
+
+  // In-app navigation — custom modal via useBlocker (boolean form)
+  const blocker = useBlocker(shouldBlock)
+
+  // Real page unloads (refresh, tab close) — native browser dialog
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!shouldBlock) return
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [shouldBlock])
+
   const brandColor = tenant?.primaryColor ?? '#FC6514'
   const brandRgb   = hexToRgb(brandColor)
 
@@ -51,6 +69,37 @@ export default function BookingWizard() {
   return (
     <div style={{ background: '#fff', minHeight: 'calc(100vh - 56px)' }}>
 
+      {blocker.state === 'blocked' && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: 32, width: 400, maxWidth: 'calc(100vw - 48px)', boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1C1917', margin: '0 0 8px', letterSpacing: '-0.02em' }}>Leave booking?</h3>
+            <p style={{ fontSize: 15, color: 'var(--text-mid)', lineHeight: 1.6, margin: '0 0 24px' }}>
+              Your booking progress will be lost. Are you sure you want to leave?
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => blocker.reset?.()}
+                style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: '1px solid rgba(0,0,0,0.12)', background: '#F9F9F8', fontWeight: 600, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit', color: '#1C1917' }}
+              >
+                Stay on Page
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  try { sessionStorage.removeItem('glido_wizard_v2') } catch { /* noop */ }
+                  dispatch({ type: 'RESET' })
+                  blocker.proceed?.()
+                }}
+                style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: 'none', background: '#EF4444', color: '#fff', fontWeight: 600, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                Leave Page
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hold-expired modal */}
       {holdExpiredModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}>
@@ -61,13 +110,13 @@ export default function BookingWizard() {
             <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.02em', marginBottom: 10 }}>
               Slot hold expired
             </h3>
-            <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.6, marginBottom: 24 }}>
+            <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 24 }}>
               Your slot reservation has timed out. Please select an available slot again to continue your booking.
             </p>
             <button
               type="button"
               className="btn-primary"
-              style={{ width: '100%', justifyContent: 'center', padding: '13px 24px', fontSize: 14, fontWeight: 700, borderRadius: 12 }}
+              style={{ width: '100%', justifyContent: 'center', padding: '13px 24px', fontSize: 15, fontWeight: 700, borderRadius: 12 }}
               onClick={() => setHoldExpiredModal(false)}
             >
               Choose a slot
@@ -120,7 +169,7 @@ export default function BookingWizard() {
         .wizard-stepper-btn:disabled { opacity: 0.35; cursor: not-allowed; }
         .btn-primary {
           display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px;
-          font-size: 13px; font-weight: 600; color: #fff;
+          font-size: 13px; font-weight: 600; color: #000000;
           background: var(--brand-color);
           border: none; border-radius: 9999px; cursor: pointer;
           box-shadow: 0 2px 8px rgba(var(--brand-rgb),0.35); transition: all 0.18s ease;
@@ -170,7 +219,7 @@ export default function BookingWizard() {
         {state.step !== 8 && (
           <div
             className="wiz-header"
-            style={{ position: 'relative', overflow: 'visible', background: 'linear-gradient(to right, rgba(250,115,21,0.10), rgba(255,255,255,0.05), rgba(254,230,212,0.005), rgba(250,115,21,0.03)), #fff', padding: '48px 60px 44px', marginBottom: 8, borderBottom: '1px solid rgba(0,0,0,0.055)', boxShadow: '0 4px 16px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03)' }}
+            style={{ position: 'relative', overflow: 'visible', background: 'linear-gradient(120deg, rgba(var(--brand-rgb),0.06) 0%, rgba(var(--brand-rgb),0.02) 35%, rgba(255,255,255,0) 70%), #fff', padding: '48px 60px 44px', marginBottom: 8, borderBottom: '1px solid rgba(0,0,0,0.055)', boxShadow: '0 4px 16px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.03)' }}
           >
             {/* Left grid */}
             <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 380, pointerEvents: 'none', zIndex: 0, WebkitMaskImage: 'linear-gradient(to right,rgba(0,0,0,0.30) 0%,rgba(0,0,0,0.10) 100%)', maskImage: 'linear-gradient(to right,rgba(0,0,0,0.30) 0%,rgba(0,0,0,0.10) 100%)' }}>
@@ -184,7 +233,7 @@ export default function BookingWizard() {
             {/* Title */}
             <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', marginBottom: 40 }}>
               <h1 className="wiz-header-title" style={{ fontSize: 36, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.15, marginBottom: 10 }}>Visitor Booking</h1>
-              <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.6, maxWidth: 480, margin: '0 auto' }}>
+              <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: 480, margin: '0 auto' }}>
                 Complete your booking now to ensure you get the exact date and time that works for you
               </p>
             </div>
@@ -214,7 +263,7 @@ export default function BookingWizard() {
                     <div className="wiz-step-circle" style={{ border: `2.5px solid ${done || active ? 'var(--brand-color)' : '#C2C2C2'}`, color: done || active ? 'var(--brand-color)' : '#C2C2C2', background: '#fff' }}>
                       <Icon name={ctx.icon} size={24} />
                     </div>
-                    <span className="wiz-step-label" style={{ fontSize: 13, fontWeight: active ? 700 : 400, color: active || done ? '#101010' : '#605F5F', whiteSpace: 'nowrap', transition: 'all 0.25s ease' }}>
+                    <span className="wiz-step-label" style={{ fontSize: 15, fontWeight: active ? 700 : 400, color: active || done ? '#101010' : '#605F5F', whiteSpace: 'nowrap', transition: 'all 0.25s ease' }}>
                       {ctx.shortLabel}
                     </span>
                   </div>
@@ -246,12 +295,11 @@ export default function BookingWizard() {
         <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderTop: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
 
           {/* Floating pills */}
-          {console.log('[HOLD DEBUG] step:', state.step, 'holdSeconds:', state.holdSeconds, 'holdActive:', holdActive)}
           {holdActive && state.step >= 5 && (
             <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', paddingBottom: 10, pointerEvents: 'none' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 20px', borderRadius: 9999, background: '#fff', border: `1.5px solid ${expiring ? 'rgba(239,68,68,0.35)' : 'rgba(252,101,20,0.28)'}`, boxShadow: '0 4px 18px rgba(0,0,0,0.09),0 2px 8px rgba(252,101,20,0.12)', whiteSpace: 'nowrap' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 20px', borderRadius: 9999, background: '#fff', border: `1.5px solid ${expiring ? 'rgba(239,68,68,0.35)' : 'rgba(var(--brand-rgb),0.28)'}`, boxShadow: '0 4px 18px rgba(0,0,0,0.09),0 2px 8px rgba(var(--brand-rgb),0.12)', whiteSpace: 'nowrap' }}>
                 <Icon name={ICONS.clock} size={26} style={{ color: expiring ? '#EF4444' : 'var(--brand-color)', flexShrink: 0 }} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: expiring ? '#EF4444' : '#1C1917' }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: expiring ? '#EF4444' : '#1C1917' }}>
                   Slot held · <span style={{ fontFamily: 'ui-monospace,monospace' }}>{holdLabel}</span>
                 </span>
               </div>
@@ -260,9 +308,9 @@ export default function BookingWizard() {
 
           {state.step === 1 && state.slotCount > 1 && (
             <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', paddingBottom: 10, pointerEvents: 'none' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '7px 20px', borderRadius: 9999, background: '#fff', border: '1.5px solid rgba(252,101,20,0.28)', boxShadow: '0 4px 18px rgba(0,0,0,0.09)', whiteSpace: 'nowrap' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '7px 20px', borderRadius: 9999, background: '#fff', border: '1.5px solid rgba(var(--brand-rgb),0.28)', boxShadow: '0 4px 18px rgba(0,0,0,0.09)', whiteSpace: 'nowrap' }}>
                 <span style={{ width: 7, height: 7, borderRadius: 9999, background: 'var(--brand-color)', flexShrink: 0, display: 'inline-block' }} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#1C1917' }}>{state.slotCount} slots — you'll enter shipment details for each one separately.</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#1C1917' }}>{state.slotCount} slots — you'll enter shipment details for each one separately.</span>
               </div>
             </div>
           )}
@@ -272,13 +320,13 @@ export default function BookingWizard() {
               {state.selectedSlotLabel ? (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '7px 20px', borderRadius: 9999, background: '#fff', border: '1.5px solid rgba(239,68,68,0.30)', boxShadow: '0 4px 18px rgba(0,0,0,0.09)', whiteSpace: 'nowrap' }}>
                   <span style={{ width: 7, height: 7, borderRadius: 9999, background: '#EF4444', flexShrink: 0, display: 'inline-block' }} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#1C1917' }}>{state.selectedSlotLabel}</span>
-                  <span style={{ fontSize: 11, color: '#9CA3AF', background: 'rgba(0,0,0,0.05)', borderRadius: 5, padding: '2px 7px', fontWeight: 500 }}>selected</span>
-                  <span style={{ fontSize: 11, color: '#EF4444', fontWeight: 600 }}>· 10-min hold on Next →</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#1C1917' }}>{state.selectedSlotLabel}</span>
+                  <span style={{ fontSize: 13, color: '#9CA3AF', background: 'rgba(0,0,0,0.05)', borderRadius: 5, padding: '2px 7px', fontWeight: 500 }}>selected</span>
+                  <span style={{ fontSize: 13, color: '#EF4444', fontWeight: 600 }}>· 10-min hold on Next →</span>
                 </div>
               ) : (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 20px', borderRadius: 9999, background: '#fff', border: '1.5px solid rgba(0,0,0,0.10)', boxShadow: '0 4px 18px rgba(0,0,0,0.06)', whiteSpace: 'nowrap' }}>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: '#9CA3AF' }}>Select a time slot to hold your booking</span>
+                  <span style={{ fontSize: 15, fontWeight: 500, color: '#9CA3AF' }}>Select a time slot to hold your booking</span>
                 </div>
               )}
             </div>
@@ -293,7 +341,7 @@ export default function BookingWizard() {
                 type="button"
                 className="wiz-btn-back btn-ghost"
                 onClick={back}
-                style={{ opacity: state.step === 1 ? 0 : 1, pointerEvents: state.step === 1 ? 'none' : 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px 9px 14px', fontSize: 13 }}
+                style={{ opacity: state.step === 1 ? 0 : 1, pointerEvents: state.step === 1 ? 'none' : 'auto', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px 9px 14px', fontSize: 15 }}
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
                   <path d="M8.5 2.5L4.5 7l4 4.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
@@ -303,10 +351,10 @@ export default function BookingWizard() {
 
               {/* Step counter */}
               <div className="wiz-step-counter" style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#57534E', letterSpacing: '-0.01em' }}>
+                <span style={{ fontSize: 16, fontWeight: 600, color: '#57534E', letterSpacing: '-0.01em' }}>
                   {STEP_CTX[state.step - 1]?.label}
                 </span>
-                <span style={{ fontSize: 10, color: '#A8A29E', fontVariantNumeric: 'tabular-nums' }}>{state.step} of 7</span>
+                <span style={{ fontSize: 13, color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>{state.step} of 7</span>
               </div>
 
               {/* Continue */}
@@ -314,7 +362,7 @@ export default function BookingWizard() {
                 type="button"
                 className="btn-primary wiz-btn-next"
                 onClick={next}
-                style={{ padding: '10px 24px', fontSize: 13, minWidth: 130, justifyContent: 'center', flexShrink: 0, height: 44, filter: !canProceed ? 'grayscale(1) opacity(0.28)' : 'none', cursor: !canProceed ? 'not-allowed' : 'pointer', pointerEvents: !canProceed ? 'none' : 'auto' }}
+                style={{ padding: '10px 24px', fontSize: 15, minWidth: 130, justifyContent: 'center', flexShrink: 0, height: 44, filter: !canProceed ? 'grayscale(1) opacity(0.28)' : 'none', cursor: !canProceed ? 'not-allowed' : 'pointer', pointerEvents: !canProceed ? 'none' : 'auto' }}
               >
                 {continueLabel}
                 <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
@@ -327,10 +375,10 @@ export default function BookingWizard() {
           {/* Mini footer */}
           <div style={{ borderTop: '1px solid rgba(0,0,0,0.05)', flexShrink: 0 }} className="wiz-site-footer-row">
             <div style={{ width: '100%', maxWidth: 1120, margin: '0 auto', padding: '9px 60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxSizing: 'border-box' }}>
-              <span style={{ fontSize: 11, color: '#A8A29E' }}>© 2026 {tenant?.name || 'Glido CFS'} · Sydney Container Freight Station</span>
+              <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>© 2026 {tenant?.name || 'Glido CFS'} · Sydney Container Freight Station</span>
               <div style={{ display: 'flex', gap: 18 }}>
                 {['Privacy', 'Terms', 'Contact'].map(l => (
-                  <a key={l} href="#" style={{ fontSize: 11, color: '#A8A29E', textDecoration: 'none', transition: 'color 0.15s ease' }}
+                  <a key={l} href="#" style={{ fontSize: 13, color: 'var(--text-tertiary)', textDecoration: 'none', transition: 'color 0.15s ease' }}
                     onMouseOver={e => (e.currentTarget.style.color = '#57534E')}
                     onMouseOut={e  => (e.currentTarget.style.color = '#A8A29E')}
                   >{l}</a>

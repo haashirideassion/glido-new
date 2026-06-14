@@ -106,6 +106,7 @@ export interface WizardState {
   guestName: string
   guestEmail: string
   guestPhone: string
+  companyName: string
   // Step 2 — serviceType mirrors slotConfigs[0].serviceType for backward compat
   serviceType: 'pickup' | 'dropoff' | null
   // Step 3 — loadType mirrors slotConfigs[0].loadType for backward compat
@@ -154,6 +155,9 @@ export interface WizardState {
   submitError: string | null
   confirmationRef: string | null        // first ref (backward compat)
   confirmationRefs: Array<{ ref: string; slotLabel: string; date: string }>  // one per slot, carries time info
+  bookingConfirmed: boolean             // true after successful submission — suppresses leave-page blocker
+  // Step 5 — active slot tab index (lifted so BookingWizard footer can react to it)
+  step5ActiveSlot: number
   // Tenant pricing config (loaded on wizard mount)
   tenantPricing: TenantPricing | null
   // Tenant document requirements (loaded on wizard mount)
@@ -184,7 +188,7 @@ export const INITIAL_STATE: WizardState = {
   step: 1,
   slotCount: 1,
   slotConfigs: makeSlotConfigs(1),
-  guestName: '', guestEmail: '', guestPhone: '',
+  guestName: '', guestEmail: '', guestPhone: '', companyName: '',
   serviceType: null,
   loadType: null,
   selectedDate: getDefaultDate(),
@@ -203,6 +207,8 @@ export const INITIAL_STATE: WizardState = {
   submitting: false, submitError: null,
   confirmationRef: null,
   confirmationRefs: [],
+  bookingConfirmed: false,
+  step5ActiveSlot: 0,
   tenantPricing: null,
   tenantDocs: null,
 }
@@ -277,6 +283,7 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
     case 'CLEAR_HOLD':
       return { ...state, holdSeconds: 0, selectedSlotId: null, selectedSlotLabel: '' }
     case 'RESET':
+      try { sessionStorage.removeItem('glido_wizard_v2') } catch { /* noop */ }
       return { ...INITIAL_STATE, selectedDate: getDefaultDate() }
     default:
       return state

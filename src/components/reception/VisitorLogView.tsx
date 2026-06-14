@@ -37,8 +37,8 @@ export const VisitorLogView = ({ records, stats, filters }: Props) => {
     <div style="display:flex; flex-direction:column; gap:20px;">
       {/* ── Compliance Header ─────────────────────────────────────────────── */}
       <div style="background:#1C1917; border-radius:12px; padding:16px 24px; border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:16px;">
-        <div style="width:40px; height:40px; border-radius:10px; background:rgba(252,101,20,0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-          <Icon name={ICONS.reports} size={20} style="color:#FC6514;" />
+        <div style="width:40px; height:40px; border-radius:10px; background:rgba(var(--brand-rgb),0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <Icon name={ICONS.reports} size={20} style="color:var(--brand-color);" />
         </div>
         <div>
           <h1 style="font-size:22px; font-weight:700; color:#FFFFFF; margin:0; letter-spacing:0.02em; text-transform:uppercase;">
@@ -54,7 +54,7 @@ export const VisitorLogView = ({ records, stats, filters }: Props) => {
       <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
         {[
           { label: 'Total Visitors',  value: stats.totalVisitors,   icon: ICONS.walkIn,   color: '#1C1917' },
-          { label: 'Currently On-Site', value: stats.currentlyOnSite, icon: ICONS.check,    color: '#FC6514' },
+          { label: 'Currently On-Site', value: stats.currentlyOnSite, icon: ICONS.check,    color: 'var(--brand-color)' },
           { label: 'Completed Visits', value: stats.completedVisits, icon: ICONS.bookings, color: '#22C55E' },
         ].map((kpi) => (
           <div key={kpi.label} style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07); display:flex; align-items:center; justify-content:space-between;">
@@ -86,7 +86,7 @@ export const VisitorLogView = ({ records, stats, filters }: Props) => {
                 <a
                   key={d.label}
                   href={`/reception/reports/visitor-log?from=${start}&to=${today}`}
-                  style={`padding:8px 14px; font-size:15px; font-weight:600; text-decoration:none; border-radius:6px; transition:all 0.15s ease; ${isActive ? 'background:#FFFFFF; color:#FC6514; box-shadow:0 1px 2px rgba(0,0,0,0.08);' : 'color:#4B5563;'}`}
+                  style={`padding:8px 14px; font-size:15px; font-weight:600; text-decoration:none; border-radius:6px; transition:all 0.15s ease; ${isActive ? 'background:#FFFFFF; color:var(--brand-color); box-shadow:0 1px 2px rgba(0,0,0,0.08);' : 'color:#4B5563;'}`}
                 >
                   {d.label}
                 </a>
@@ -97,7 +97,7 @@ export const VisitorLogView = ({ records, stats, filters }: Props) => {
           {/* Custom Date Range */}
           <form style="display:flex; align-items:center; gap:8px;">
             <input type="date" name="from" value={filters.from || ''} style="font-size:15px; border:1px solid rgba(0,0,0,0.1); border-radius:6px; padding:8px 12px; height:48px; outline:none; box-sizing:border-box;" />
-            <span style="font-size:12px; color:#A8A29E; font-weight:700;">→</span>
+            <span style="font-size:12px;c3F3D; font-weight:700;">→</span>
             <input type="date" name="to" value={filters.to || ''} style="font-size:15px; border:1px solid rgba(0,0,0,0.1); border-radius:6px; padding:8px 12px; height:48px; outline:none; box-sizing:border-box;" />
             
             {/* Native status search logic via params */}
@@ -133,7 +133,7 @@ export const VisitorLogView = ({ records, stats, filters }: Props) => {
             CSV
           </button>
           <button 
-            style="background:rgba(252,101,20,0.07); border:1px solid rgba(252,101,20,0.20); border-radius:8px; padding:0 16px; height:48px; font-size:15px; font-weight:600; color:#FC6514; display:flex; align-items:center; gap:8px; cursor:pointer; box-sizing:border-box;"
+            style="background:rgba(var(--brand-rgb),0.07); border:1px solid rgba(var(--brand-rgb),0.20); border-radius:8px; padding:0 16px; height:48px; font-size:15px; font-weight:600; color:var(--brand-color); display:flex; align-items:center; gap:8px; cursor:pointer; box-sizing:border-box;"
           >
             <Icon name={ICONS.reports} size={15} />
             PDF
@@ -144,7 +144,7 @@ export const VisitorLogView = ({ records, stats, filters }: Props) => {
       {/* ── Table Area ────────────────────────────────────────────────────── */}
       <div style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07);">
         <div style="padding:16px 24px; border-bottom:1px solid rgba(0,0,0,0.07); background:rgba(0,0,0,0.01); display:flex; align-items:center; justify-content:space-between;">
-           <p style="font-size:13px; font-weight:700; color:#1C1917;">Visitor Activity Log <span style="font-weight:400; color:#A8A29E; margin-left:6px;">Showing {records.length} records</span></p>
+           <p style="font-size:13px; font-weight:700; color:#1C1917;">Visitor Activity Log <span style="font-weight:400;c3F3D; margin-left:6px;">Showing {records.length} records</span></p>
         </div>
         <div style="overflow-x:auto;">
           <table id="visitor-log-table" style="width:100%; border-collapse:collapse; font-size:11.5px; white-space:nowrap;">
@@ -170,7 +170,7 @@ export const VisitorLogView = ({ records, stats, filters }: Props) => {
                     <td style="padding:16px 20px; font-weight:700; color:#1C1917; font-size:16px;">{name}</td>
                     <td style="padding:16px 20px; color:#4B5563; max-width:200px; overflow:hidden; text-overflow:ellipsis; font-size:16px;">{r.licence_address || '—'}</td>
                     <td style="padding:16px 20px; color:#4B5563; font-size:15px;">{r.licence_scan_method || 'Manual'}</td>
-                    <td style="padding:16px 20px; font-family:ui-monospace,monospace; color:#FC6514; font-weight:700; font-size:16px;">{r.licence_number || '—'}</td>
+                    <td style="padding:16px 20px; font-family:ui-monospace,monospace; color:var(--brand-color); font-weight:700; font-size:16px;">{r.licence_number || '—'}</td>
                     <td style="padding:16px 20px; color:#4B5563; font-size:15px;">{formatDate(r.licence_dob)}</td>
                     <td style="padding:16px 20px; color:#4B5563; font-style:italic; font-size:15px;">Pending</td>
                     <td style="padding:16px 20px;"><span style="background:rgba(0,0,0,0.04); padding:4px 10px; border-radius:6px; font-weight:600; color:#374151; font-size:14px;">{reason}</span></td>
@@ -186,7 +186,7 @@ export const VisitorLogView = ({ records, stats, filters }: Props) => {
                   <td colspan={12} style="padding:64px 20px; text-align:center;">
                     <Icon name={ICONS.reports} size={40} style="color:rgba(0,0,0,0.1); margin:0 auto 12px; display:block;" />
                     <p style="font-size:14px; font-weight:600; color:#78716C; margin:0;">No visitor records found</p>
-                    <p style="font-size:12px; color:#A8A29E; margin:4px 0 0;">Try adjusting your filters or date range.</p>
+                    <p style="font-size:12px;c3F3D; margin:4px 0 0;">Try adjusting your filters or date range.</p>
                   </td>
                 </tr>
               )}

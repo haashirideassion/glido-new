@@ -60,144 +60,165 @@ function ConfirmedScreen() {
     navigator.clipboard.writeText(ref).catch(() => {})
   }
 
-  // ── Download QR as PNG ───────────────────────────────────────────────────────
+  // ── Download QR as PNG (with text below) ────────────────────────────────────
   const downloadQr = () => {
     if (!qrUrl) return
-    const a = document.createElement('a')
-    a.href = qrUrl
-    a.download = `booking-${ref}.png`
-    a.click()
+    const img = new Image()
+    img.onload = () => {
+      const qCanvas = document.createElement('canvas')
+      qCanvas.width  = img.width
+      qCanvas.height = img.height
+      const qCtx = qCanvas.getContext('2d')!
+      qCtx.drawImage(img, 0, 0)
+
+      const out = document.createElement('canvas')
+      out.width  = qCanvas.width
+      out.height = qCanvas.height + 80
+      const ctx = out.getContext('2d')!
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, out.width, out.height)
+      ctx.drawImage(qCanvas, 0, 0)
+
+      const cx = out.width / 2
+      const cfg0 = state.slotConfigs[0]
+      const svcLabel  = (cfg0?.serviceType ?? state.serviceType) === 'pickup' ? 'Pick Up' : 'Drop Off'
+      const ltLabel   = ((cfg0?.loadType ?? state.loadType) ?? '').toUpperCase()
+
+      ctx.fillStyle = '#1C1917'
+      ctx.textAlign = 'center'
+      ctx.font = 'bold 14px system-ui, sans-serif'
+      ctx.fillText(ref, cx, qCanvas.height + 22)
+
+      ctx.font = '12px system-ui, sans-serif'
+      ctx.fillStyle = '#6B7280'
+      ctx.fillText(`${svcLabel} · ${ltLabel}`, cx, qCanvas.height + 42)
+
+      const a = document.createElement('a')
+      a.href = out.toDataURL('image/png')
+      a.download = `booking-${ref}.png`
+      a.click()
+    }
+    img.src = qrUrl
   }
 
   // ── Export full booking summary as PDF ───────────────────────────────────────
   const exportPdf = async () => {
     const { jsPDF } = await import('jspdf')
-    const doc  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-    const pw   = doc.internal.pageSize.getWidth()
-    const ph   = doc.internal.pageSize.getHeight()
-    let y = 18
-
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const pw  = doc.internal.pageSize.getWidth()
+    const ph  = doc.internal.pageSize.getHeight()
     const tenantName = tenant?.name || 'Container Freight Station'
 
+    const pdfRow = (d: typeof doc, label: string, val: string, lx: number, rx: number, y: number) => {
+      d.setTextColor(120, 113, 108); d.text(label, lx, y)
+      d.setTextColor(28, 25, 23);   d.text(val, rx, y, { align: 'right' })
+    }
+    const section = (d: typeof doc, title: string, curY: number): number => {
+      curY += 4
+      d.setDrawColor(220, 215, 210); d.line(20, curY, pw - 20, curY); curY += 7
+      d.setFontSize(10); d.setFont('helvetica', 'bold'); d.setTextColor(28, 25, 23)
+      d.text(title, 20, curY); curY += 6
+      d.setFont('helvetica', 'normal'); d.setFontSize(9.5)
+      return curY
+    }
+
+    let y = 18
+
     // ── Header ────────────────────────────────────────────────────────────────
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(120, 113, 108)
-    doc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' })
-    y += 8
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 113, 108)
+    doc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' }); y += 8
 
-    doc.setFontSize(20)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(28, 25, 23)
-    doc.text('Booking Confirmation', pw / 2, y, { align: 'center' })
-    y += 9
+    doc.setFontSize(20); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 25, 23)
+    doc.text('Booking Confirmation', pw / 2, y, { align: 'center' }); y += 9
 
-    doc.setFontSize(13)
-    doc.setFont('courier', 'bold')
-    doc.setTextColor(100, 92, 80)
-    doc.text(ref, pw / 2, y, { align: 'center' })
-    y += 10
+    doc.setFontSize(13); doc.setFont('courier', 'bold'); doc.setTextColor(100, 92, 80)
+    doc.text(ref, pw / 2, y, { align: 'center' }); y += 10
 
     // ── QR code ───────────────────────────────────────────────────────────────
     if (qrUrl) {
       const sz = 56
-      doc.addImage(qrUrl, 'PNG', (pw - sz) / 2, y, sz, sz)
-      y += sz + 6
+      doc.addImage(qrUrl, 'PNG', (pw - sz) / 2, y, sz, sz); y += sz + 6
     }
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139)
+    doc.text('Present this QR code at the CFS gate for check-in', pw / 2, y, { align: 'center' }); y += 10
 
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(100, 116, 139)
-    doc.text('Present this QR code at the CFS gate for check-in', pw / 2, y, { align: 'center' })
-    y += 10
-
-    // ── Divider ───────────────────────────────────────────────────────────────
-    doc.setDrawColor(220, 215, 210)
-    doc.line(20, y, pw - 20, y)
-    y += 8
-
-    // ── Booking details ───────────────────────────────────────────────────────
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(28, 25, 23)
-    doc.text('Booking Details', 20, y)
-    y += 6
-
-    const details: [string, string][] = [
-      ['Driver',    state.driverName || state.guestName || '—'],
-      ['Service',   state.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'],
-      ['Load Type', (state.loadType ?? '—').toUpperCase()],
-      ['Date',      state.selectedDate || '—'],
-      ['Time',      slot ? `${slot.startTime} – ${slot.endTime}` : state.selectedSlotLabel || '—'],
-      ...(state.hbl             ? [['HBL',       state.hbl]             as [string, string]] : []),
-      ...(state.containerNumber ? [['Container', state.containerNumber] as [string, string]] : []),
+    // ── Contact details ───────────────────────────────────────────────────────
+    y = section(doc, 'Contact & Driver', y)
+    const contactRows: [string, string][] = [
+      ...(state.guestName           ? [['Guest Name',   state.guestName]           as [string,string]] : []),
+      ...(state.guestEmail          ? [['Guest Email',  state.guestEmail]          as [string,string]] : []),
+      ...(state.guestPhone          ? [['Guest Phone',  state.guestPhone]          as [string,string]] : []),
+      ...(state.companyName         ? [['Company',      state.companyName]         as [string,string]] : []),
+      ...(state.driverName          ? [['Driver Name',  state.driverName]          as [string,string]] : []),
+      ...(state.driverPhone         ? [['Driver Phone', state.driverPhone]         as [string,string]] : []),
+      ...(state.vehicleRegistration ? [['Vehicle Rego', state.vehicleRegistration] as [string,string]] : []),
     ]
+    for (const [label, val] of contactRows) { pdfRow(doc, label, val, 20, pw - 20, y); y += 5.5 }
 
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(9.5)
-    for (const [label, val] of details) {
-      doc.setTextColor(120, 113, 108); doc.text(label, 20, y)
-      doc.setTextColor(28, 25, 23);   doc.text(val,   pw / 2, y)
-      y += 5.5
+    // ── Slot details ──────────────────────────────────────────────────────────
+    for (let si = 0; si < state.slotConfigs.length; si++) {
+      const cfg    = state.slotConfigs[si]
+      const isPickup  = cfg.serviceType === 'pickup'
+      const isDropoff = cfg.serviceType === 'dropoff'
+      const isFCL     = cfg.loadType === 'fcl'
+      const isLCL     = cfg.loadType === 'lcl'
+      const slotTitle = state.slotCount > 1 ? `Slot ${si + 1} Details` : 'Slot Details'
+      y = section(doc, slotTitle, y)
+
+      const slotRows: [string, string][] = [
+        ['Service Type', isPickup ? 'Pick Up' : isDropoff ? 'Drop Off' : '—'],
+        ['Load Type',    (cfg.loadType ?? '—').toUpperCase()],
+        ['Date',         cfg.selectedDate || state.selectedDate || '—'],
+        ['Time Slot',    cfg.selectedSlotLabel || state.selectedSlotLabel || '—'],
+        ...(isPickup  && isLCL && cfg.hbl             ? [['HBL Number',       cfg.hbl]             as [string,string]] : []),
+        ...(isFCL              && cfg.containerNumber  ? [['Container Number', cfg.containerNumber] as [string,string]] : []),
+        ...(isFCL              && cfg.containerSize    ? [['Container Size',   cfg.containerSize]   as [string,string]] : []),
+        ...(isDropoff          && cfg.entryNumber      ? [['Entry Number',     cfg.entryNumber]     as [string,string]] : []),
+        ...(isDropoff          && cfg.purpose          ? [['Purpose',          cfg.purpose]         as [string,string]] : []),
+        ...(isDropoff && isLCL && cfg.bookingReference ? [['Booking Reference',cfg.bookingReference]as [string,string]] : []),
+        ...(isDropoff && isLCL && cfg.consolidator     ? [['Consolidator',     cfg.consolidator]    as [string,string]] : []),
+      ]
+      for (const [label, val] of slotRows) { pdfRow(doc, label, val, 20, pw - 20, y); y += 5.5 }
     }
 
-    // ── Charges ───────────────────────────────────────────────────────────────
+    // ── Payment ───────────────────────────────────────────────────────────────
     if (charges.total > 0) {
-      y += 4
-      doc.setDrawColor(220, 215, 210)
-      doc.line(20, y, pw - 20, y)
-      y += 7
-
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(28, 25, 23)
-      doc.text('Charges', 20, y)
-      y += 6
-
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(9.5)
-
+      y = section(doc, 'Payment', y)
       const chargeRows: [string, string][] = [
-        ...(charges.storageCharge > 0   ? [['Storage',     `$${charges.storageCharge.toFixed(2)}`]   as [string,string]] : []),
-        ...(charges.shrinkWrapCharge > 0 ? [['Shrink wrap', `$${charges.shrinkWrapCharge.toFixed(2)}`] as [string,string]] : []),
-        ...(charges.slotFee > 0         ? [['Slot fee',    `$${charges.slotFee.toFixed(2)}`]         as [string,string]] : []),
-        ['GST (10%)', `$${charges.gst.toFixed(2)}`],
-        ['Total',     `$${charges.total.toFixed(2)} AUD`],
-        ['Payment',   state.paymentMethod?.toUpperCase() || '—'],
+        ...(charges.storageCharge   > 0 ? [['Storage',                    `$${charges.storageCharge.toFixed(2)}`]   as [string,string]] : []),
+        ...(charges.shrinkWrapCharge > 0 ? [['Shrink wrap',                `$${charges.shrinkWrapCharge.toFixed(2)}`] as [string,string]] : []),
+        [`Slot fee × ${state.slotCount}`, `$${charges.subtotal.toFixed(2)}`],
+        ['GST (10%)',    `$${charges.gst.toFixed(2)}`],
+        ['Total Amount', `$${charges.total.toFixed(2)} AUD`],
+        ['Payment',      state.paymentMethod?.toUpperCase() || '—'],
       ]
-
-      for (const [label, val] of chargeRows) {
-        doc.setTextColor(120, 113, 108); doc.text(label, 20, y)
-        doc.setTextColor(28, 25, 23);   doc.text(val, pw - 20, y, { align: 'right' })
-        y += 5.5
-      }
+      for (const [label, val] of chargeRows) { pdfRow(doc, label, val, 20, pw - 20, y); y += 5.5 }
     }
 
     // ── Footer ────────────────────────────────────────────────────────────────
-    doc.setFontSize(8)
-    doc.setFont('helvetica', 'italic')
-    doc.setTextColor(156, 163, 175)
-    doc.text('Present this QR code at the CFS gate for check-in', pw / 2, ph - 14, { align: 'center' })
-    doc.text(`Generated ${new Date().toLocaleDateString('en-AU')}`, pw / 2, ph - 9, { align: 'center' })
+    doc.setFontSize(8); doc.setFont('helvetica', 'italic'); doc.setTextColor(156, 163, 175)
+    doc.text(`${tenantName} · Generated ${new Date().toLocaleDateString('en-AU')}`, pw / 2, ph - 9, { align: 'center' })
 
     doc.save(`booking-${ref}.pdf`)
   }
 
+  console.log('[QR DEBUG] full state:', state)
+
   return (
-    <div style={{ minHeight: 'calc(100vh - 56px)', background: '#F3F2F0', padding: '40px 24px 64px' }}>
+    <div style={{ minHeight: 'calc(100vh - 56px)', background: 'var(--surface-tint)', padding: '40px 24px 64px' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
 
         {/* Success banner */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderRadius: 12, padding: '16px 20px', marginBottom: 32, background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.22)' }}>
           <div style={{ width: 40, height: 40, borderRadius: 9999, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(180deg,#4ADE80 0%,#16A34A 100%)', boxShadow: '0 4px 12px rgba(34,197,94,0.35)' }}>
-            <Icon name={ICONS.check} size={20} style={{ color: '#fff' }} />
+            <Icon name={ICONS.check} size={20} style={{ color: 'var(--brand-text)' }} />
           </div>
           <div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#22C55E' }}>
+            <p style={{ fontSize: 15, fontWeight: 600, color: '#22C55E' }}>
               {multi ? `${rawRefs.length} Bookings Confirmed!` : 'Booking Confirmed!'}
             </p>
             <p
-              style={{ fontSize: 12, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#78716C', marginTop: 2, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+              style={{ fontSize: 14, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: 'var(--text-secondary)', marginTop: 2, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}
               onClick={copyRef}
               title="Click to copy"
             >{multi ? rawRefs.map(r => r.ref).join(' · ') : ref}</p>
@@ -213,10 +234,35 @@ function ConfirmedScreen() {
 
               const downloadSlotQr = () => {
                 if (!url) return
-                const a = document.createElement('a')
-                a.href = url
-                a.download = `booking-${r}.png`
-                a.click()
+                const img = new Image()
+                img.onload = () => {
+                  const qCanvas = document.createElement('canvas')
+                  qCanvas.width = img.width; qCanvas.height = img.height
+                  const qCtx = qCanvas.getContext('2d')!
+                  qCtx.drawImage(img, 0, 0)
+
+                  const out = document.createElement('canvas')
+                  out.width = qCanvas.width; out.height = qCanvas.height + 80
+                  const ctx = out.getContext('2d')!
+                  ctx.fillStyle = '#ffffff'
+                  ctx.fillRect(0, 0, out.width, out.height)
+                  ctx.drawImage(qCanvas, 0, 0)
+
+                  const cx = out.width / 2
+                  const svcLabel = cfg?.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'
+                  const ltLabel  = (cfg?.loadType ?? '').toUpperCase()
+                  ctx.fillStyle = '#1C1917'; ctx.textAlign = 'center'
+                  ctx.font = 'bold 14px system-ui, sans-serif'
+                  ctx.fillText(r, cx, qCanvas.height + 22)
+                  ctx.font = '12px system-ui, sans-serif'; ctx.fillStyle = '#6B7280'
+                  ctx.fillText(`${svcLabel} · ${ltLabel}`, cx, qCanvas.height + 42)
+
+                  const a = document.createElement('a')
+                  a.href = out.toDataURL('image/png')
+                  a.download = `booking-${r}.png`
+                  a.click()
+                }
+                img.src = url
               }
 
               const exportSlotPdf = async () => {
@@ -224,74 +270,90 @@ function ConfirmedScreen() {
                 const pdoc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
                 const pw = pdoc.internal.pageSize.getWidth()
                 const ph = pdoc.internal.pageSize.getHeight()
-                let y = 18
                 const tenantName = tenant?.name || 'Container Freight Station'
+                const n = refs.length
 
+                const pRow = (label: string, val: string, y: number) => {
+                  pdoc.setTextColor(120, 113, 108); pdoc.text(label, 20, y)
+                  pdoc.setTextColor(28, 25, 23);   pdoc.text(val, pw - 20, y, { align: 'right' })
+                }
+                const sec = (title: string, curY: number): number => {
+                  curY += 4; pdoc.setDrawColor(220, 215, 210); pdoc.line(20, curY, pw - 20, curY); curY += 7
+                  pdoc.setFontSize(10); pdoc.setFont('helvetica', 'bold'); pdoc.setTextColor(28, 25, 23)
+                  pdoc.text(title, 20, curY); curY += 6
+                  pdoc.setFont('helvetica', 'normal'); pdoc.setFontSize(9.5)
+                  return curY
+                }
+
+                let y = 18
                 pdoc.setFontSize(9); pdoc.setFont('helvetica', 'normal'); pdoc.setTextColor(120, 113, 108)
                 pdoc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' }); y += 8
 
                 pdoc.setFontSize(14); pdoc.setFont('helvetica', 'bold'); pdoc.setTextColor(28, 25, 23)
-                pdoc.text(`Booking Confirmation — Slot ${i + 1} of ${refs.length}`, pw / 2, y, { align: 'center' }); y += 9
+                pdoc.text(`Booking Confirmation — Slot ${i + 1} of ${n}`, pw / 2, y, { align: 'center' }); y += 9
 
                 pdoc.setFontSize(13); pdoc.setFont('courier', 'bold'); pdoc.setTextColor(100, 92, 80)
                 pdoc.text(r, pw / 2, y, { align: 'center' }); y += 10
 
                 if (url) { const sz = 56; pdoc.addImage(url, 'PNG', (pw - sz) / 2, y, sz, sz); y += sz + 6 }
-
                 pdoc.setFontSize(9); pdoc.setFont('helvetica', 'normal'); pdoc.setTextColor(100, 116, 139)
                 pdoc.text('Present this QR code at the CFS gate for check-in', pw / 2, y, { align: 'center' }); y += 10
 
-                pdoc.setDrawColor(220, 215, 210); pdoc.line(20, y, pw - 20, y); y += 8
-
-                pdoc.setFontSize(10); pdoc.setFont('helvetica', 'bold'); pdoc.setTextColor(28, 25, 23)
-                pdoc.text('Booking Details', 20, y); y += 6
-
-                const details: [string, string][] = [
-                  ['Driver',    state.driverName || state.guestName || '—'],
-                  ['Service',   cfg?.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'],
-                  ['Load Type', (cfg?.loadType ?? '—').toUpperCase()],
-                  ['Date',      state.selectedDate || '—'],
-                  ['Time',      slot ? `${slot.startTime} – ${slot.endTime}` : state.selectedSlotLabel || '—'],
-                  ...(state.hbl             ? [['HBL',       state.hbl]             as [string,string]] : []),
-                  ...(state.containerNumber ? [['Container', state.containerNumber] as [string,string]] : []),
+                // Contact & driver
+                y = sec('Contact & Driver', y)
+                const contactRows: [string,string][] = [
+                  ...(state.guestName           ? [['Guest Name',   state.guestName]           as [string,string]] : []),
+                  ...(state.guestEmail          ? [['Guest Email',  state.guestEmail]          as [string,string]] : []),
+                  ...(state.guestPhone          ? [['Guest Phone',  state.guestPhone]          as [string,string]] : []),
+                  ...(state.driverName          ? [['Driver Name',  state.driverName]          as [string,string]] : []),
+                  ...(state.driverPhone         ? [['Driver Phone', state.driverPhone]         as [string,string]] : []),
+                  ...(state.vehicleRegistration ? [['Vehicle Rego', state.vehicleRegistration] as [string,string]] : []),
                 ]
-                pdoc.setFont('helvetica', 'normal'); pdoc.setFontSize(9.5)
-                for (const [label, val] of details) {
-                  pdoc.setTextColor(120, 113, 108); pdoc.text(label, 20, y)
-                  pdoc.setTextColor(28, 25, 23);   pdoc.text(val, pw / 2, y)
-                  y += 5.5
-                }
+                for (const [label, val] of contactRows) { pRow(label, val, y); y += 5.5 }
 
+                // Slot details
+                const isPickup  = cfg?.serviceType === 'pickup'
+                const isDropoff = cfg?.serviceType === 'dropoff'
+                const isFCL     = cfg?.loadType === 'fcl'
+                const isLCL     = cfg?.loadType === 'lcl'
+                y = sec('Slot Details', y)
+                const slotRows: [string,string][] = [
+                  ['Service Type', isPickup ? 'Pick Up' : isDropoff ? 'Drop Off' : '—'],
+                  ['Load Type',    (cfg?.loadType ?? '—').toUpperCase()],
+                  ['Date',         cfg?.selectedDate || '—'],
+                  ['Time Slot',    cfg?.selectedSlotLabel || '—'],
+                  ...(isPickup  && isLCL && cfg?.hbl             ? [['HBL Number',       cfg.hbl]             as [string,string]] : []),
+                  ...(isFCL              && cfg?.containerNumber  ? [['Container Number', cfg.containerNumber] as [string,string]] : []),
+                  ...(isFCL              && cfg?.containerSize    ? [['Container Size',   cfg.containerSize]   as [string,string]] : []),
+                  ...(isDropoff          && cfg?.entryNumber      ? [['Entry Number',     cfg.entryNumber]     as [string,string]] : []),
+                  ...(isDropoff          && cfg?.purpose          ? [['Purpose',          cfg.purpose]         as [string,string]] : []),
+                  ...(isDropoff && isLCL && cfg?.bookingReference ? [['Booking Reference',cfg.bookingReference]as [string,string]] : []),
+                  ...(isDropoff && isLCL && cfg?.consolidator     ? [['Consolidator',     cfg.consolidator]    as [string,string]] : []),
+                ]
+                for (const [label, val] of slotRows) { pRow(label, val, y); y += 5.5 }
+
+                // Payment (per-slot share)
                 if (charges.total > 0) {
-                  y += 4; pdoc.setDrawColor(220, 215, 210); pdoc.line(20, y, pw - 20, y); y += 7
-                  pdoc.setFontSize(10); pdoc.setFont('helvetica', 'bold'); pdoc.setTextColor(28, 25, 23)
-                  pdoc.text('Charges', 20, y); y += 6
-                  pdoc.setFont('helvetica', 'normal'); pdoc.setFontSize(9.5)
-                  const n = refs.length
-                  const chargeRows: [string, string][] = [
-                    ...(charges.storageCharge   > 0 ? [['Storage',    `$${charges.storageCharge.toFixed(2)}`]   as [string,string]] : []),
-                    ...(charges.shrinkWrapCharge > 0 ? [['Shrink wrap',`$${charges.shrinkWrapCharge.toFixed(2)}`] as [string,string]] : []),
-                    ...(charges.slotFee          > 0 ? [['Slot fee',   `$${(charges.slotFee / n).toFixed(2)}`]  as [string,string]] : []),
-                    ['GST (10%)', `$${(charges.gst   / n).toFixed(2)}`],
-                    ['Total',     `$${(charges.total / n).toFixed(2)} AUD`],
-                    ['Payment',   state.paymentMethod?.toUpperCase() || '—'],
+                  y = sec('Payment', y)
+                  const chargeRows: [string,string][] = [
+                    ...(charges.storageCharge   > 0 ? [['Storage',        `$${(charges.storageCharge   / n).toFixed(2)}`] as [string,string]] : []),
+                    ...(charges.shrinkWrapCharge > 0 ? [['Shrink wrap',    `$${(charges.shrinkWrapCharge / n).toFixed(2)}`] as [string,string]] : []),
+                    ['Slot fee',    `$${(charges.subtotal / n).toFixed(2)}`],
+                    ['GST (10%)',   `$${(charges.gst   / n).toFixed(2)}`],
+                    ['Slot Total',  `$${(charges.total / n).toFixed(2)} AUD`],
+                    ['Payment',     state.paymentMethod?.toUpperCase() || '—'],
                   ]
-                  for (const [label, val] of chargeRows) {
-                    pdoc.setTextColor(120, 113, 108); pdoc.text(label, 20, y)
-                    pdoc.setTextColor(28, 25, 23);   pdoc.text(val, pw - 20, y, { align: 'right' })
-                    y += 5.5
-                  }
+                  for (const [label, val] of chargeRows) { pRow(label, val, y); y += 5.5 }
                 }
 
                 pdoc.setFontSize(8); pdoc.setFont('helvetica', 'italic'); pdoc.setTextColor(156, 163, 175)
-                pdoc.text('Present this QR code at the CFS gate for check-in', pw / 2, ph - 14, { align: 'center' })
-                pdoc.text(`Generated ${new Date().toLocaleDateString('en-AU')}`, pw / 2, ph - 9, { align: 'center' })
+                pdoc.text(`${tenantName} · Generated ${new Date().toLocaleDateString('en-AU')}`, pw / 2, ph - 9, { align: 'center' })
                 pdoc.save(`booking-${r}.pdf`)
               }
 
               return (
                 <div key={r} style={{ flex: '1 1 200px', minWidth: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 16px', background: '#fff', borderRadius: 16, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Slot {i + 1}</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Slot {i + 1}</p>
                   {url ? (
                     <img src={url} alt={`QR for ${r}`} width={160} height={160} style={{ borderRadius: 8 }} />
                   ) : (
@@ -299,7 +361,7 @@ function ConfirmedScreen() {
                       <Icon name={ICONS.qrCode} size={48} style={{ color: 'rgba(0,0,0,0.15)' }} />
                     </div>
                   )}
-                  <p style={{ fontSize: 11, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#1C1917', marginTop: 10 }}>{r}</p>
+                  <p style={{ fontSize: 13, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#1C1917', marginTop: 10 }}>{r}</p>
                   <p style={{ fontSize: 10, color: '#64748B', marginTop: 4 }}>
                     {cfg?.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {(cfg?.loadType ?? '').toUpperCase()}
                   </p>
@@ -309,7 +371,7 @@ function ConfirmedScreen() {
                     <button
                       onClick={downloadSlotQr}
                       disabled={!url}
-                      style={{ flex: 1, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '0 10px', fontSize: 11, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 9, cursor: url ? 'pointer' : 'not-allowed', opacity: url ? 1 : 0.45, whiteSpace: 'nowrap', transition: 'all 0.13s' }}
+                      style={{ flex: 1, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '0 10px', fontSize: 13, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 9, cursor: url ? 'pointer' : 'not-allowed', opacity: url ? 1 : 0.45, whiteSpace: 'nowrap', transition: 'all 0.13s' }}
                       onMouseOver={e => { if (url) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.28)' }}
                       onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.14)' }}
                     >
@@ -318,7 +380,7 @@ function ConfirmedScreen() {
                     </button>
                     <button
                       onClick={exportSlotPdf}
-                      style={{ flex: 1, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '0 10px', fontSize: 11, fontWeight: 600, color: '#fff', background: 'var(--brand-color)', border: 'none', borderRadius: 9, cursor: 'pointer', boxShadow: '0 2px 6px rgba(var(--brand-rgb),0.30)', whiteSpace: 'nowrap', transition: 'all 0.13s' }}
+                      style={{ flex: 1, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '0 10px', fontSize: 13, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 9, cursor: 'pointer', boxShadow: '0 2px 6px rgba(var(--brand-rgb),0.30)', whiteSpace: 'nowrap', transition: 'all 0.13s' }}
                       onMouseOver={e => { e.currentTarget.style.opacity = '0.88' }}
                       onMouseOut={e  => { e.currentTarget.style.opacity = '1' }}
                     >
@@ -345,15 +407,15 @@ function ConfirmedScreen() {
                 <Icon name={ICONS.qrCode} size={64} style={{ color: 'rgba(0,0,0,0.15)' }} />
               </div>
             )}
-            <p style={{ fontSize: 12, fontWeight: 500, color: '#64748B', marginTop: 14 }}>Scan at the kiosk to check in</p>
-            <p style={{ fontSize: 12, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#1C1917', marginTop: 4 }}>{ref}</p>
+            <p style={{ fontSize: 14, fontWeight: 500, color: '#64748B', marginTop: 14 }}>Scan at the kiosk to check in</p>
+            <p style={{ fontSize: 14, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#1C1917', marginTop: 4 }}>{ref}</p>
 
             {/* Download actions */}
             <div style={{ display: 'flex', flexDirection: 'row', gap: 12, width: '100%', marginTop: 18 }}>
               <button
                 onClick={downloadQr}
                 disabled={!qrUrl}
-                style={{ flex: 1, height: 48, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '0 14px', fontSize: 12, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 9, cursor: qrUrl ? 'pointer' : 'not-allowed', opacity: qrUrl ? 1 : 0.45, whiteSpace: 'nowrap', transition: 'all 0.13s' }}
+                style={{ flex: 1, height: 48, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '0 14px', fontSize: 14, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 9, cursor: qrUrl ? 'pointer' : 'not-allowed', opacity: qrUrl ? 1 : 0.45, whiteSpace: 'nowrap', transition: 'all 0.13s' }}
                 onMouseOver={e => { if (qrUrl) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.28)' }}
                 onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.14)' }}
               >
@@ -362,7 +424,7 @@ function ConfirmedScreen() {
               </button>
               <button
                 onClick={exportPdf}
-                style={{ flex: 1, height: 48, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '0 14px', fontSize: 12, fontWeight: 600, color: '#fff', background: 'var(--brand-color)', border: 'none', borderRadius: 9, cursor: 'pointer', boxShadow: '0 2px 6px rgba(var(--brand-rgb),0.30)', whiteSpace: 'nowrap', transition: 'all 0.13s' }}
+                style={{ flex: 1, height: 48, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '0 14px', fontSize: 14, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 9, cursor: 'pointer', boxShadow: '0 2px 6px rgba(var(--brand-rgb),0.30)', whiteSpace: 'nowrap', transition: 'all 0.13s' }}
                 onMouseOver={e => { e.currentTarget.style.opacity = '0.88' }}
                 onMouseOut={e  => { e.currentTarget.style.opacity = '1' }}
               >
@@ -379,14 +441,17 @@ function ConfirmedScreen() {
             {/* Booking details */}
             <div style={{ borderRadius: 12, padding: 16, background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
               <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748B', marginBottom: 12 }}>Booking Details</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, fontSize: 14 }}>
                 {[
-                  { label: 'Driver',   value: state.driverName || state.guestName },
-                  { label: 'Service',  value: state.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off' },
-                  { label: 'Load type', value: (state.loadType ?? '').toUpperCase() },
-                  { label: 'Date',     value: state.selectedDate },
-                  { label: 'Time',     value: slot ? `${slot.startTime} – ${slot.endTime}` : state.selectedSlotLabel },
-                  ...(state.hbl            ? [{ label: 'HBL',       value: state.hbl }]            : []),
+                  { label: 'Driver Name',  value: state.driverName || state.guestName },
+                  ...(state.driverPhone         ? [{ label: 'Driver Phone', value: state.driverPhone }]         : []),
+                  ...(state.vehicleRegistration ? [{ label: 'Vehicle Rego', value: state.vehicleRegistration }] : []),
+                  ...(state.companyName         ? [{ label: 'Company',      value: state.companyName }]         : []),
+                  { label: 'Service Type', value: state.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off' },
+                  { label: 'Load Type',    value: (state.loadType ?? '').toUpperCase() },
+                  { label: 'Date',         value: state.selectedDate },
+                  { label: 'Time',         value: slot ? `${slot.startTime} – ${slot.endTime}` : state.selectedSlotLabel },
+                  ...(state.hbl             ? [{ label: 'HBL',       value: state.hbl }]             : []),
                   ...(state.containerNumber ? [{ label: 'Container', value: state.containerNumber }] : []),
                 ].map(row => (
                   <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -401,7 +466,7 @@ function ConfirmedScreen() {
             {charges.total > 0 && (
               <div style={{ borderRadius: 12, padding: 16, background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
                 <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748B', marginBottom: 12 }}>Charges</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 14 }}>
                   {charges.storageCharge > 0    && <ChargeRow label="Storage"      val={charges.storageCharge} />}
                   {charges.shrinkWrapCharge > 0  && <ChargeRow label="Shrink wrap"  val={charges.shrinkWrapCharge} />}
                   {charges.slotFee > 0           && <ChargeRow label="Slot fee"     val={charges.slotFee} />}
@@ -411,7 +476,7 @@ function ConfirmedScreen() {
                     </div>
                   )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#1C1917', paddingTop: 6, borderTop: '1px solid rgba(0,0,0,0.09)' }}>
-                    <span>Total</span>
+                    <span>Total Amount</span>
                     <span style={{ color: 'var(--brand-color)' }}>${charges.total.toFixed(2)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748B' }}>
@@ -425,8 +490,8 @@ function ConfirmedScreen() {
             {/* EFT details */}
             {isEft && (
               <div style={{ borderRadius: 12, padding: 16, background: 'rgba(var(--brand-rgb),0.06)', border: '1px solid rgba(var(--brand-rgb),0.20)' }}>
-                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--brand-color)', marginBottom: 10 }}>Transfer details</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'rgba(var(--brand-rgb),0.65)' }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--brand-color)', marginBottom: 10 }}>Transfer details</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 14, color: 'rgba(var(--brand-rgb),0.65)' }}>
                   {Object.entries({ Bank: tenant?.eftBankName || '—', BSB: tenant?.eftBsb || '—', 'Account No.': tenant?.eftAccountNumber || '—', 'Account Name': tenant?.eftAccountName || '—', Reference: ref }).map(([k, v]) => (
                     <div key={k} style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>{k}</span>
@@ -443,12 +508,12 @@ function ConfirmedScreen() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 32, justifyContent: 'center' }}>
           <button
             onClick={() => { dispatch({ type: 'RESET' }); window.location.href = '/book' }}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', fontSize: 13, fontWeight: 600, color: '#fff', background: 'var(--brand-color)', border: 'none', borderRadius: 9999, cursor: 'pointer', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 22px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 9999, cursor: 'pointer', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)' }}
           >
             <Icon name={ICONS.add} size={14} />
             Book Another Visit
           </button>
-          <Link to="/bookings" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 20px', fontSize: 13, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 9999, textDecoration: 'none', transition: 'all 0.15s' }}>
+          <Link to="/bookings" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 20px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 9999, textDecoration: 'none', transition: 'all 0.15s' }}>
             <Icon name={ICONS.search} size={14} />
             View My Bookings
           </Link>
@@ -461,7 +526,7 @@ function ConfirmedScreen() {
 
 function ChargeRow({ label, val }: { label: string; val: number }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#78716C' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
       <span>{label}</span><span>${val.toFixed(2)}</span>
     </div>
   )

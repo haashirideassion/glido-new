@@ -107,7 +107,10 @@ export function Step7Confirmation() {
           driverName: state.driverName || state.guestName,
           driverPhone: state.driverPhone || state.guestPhone || undefined,
           guestName: state.guestName || undefined,
+          // Only save guestEmail for unauthenticated bookings
+          ...(!user && state.guestEmail ? { guestEmail: state.guestEmail } : {}),
           guestPhone: state.guestPhone || undefined,
+          companyName: state.companyName.trim() || undefined,
           houseBillNumber: hbl || undefined,
           containerNumber: containerNumber || undefined,
           weightKg: sd?.weightKg, volumeCbm: sd?.volumeCbm,
@@ -125,6 +128,11 @@ export function Step7Confirmation() {
           icsStatus: (sd?.icsStatus as any) || undefined,
           tenantId: DEFAULT_TENANT_ID,
           userId: user?.id ?? undefined,
+          booking_source: !user
+            ? 'guest'
+            : (user.role === 'reception_staff' || user.role === 'reception_admin' || user.role === 'super_admin')
+              ? 'reception_booking'
+              : 'self_booking',
           container_size:       containerSize       || undefined,
           entry_number:         entryNumber         || undefined,
           purpose:              purpose             || undefined,
@@ -204,6 +212,7 @@ export function Step7Confirmation() {
       console.log('[Submit Debug] final refs:', uniqueRefs)
       dispatch({ type: 'SET', field: 'confirmationRef',  value: uniqueRefs[0]?.ref ?? null })
       dispatch({ type: 'SET', field: 'confirmationRefs', value: uniqueRefs })
+      dispatch({ type: 'SET', field: 'bookingConfirmed', value: true })
       dispatch({ type: 'SET', field: 'submitting', value: false })
       dispatch({ type: 'SET', field: 'step', value: 8 })
     } catch (err: any) {
@@ -223,7 +232,7 @@ export function Step7Confirmation() {
           <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0 }}>
             {state.paymentMethod === 'eft' ? 'Review & Confirm' : 'Review & Pay'}
           </h2>
-          <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>
+          <p style={{ fontSize: 15, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>
             {state.paymentMethod === 'eft'
               ? 'Confirm your booking details. You will receive bank transfer instructions by email.'
               : 'Confirm your booking details and complete payment to secure your slot.'}
@@ -232,87 +241,13 @@ export function Step7Confirmation() {
       </div>
 
 
-      {/* Booking summary */}
-      <div style={{ background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: 20, marginBottom: 20, fontSize: 13 }}>
-        <p style={{ fontSize: 10, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>Booking Summary</p>
-        {/* Shared fields */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: state.slotCount > 1 ? 16 : 0 }}>
-          {[
-            ['Guest Name', state.guestName || '—'],
-            ['Driver', state.driverName || '—'],
-            ...(state.slotCount === 1 ? [
-              ['Service', state.serviceType === 'pickup' ? 'Pick Up' : state.serviceType === 'dropoff' ? 'Drop Off' : '—'],
-              ['Load Type', (state.loadType || '—').toUpperCase()],
-              ['Slot', state.selectedSlotLabel || '—'],
-              ...(state.hbl ? [['HBL', state.hbl]] : []),
-              ...(state.containerNumber ? [['Container', state.containerNumber]] : []),
-            ] : []),
-          ].map(([label, val]) => (
-            <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#78716C' }}>{label}</span>
-              <span style={{ fontWeight: 600, color: '#1C1917', fontFamily: label === 'HBL' || label === 'Container' ? 'ui-monospace,monospace' : undefined, fontSize: label === 'HBL' || label === 'Container' ? 12 : 13 }}>{val}</span>
-            </div>
-          ))}
-        </div>
-        {/* Per-slot breakdown for multi-slot */}
-        {state.slotCount > 1 && state.slotConfigs.map((cfg, i) => {
-          // Per-slot charge calculation
-          const tp = state.tenantPricing
-          const perSlotFee = cfg.serviceType === 'pickup'
-            ? (tp?.slot_fee_pickup  ?? 5.00)
-            : (tp?.slot_fee_dropoff ?? 5.00)
-          const perSlotStorage    = charges.storageCharge    / state.slotCount
-          const perSlotShrinkWrap = charges.shrinkWrapCharge / state.slotCount
-          const perSlotSubtotal   = perSlotFee + perSlotStorage + perSlotShrinkWrap
-
-          return (
-            <div key={cfg.index} style={{ borderTop: '1px solid rgba(0,0,0,0.07)', paddingTop: 12, marginTop: i === 0 ? 4 : 12 }}>
-              <p style={{ fontSize: 10, fontWeight: 700, color: '#78716C', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8 }}>Slot {cfg.index}</p>
-              {[
-                ['Service',   cfg.serviceType === 'pickup' ? 'Pick Up' : cfg.serviceType === 'dropoff' ? 'Drop Off' : '—'],
-                ['Load',      (cfg.loadType || '—').toUpperCase()],
-                ['Date',      cfg.selectedDate || '—'],
-                ['Time',      cfg.selectedSlotLabel || '—'],
-                ...(cfg.containerNumber ? [['Container', cfg.containerNumber]] : []),
-                ...(cfg.hbl            ? [['HBL',       cfg.hbl]]             : []),
-              ].map(([label, val]) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <span style={{ color: '#A8A29E', fontSize: 12 }}>{label}</span>
-                  <span style={{ fontWeight: 600, color: '#1C1917', fontSize: 12, fontFamily: label === 'HBL' || label === 'Container' ? 'ui-monospace,monospace' : undefined }}>{val}</span>
-                </div>
-              ))}
-              {/* Per-slot charges */}
-              <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', marginTop: 8, paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#A8A29E' }}>
-                  <span>Slot fee</span>
-                  <span style={{ fontWeight: 500, color: '#78716C' }}>${perSlotFee.toFixed(2)}</span>
-                </div>
-                {perSlotStorage > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#A8A29E' }}>
-                    <span>Storage</span>
-                    <span style={{ fontWeight: 500, color: '#78716C' }}>${perSlotStorage.toFixed(2)}</span>
-                  </div>
-                )}
-                {perSlotShrinkWrap > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#A8A29E' }}>
-                    <span>Shrink wrap</span>
-                    <span style={{ fontWeight: 500, color: '#78716C' }}>${perSlotShrinkWrap.toFixed(2)}</span>
-                  </div>
-                )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 600, color: '#1C1917', marginTop: 2 }}>
-                  <span>Slot subtotal</span>
-                  <span>${perSlotSubtotal.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+      {/* Booking summary — accordion */}
+      <BookingSummaryAccordion state={state} charges={charges} user={user} />
 
       {/* ICS status */}
       {sd && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, marginBottom: 20 }}>
-          <span style={{ color: '#78716C', fontWeight: 500 }}>ICS Status:</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 15, marginBottom: 20 }}>
+          <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>ICS Status:</span>
           {(() => {
             const m: Record<string, [string, string, string]> = {
               cleared: ['rgba(34,197,94,0.12)', '#22C55E', 'rgba(34,197,94,0.22)'],
@@ -321,7 +256,7 @@ export function Step7Confirmation() {
             }
             const [bg, color, border] = m[sd.icsStatus ?? ''] ?? ['rgba(0,0,0,0.04)', '#78716C', 'rgba(0,0,0,0.10)']
             const label = { cleared: 'Cleared', held: 'Held', examination: 'On Hold', pending: 'Pending' }[sd.icsStatus ?? ''] ?? 'Unknown'
-            return <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 9999, background: bg, color, border: `1px solid ${border}` }}>{label}</span>
+            return <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '3px 10px', borderRadius: 9999, background: bg, color, border: `1px solid ${border}` }}>{label}</span>
           })()}
         </div>
       )}
@@ -330,36 +265,12 @@ export function Step7Confirmation() {
       {showChep && (
         <div style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.25)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           <Icon name={ICONS.warning} size={16} style={{ color: '#D97706', flexShrink: 0, marginTop: 1 }} />
-          <p style={{ fontSize: 12, color: '#92400E', fontWeight: 500, lineHeight: 1.5 }}>Reminder: CHEP pallet exchange required at collection. Bring your CHEP pallets.</p>
+          <p style={{ fontSize: 14, color: '#92400E', fontWeight: 500, lineHeight: 1.5 }}>Reminder: CHEP pallet exchange required at collection. Bring your CHEP pallets.</p>
         </div>
       )}
 
-      {/* Charges — single-slot: full breakdown; multi-slot: grand total summary only */}
-      <div style={{ background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: 20, marginBottom: 20 }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', marginBottom: 14 }}>
-          {state.slotCount > 1 ? 'Total Summary' : 'Charges'}
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
-          {state.slotCount === 1 && (
-            <>
-              {charges.storageCharge > 0 && <CR label="Storage charge" val={`$${charges.storageCharge.toFixed(2)}`} />}
-              {charges.shrinkWrapCharge > 0 && <CR label="Shrink wrap" val={`$${charges.shrinkWrapCharge.toFixed(2)}`} />}
-              <CR label="Slot fee" val={`$${charges.slotFee.toFixed(2)}`} />
-              <div style={{ height: 1, background: 'rgba(0,0,0,0.07)', margin: '2px 0' }} />
-            </>
-          )}
-          <CR label={state.slotCount > 1 ? 'Subtotal (all slots)' : 'Subtotal'} val={`$${charges.subtotal.toFixed(2)}`} bold />
-          <CR label="GST (10%)" val={`$${charges.gst.toFixed(2)}`} small />
-          <div style={{ height: 1, background: 'rgba(0,0,0,0.07)', margin: '2px 0' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#1C1917', fontSize: 15 }}>
-            <span>Total Due</span>
-            <span style={{ color: 'var(--brand-color)' }}>${totalWithGst} AUD</span>
-          </div>
-        </div>
-      </div>
-
       {/* Payment method */}
-      <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', marginBottom: 12 }}>Payment Method</p>
+      <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', marginBottom: 12 }}>Payment Method</p>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
         {[
           { val: 'card',   icon: ICONS.shield,   title: 'Credit / Debit Card',   sub: 'Visa, Mastercard, Amex'            },
@@ -371,8 +282,8 @@ export function Step7Confirmation() {
             <button key={opt.val} type="button" onClick={() => dispatch({ type: 'SET', field: 'paymentMethod', value: opt.val })}
               style={{ textAlign: 'left', cursor: 'pointer', borderRadius: 16, padding: 16, transition: 'all 0.15s ease', background: sel ? 'rgba(var(--brand-rgb),0.03)' : '#fff', border: `1.5px solid ${sel ? 'var(--brand-color)' : 'rgba(0,0,0,0.08)'}` }}>
               <Icon name={opt.icon} size={20} style={{ color: 'var(--brand-color)', marginBottom: 8, display: 'block' }} />
-              <div style={{ fontWeight: 600, fontSize: 13, color: '#1C1917' }}>{opt.title}</div>
-              <div style={{ fontSize: 12, color: '#78716C', marginTop: 2 }}>{opt.sub}</div>
+              <div style={{ fontWeight: 600, fontSize: 15, color: '#1C1917' }}>{opt.title}</div>
+              <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 2 }}>{opt.sub}</div>
             </button>
           )
         })}
@@ -385,23 +296,23 @@ export function Step7Confirmation() {
 
       {/* EFT panel */}
       {state.paymentMethod === 'eft' && (
-        <div style={{ background: 'rgba(var(--brand-rgb),0.06)', border: '1px solid rgba(var(--brand-rgb),0.20)', borderRadius: 10, padding: 16, marginBottom: 20 }}>
-          <p style={{ fontWeight: 600, color: 'var(--brand-color)', fontSize: 13, marginBottom: 14 }}>Bank Transfer Details</p>
+        <div style={{ background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+          <p style={{ fontWeight: 600, color: '#1C1917', fontSize: 15, marginBottom: 14 }}>Bank Transfer Details</p>
           {[
             ['Bank',         tenant?.eftBankName      || '—'],
             ['Account Name', tenant?.eftAccountName   || '—'],
             ['BSB',          tenant?.eftBsb           || '—'],
             ['Account No.',  tenant?.eftAccountNumber || '—'],
           ].map(([k, v], i, arr) => (
-            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(var(--brand-rgb),0.15)' : 'none' }}>
-              <span style={{ color: 'rgba(var(--brand-rgb),0.60)', fontSize: 12 }}>{k}</span>
-              <span style={{ fontFamily: 'ui-monospace,monospace', fontWeight: 600, color: 'var(--brand-color)', fontSize: 12 }}>{v}</span>
+            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(0,0,0,0.07)' : 'none' }}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: 14 }}>{k}</span>
+              <span style={{ fontFamily: 'ui-monospace,monospace', fontWeight: 600, color: '#1C1917', fontSize: 14 }}>{v}</span>
             </div>
           ))}
           <div style={{ marginTop: 14, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <input type="checkbox" id="eft-confirm" checked={state.eftConfirmed} onChange={e => dispatch({ type: 'SET', field: 'eftConfirmed', value: e.target.checked })} style={{ marginTop: 3, accentColor: 'var(--brand-color)' }} />
-            <label htmlFor="eft-confirm" style={{ fontSize: 12, color: 'rgba(var(--brand-rgb),0.70)', cursor: 'pointer', lineHeight: 1.5 }}>
-              I confirm I will transfer <strong style={{ color: 'var(--brand-color)' }}>${totalWithGst} AUD</strong> to the above account using my booking reference as the payment reference.
+            <label htmlFor="eft-confirm" style={{ fontSize: 14, color: 'var(--text-secondary)', cursor: 'pointer', lineHeight: 1.5 }}>
+              I confirm I will transfer <strong style={{ color: '#1C1917' }}>${totalWithGst} AUD</strong> to the above account using my booking reference as the payment reference.
             </label>
           </div>
         </div>
@@ -416,9 +327,9 @@ export function Step7Confirmation() {
           ? `https://compay.1-stop.biz/AdhocCCWebPages/Payment.aspx?CN=${encodeURIComponent(clientNum)}&PayType=STORAGE&REF1=${encodeURIComponent(ref)}&AMT=${encodeURIComponent(amt)}`
           : null
         return (
-          <div style={{ background: 'rgba(var(--brand-rgb),0.06)', border: '1px solid rgba(var(--brand-rgb),0.20)', borderRadius: 10, padding: 16, marginBottom: 20 }}>
-            <p style={{ fontWeight: 600, color: 'var(--brand-color)', fontSize: 13, marginBottom: 8 }}>ComPay — Port Community Payments</p>
-            <p style={{ fontSize: 12, color: '#78716C', marginBottom: 14, lineHeight: 1.5 }}>
+          <div style={{ background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+            <p style={{ fontWeight: 600, color: '#1C1917', fontSize: 15, marginBottom: 8 }}>ComPay — Port Community Payments</p>
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 14, lineHeight: 1.5 }}>
               Pay your freight and storage charges through the ComPay port community payment system.
             </p>
             {compayUrl ? (
@@ -426,7 +337,7 @@ export function Step7Confirmation() {
                 href={compayUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: 'var(--brand-color)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: 'var(--brand-color)', color: 'var(--brand-text)', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }}
               >
                 <Icon name={ICONS.bookings} size={16} />
                 Pay via ComPay →
@@ -435,18 +346,18 @@ export function Step7Confirmation() {
               <button
                 type="button"
                 onClick={() => toast('ComPay online payments — coming soon. Please pay at reception.', 'info')}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: 'var(--brand-color)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: 'var(--brand-color)', color: 'var(--brand-text)', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 <Icon name={ICONS.bookings} size={16} />
                 Pay via ComPay →
               </button>
             )}
             {ref && (
-              <p style={{ fontSize: 12, color: '#78716C', marginTop: 10, lineHeight: 1.5 }}>
+              <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 10, lineHeight: 1.5 }}>
                 Reference your booking number: <strong style={{ fontFamily: 'ui-monospace,monospace', color: '#1C1917' }}>{ref}</strong> when paying.
               </p>
             )}
-            <p style={{ fontSize: 11, color: '#A8A29E', marginTop: 12, lineHeight: 1.5 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 12, lineHeight: 1.5 }}>
               ComPay is used by freight forwarders and transport companies at Australian ports. Settlement next business day.
             </p>
           </div>
@@ -456,7 +367,7 @@ export function Step7Confirmation() {
       {/* Terms */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 20 }}>
         <input type="checkbox" id="terms" checked={state.termsAccepted} onChange={e => dispatch({ type: 'SET', field: 'termsAccepted', value: e.target.checked })} style={{ marginTop: 3, accentColor: 'var(--brand-color)' }} />
-        <label htmlFor="terms" style={{ fontSize: 13, color: '#78716C', cursor: 'pointer', lineHeight: 1.5 }}>
+        <label htmlFor="terms" style={{ fontSize: 15, color: 'var(--text-secondary)', cursor: 'pointer', lineHeight: 1.5 }}>
           I agree to the <a href="#" style={{ color: 'var(--brand-color)', textDecoration: 'underline', textUnderlineOffset: 2 }}>booking terms</a>{' '}
           and <a href="#" style={{ color: 'var(--brand-color)', textDecoration: 'underline', textUnderlineOffset: 2 }}>cancellation policy</a>.
         </label>
@@ -464,7 +375,7 @@ export function Step7Confirmation() {
 
       {/* Error */}
       {state.submitError && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 13, color: '#DC2626', fontWeight: 500 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 15, color: '#DC2626', fontWeight: 500 }}>
           {state.submitError}
         </div>
       )}
@@ -475,7 +386,7 @@ export function Step7Confirmation() {
         className="btn-primary"
         onClick={submit}
         disabled={!canSubmit}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 600, padding: '14px 24px', border: 'none', cursor: canSubmit ? 'pointer' : 'not-allowed', opacity: canSubmit ? 1 : 0.50, borderRadius: 12, pointerEvents: canSubmit ? 'auto' : 'none' }}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 15, fontWeight: 600, padding: '14px 24px', border: 'none', cursor: canSubmit ? 'pointer' : 'not-allowed', opacity: canSubmit ? 1 : 0.50, borderRadius: 12, pointerEvents: canSubmit ? 'auto' : 'none' }}
       >
         {state.submitting
           ? <><Spinner /> Submitting…</>
@@ -490,6 +401,144 @@ function CR({ label, val, bold, small }: { label: string; val: string; bold?: bo
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', color: bold ? '#1C1917' : '#78716C', fontWeight: bold ? 600 : 400, fontSize: small ? 12 : 13 }}>
       <span>{label}</span><span>{val}</span>
+    </div>
+  )
+}
+
+// ─── Booking Summary Accordion ───────────────────────────────────────────────
+function SummaryRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  if (!value || value === '—') return null
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <span style={{ fontSize: 10, fontWeight: 600, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+      <span style={{ fontSize: 14, fontWeight: 600, color: '#1C1917', fontFamily: mono ? 'ui-monospace,monospace' : undefined }}>{value}</span>
+    </div>
+  )
+}
+
+function BookingSummaryAccordion({ state, charges, user }: { state: ReturnType<typeof useWizard>['state']; charges: ReturnType<typeof calcCharges>; user: ReturnType<typeof useAuth>['user'] }) {
+  const [openSlot, setOpenSlot] = useState(0)
+
+  const tp = state.tenantPricing
+  const multi = state.slotCount > 1
+
+  return (
+    <div style={{ border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, overflow: 'hidden', marginBottom: 20, background: '#fff' }}>
+      {/* Header label */}
+      <div style={{ padding: '14px 20px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+        <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Booking Summary</p>
+      </div>
+
+      {/* Guest / driver — always visible */}
+      <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {[
+          [user ? 'Name' : 'Guest Name', state.guestName],
+          ['Email',         state.guestEmail],
+          ['Guest Phone',   state.guestPhone],
+          ['Company',       state.companyName],
+          ['Driver Name',   state.driverName],
+          ['Driver Phone',  state.driverPhone],
+          ['Vehicle Rego',  state.vehicleRegistration],
+        ].filter(([, val]) => !!val).map(([label, val]) => (
+          <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15 }}>
+            <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
+            <span style={{ fontWeight: 600, color: '#1C1917' }}>{val}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Slot accordion rows */}
+      {state.slotConfigs.map((cfg, i) => {
+        const isOpen    = openSlot === i
+        const isPickup  = cfg.serviceType === 'pickup'
+        const isDropoff = cfg.serviceType === 'dropoff'
+        const isFCL     = cfg.loadType === 'fcl'
+        const isLCL     = cfg.loadType === 'lcl'
+        const perSlotFee = cfg.serviceType === 'pickup'
+          ? (tp?.slot_fee_pickup  ?? 5.00)
+          : (tp?.slot_fee_dropoff ?? 5.00)
+        const perSlotStorage    = charges.storageCharge    / state.slotCount
+        const perSlotShrinkWrap = charges.shrinkWrapCharge / state.slotCount
+
+        return (
+          <div key={cfg.index}>
+            {/* Collapsed header row */}
+            <div
+              onClick={() => setOpenSlot(isOpen ? -1 : i)}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid rgba(0,0,0,0.06)', background: isOpen ? '#FAFAFA' : '#fff', transition: 'background 0.15s' }}
+            >
+              <Icon name={isOpen ? ICONS.arrowDown : ICONS.arrowRight} size={13} style={{ color: '#1C1917', flexShrink: 0 }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#9CA3AF', whiteSpace: 'nowrap', flexShrink: 0 }}>SLOT {i + 1}</span>
+              <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--brand-color)' }}>
+                {cfg.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {(cfg.loadType ?? '').toUpperCase()}
+              </span>
+              <div style={{ flex: 1 }} />
+              <span style={{ fontSize: 14, color: 'var(--text-mid)', whiteSpace: 'nowrap' }}>{cfg.selectedDate} · {cfg.selectedSlotLabel}</span>
+            </div>
+
+            {/* Expanded panel */}
+            {isOpen && (
+              <div style={{ padding: '16px 20px 18px', background: '#FAFAFA', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 32px' }}>
+                  <SummaryRow label="Service Type" value={isPickup ? 'Pick Up' : isDropoff ? 'Drop Off' : '—'} />
+                  <SummaryRow label="Load Type"    value={(cfg.loadType || '—').toUpperCase()} />
+                  <SummaryRow label="Date"         value={cfg.selectedDate || '—'} />
+                  <SummaryRow label="Time Slot"    value={cfg.selectedSlotLabel || '—'} />
+                  {isPickup  && isLCL && <SummaryRow label="HBL Number"       value={cfg.hbl            || '—'} mono />}
+                  {isFCL              && <SummaryRow label="Container Number"  value={cfg.containerNumber || '—'} mono />}
+                  {isFCL              && <SummaryRow label="Container Size"    value={cfg.containerSize  || '—'} />}
+                  {isDropoff          && <SummaryRow label="Entry Number"      value={cfg.entryNumber    || '—'} mono />}
+                  {isDropoff          && <SummaryRow label="Purpose"           value={cfg.purpose        || '—'} />}
+                  {isDropoff && isLCL && <SummaryRow label="Booking Reference" value={cfg.bookingReference || '—'} />}
+                  {isDropoff && isLCL && <SummaryRow label="Consolidator"      value={cfg.consolidator   || '—'} />}
+                </div>
+                {/* Per-slot fee */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.06)', fontSize: 15, color: 'var(--text-mid)' }}>
+                  <span>Slot fee</span>
+                  <span style={{ fontWeight: 600, color: '#1C1917' }}>${perSlotFee.toFixed(2)}</span>
+                </div>
+                {perSlotStorage > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#9CA3AF', marginTop: 4 }}>
+                    <span>Storage</span><span>${perSlotStorage.toFixed(2)}</span>
+                  </div>
+                )}
+                {perSlotShrinkWrap > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#9CA3AF', marginTop: 4 }}>
+                    <span>Shrink wrap</span><span>${perSlotShrinkWrap.toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })}
+
+      {/* Totals — always visible at bottom */}
+      <div style={{ padding: '16px 20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, color: 'var(--text-mid)', marginBottom: 6 }}>
+          <span>Slot fee × {state.slotCount}</span>
+          <span>${charges.subtotal.toFixed(2)}</span>
+        </div>
+        {charges.storageCharge > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, color: 'var(--text-mid)', marginBottom: 6 }}>
+            <span>Storage</span><span>${charges.storageCharge.toFixed(2)}</span>
+          </div>
+        )}
+        {charges.shrinkWrapCharge > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, color: 'var(--text-mid)', marginBottom: 6 }}>
+            <span>Shrink wrap</span><span>${charges.shrinkWrapCharge.toFixed(2)}</span>
+          </div>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, color: 'var(--text-mid)', marginBottom: 10 }}>
+          <span>GST (10%)</span>
+          <span>${charges.gst.toFixed(2)}</span>
+        </div>
+        <div style={{ height: 1, background: 'rgba(0,0,0,0.07)', marginBottom: 10 }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 800, color: '#1C1917' }}>
+          <span>Total Amount</span>
+          <span style={{ color: 'var(--brand-color)' }}>${charges.total.toFixed(2)} AUD</span>
+        </div>
+      </div>
     </div>
   )
 }
@@ -511,7 +560,7 @@ function detectCard(digits: string): 'visa' | 'mastercard' | 'amex' | null {
 }
 
 const CARD_LOGOS: Record<string, React.ReactNode> = {
-  visa:       <span style={{ fontSize: 11, fontWeight: 800, color: '#1a1f71', letterSpacing: '-0.02em', fontStyle: 'italic' }}>VISA</span>,
+  visa:       <span style={{ fontSize: 13, fontWeight: 800, color: '#1a1f71', letterSpacing: '-0.02em', fontStyle: 'italic' }}>VISA</span>,
   mastercard: <span style={{ fontSize: 10, fontWeight: 700, color: '#eb001b' }}>MC</span>,
   amex:       <span style={{ fontSize: 10, fontWeight: 700, color: '#007bc1' }}>AMEX</span>,
 }
@@ -599,18 +648,18 @@ function CardPaymentPanel() {
   }
 
   // ── Shared label style (matching existing wizard style) ──────────────────────
-  const LBL: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 600, color: '#78716C', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 6 }
-  const ERR: React.CSSProperties = { fontSize: 11, color: '#EF4444', marginTop: 4 }
+  const LBL: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 6 }
+  const ERR: React.CSSProperties = { fontSize: 13, color: '#EF4444', marginTop: 4 }
   const fieldStyle = (hasErr: boolean): React.CSSProperties => ({
     borderColor: hasErr ? '#EF4444' : undefined,
     boxShadow:   hasErr ? '0 0 0 2px rgba(239,68,68,0.15)' : undefined,
   })
 
   return (
-    <div style={{ background: '#fff', border: '1.5px solid #8B8B8B', borderRadius: 14, padding: 20, marginBottom: 20 }}>
+    <div style={{ background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: 20, marginBottom: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <Icon name={ICONS.shield} size={15} style={{ color: '#22C55E' }} />
-        <p style={{ fontSize: 12, color: '#78716C', fontWeight: 500 }}>Secure card payment powered by Stripe</p>
+        <p style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>Secure card payment powered by Stripe</p>
       </div>
 
       {/* Cardholder name */}

@@ -6,18 +6,18 @@ import { supabase } from '@/lib/supabase'
 import { toast } from '@/lib/toast'
 
 const FIELD: React.CSSProperties = {
-  width: '100%', padding: '11px 14px', fontSize: 14, color: '#1C1917',
+  width: '100%', padding: '11px 14px', fontSize: 15, color: '#1C1917',
   background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10,
   outline: 'none', boxSizing: 'border-box',
   transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
 }
 const LABEL: React.CSSProperties = {
-  display: 'block', fontSize: 10, fontWeight: 700, color: '#78716C',
+  display: 'block', fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)',
   letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 8,
 }
 const focus = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.target.style.borderColor = 'rgba(252,101,20,0.50)'
-  e.target.style.boxShadow   = '0 0 0 3px rgba(252,101,20,0.12)'
+  e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)'
+  e.target.style.boxShadow   = '0 0 0 3px rgba(var(--brand-rgb),0.12)'
 }
 const blur = (e: React.FocusEvent<HTMLInputElement>) => {
   e.target.style.borderColor = 'rgba(0,0,0,0.10)'
@@ -100,7 +100,7 @@ export default function StaffLoginPage() {
   }
 
   return (
-    <div style={{ minHeight: 'calc(100vh - 56px - 64px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', background: 'linear-gradient(to right,rgba(250,115,21,0.10),rgba(255,255,255,0.05),rgba(254,230,212,0.005),rgba(250,115,21,0.03)),#fff', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ minHeight: 'calc(100vh - 56px - 64px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', background: 'linear-gradient(120deg, rgba(var(--brand-rgb),0.06) 0%, rgba(var(--brand-rgb),0.02) 35%, rgba(255,255,255,0) 70%), #fff', position: 'relative', overflow: 'hidden' }}>
 
       {/* Grid patterns */}
       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 380, pointerEvents: 'none', zIndex: 0, WebkitMaskImage: 'linear-gradient(to right,rgba(0,0,0,0.30) 0%,rgba(0,0,0,0.10) 100%)', maskImage: 'linear-gradient(to right,rgba(0,0,0,0.30) 0%,rgba(0,0,0,0.10) 100%)' }}>
@@ -117,13 +117,13 @@ export default function StaffLoginPage() {
 
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: 36 }}>
-            <div style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg,#FF7A2A 0%,#E85A0A 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 4px 14px rgba(252,101,20,0.38)' }}>
-              <Icon name={ICONS.users} size={24} style={{ color: '#fff' }} />
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 4px 14px rgba(var(--brand-rgb),0.38)' }}>
+              <Icon name={ICONS.users} size={24} style={{ color: 'var(--brand-text)' }} />
             </div>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', marginBottom: 6 }}>
               Reception Staff Login
             </h1>
-            <p style={{ fontSize: 13, color: '#78716C', lineHeight: 1.6 }}>
+            <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
               Enter your credentials to access the reception dashboard. Contact your admin if you don't have access.
             </p>
           </div>
@@ -147,28 +147,28 @@ export default function StaffLoginPage() {
                   style={{ ...FIELD, paddingRight: 44 }} onFocus={focus} onBlur={blur}
                 />
                 <button type="button" onClick={() => setShowPassword(p => !p)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#9CA3AF', display: 'flex', alignItems: 'center' }}>
-                  <Icon name={showPassword ? ICONS.eyeOff : ICONS.eye} size={18} />
+                  <Icon name={showPassword ? ICONS.eye : ICONS.eyeOff} size={18} />
                 </button>
               </div>
             </div>
             <button
               type="submit"
               disabled={isSubmitting}
-              style={{ width: '100%', padding: '13px 20px', fontSize: 14, fontWeight: 600, color: '#fff', background: 'linear-gradient(135deg,#FF7A2A,#E85A0A)', border: 'none', borderRadius: 9999, cursor: isSubmitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 2px 8px rgba(252,101,20,0.35)', opacity: isSubmitting ? 0.7 : 1, transition: 'opacity 0.15s' }}
+              style={{ width: '100%', padding: '13px 20px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 9999, cursor: isSubmitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)', opacity: isSubmitting ? 0.7 : 1, transition: 'opacity 0.15s' }}
             >
               {isSubmitting ? 'Signing in…' : 'Sign in to Reception →'}
             </button>
           </form>
 
-          <p style={{ textAlign: 'center', fontSize: 12, color: '#A8A29E', marginTop: 16 }}>
-            <span style={{ color: '#FC6514', fontWeight: 500, cursor: 'pointer' }}>Forgot your password?</span>
+          <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--text-tertiary)', marginTop: 16 }}>
+            <span style={{ color: 'var(--brand-color)', fontWeight: 500, cursor: 'pointer' }}>Forgot your password?</span>
           </p>
         </div>
 
         {/* Visitor link */}
-        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: '#A8A29E' }}>
+        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: 'var(--text-tertiary)' }}>
           Visitor? Book your slot at the{' '}
-          <Link to="/visitor-login" style={{ color: '#78716C', textDecoration: 'none', fontWeight: 500, transition: 'color 0.15s ease' }}
+          <Link to="/visitor-login" style={{ color: 'var(--text-secondary)', textDecoration: 'underline', fontWeight: 500, transition: 'color 0.15s ease' }}
             onMouseOver={e => (e.currentTarget.style.color = '#1C1917')}
             onMouseOut={e  => (e.currentTarget.style.color = '#78716C')}
           >visitor portal</Link>

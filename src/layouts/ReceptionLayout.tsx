@@ -50,6 +50,20 @@ export default function ReceptionLayout() {
   const [tenantName,  setTenantName]  = useState<string | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
 
+  // Apply tenant brand colour to CSS variables whenever it loads
+  useEffect(() => {
+    const color = tenant?.primaryColor ?? 'var(--brand-color)'
+    const r = parseInt(color.slice(1, 3), 16)
+    const g = parseInt(color.slice(3, 5), 16)
+    const b = parseInt(color.slice(5, 7), 16)
+    document.documentElement.style.setProperty('--brand-color', color)
+    document.documentElement.style.setProperty('--brand-rgb', `${r},${g},${b}`)
+    const luminance = (0.2126 * (r/255)**2.2 + 0.7152 * (g/255)**2.2 + 0.0722 * (b/255)**2.2)
+    const brandText = luminance > 0.18 ? '#000000' : '#ffffff'
+    document.documentElement.style.setProperty('--brand-text', brandText)
+    try { localStorage.setItem('glido_brand_color', color) } catch(e) {}
+  }, [tenant?.primaryColor])
+
   // Page title from current nav
   const activeNav = NAV.find(n => pathname === n.to || (n.to !== '/reception' && pathname.startsWith(n.to)))
   // Some routes use a shorter nav label but need a longer page heading
@@ -127,31 +141,85 @@ export default function ReceptionLayout() {
         .sidebar-col.is-open { width: 200px; }
         .nav-pill { background: #1C1917; border-radius: 28px; padding: 6px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 8px 32px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.07); width: 52px; transition: width 0.28s cubic-bezier(0.16,1,0.3,1), border-radius 0.28s ease; }
         .sidebar-col.is-open .nav-pill { width: 176px; border-radius: 20px; }
-        .nav-item { display: flex; align-items: center; gap: 0; padding: 0; border-radius: 22px; text-decoration: none; transition: background 0.15s ease, border-radius 0.28s ease, gap 0.28s cubic-bezier(0.16,1,0.3,1); overflow: hidden; flex-shrink: 0; }
+        .nav-item { display: flex; align-items: center; gap: 0; padding: 0; border-radius: 22px; text-decoration: none; transition: background 0.15s ease, border-radius 0.28s ease, gap 0.28s cubic-bezier(0.16,1,0.3,1); overflow: hidden; flex-shrink: 0; position: relative; }
+        .sidebar-col:not(.is-open) .nav-item { overflow: visible; }
         .sidebar-col.is-open .nav-item { gap: 6px; border-radius: 14px; }
         .nav-item-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 19px; transition: background 0.15s ease; }
-        .nav-item-label { font-size: 13px; font-weight: 500; white-space: nowrap; color: rgba(255,255,255,0.55); padding-right: 10px; flex: 1; opacity: 0; max-width: 0; overflow: hidden; pointer-events: none; transition: color 0.15s ease, opacity 0.14s ease, max-width 0.28s cubic-bezier(0.16,1,0.3,1); }
+        .nav-item-label { font-size: 13px; font-weight: 500; white-space: nowrap; color: #ffffff; padding-right: 10px; flex: 1; opacity: 0; max-width: 0; overflow: hidden; pointer-events: none; transition: color 0.15s ease, opacity 0.14s ease, max-width 0.28s cubic-bezier(0.16,1,0.3,1); }
         .sidebar-col.is-open .nav-item-label { opacity: 1; max-width: 160px; pointer-events: auto; transition: color 0.15s ease, opacity 0.2s ease 0.14s, max-width 0.28s cubic-bezier(0.16,1,0.3,1); }
         .nav-item.active .nav-item-icon { background: rgba(255,255,255,0.12); }
         .sidebar-col.is-open .nav-item.active { background: rgba(255,255,255,0.09); }
         .nav-item.active .nav-item-label { color: #ffffff; font-weight: 600; }
         .nav-item:not(.active):hover .nav-item-icon { background: rgba(255,255,255,0.06); }
         .sidebar-col.is-open .nav-item:not(.active):hover { background: rgba(255,255,255,0.05); }
-        .nav-item:not(.active):hover .nav-item-label { color: rgba(255,255,255,0.80); }
-        .action-btn { width: 48px; height: 48px; border-radius: 999px; background: #FC6514; color: #fff; display: flex; align-items: center; justify-content: center; gap: 0; border: none; cursor: pointer; flex-shrink: 0; transition: width 0.28s cubic-bezier(0.16,1,0.3,1), gap 0.28s ease, box-shadow 0.15s ease; box-shadow: 0 4px 16px rgba(252,101,20,0.38), 0 1px 4px rgba(252,101,20,0.20); text-decoration: none; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+        .nav-item:not(.active):hover .nav-item-label { color: #ffffff; }
+        /* Tooltip for collapsed sidebar */
+        .sidebar-col:not(.is-open) .nav-item:hover::after {
+          content: attr(data-label);
+          position: absolute;
+          left: calc(100% + 10px);
+          top: 50%;
+          transform: translateY(-50%);
+          background: #1C1917;
+          color: #FFFFFF;
+          font-size: 13px;
+          font-weight: 500;
+          padding: 5px 10px;
+          border-radius: 6px;
+          white-space: nowrap;
+          pointer-events: none;
+          z-index: 2147483647;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+        }
+        .sidebar-col:not(.is-open) .nav-item:hover::before {
+          content: '';
+          position: absolute;
+          left: calc(100% + 6px);
+          top: 50%;
+          transform: translateY(-50%);
+          border: 4px solid transparent;
+          border-right-color: #1C1917;
+          pointer-events: none;
+          z-index: 2147483647;
+        }
+        .action-btn { width: 48px; height: 48px; border-radius: 999px; background: var(--brand-color); color: #fff; display: flex; align-items: center; justify-content: center; gap: 0; border: none; cursor: pointer; flex-shrink: 0; transition: width 0.28s cubic-bezier(0.16,1,0.3,1), gap 0.28s ease, box-shadow 0.15s ease; box-shadow: 0 4px 16px rgba(var(--brand-rgb),0.38), 0 1px 4px rgba(var(--brand-rgb),0.20); text-decoration: none; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; position: relative; }
+        .sidebar-col:not(.is-open) .action-btn { overflow: visible; }
+        .sidebar-col:not(.is-open) .action-btn:hover::after {
+          content: 'New Booking';
+          position: absolute;
+          left: calc(100% + 10px);
+          top: 50%;
+          transform: translateY(-50%);
+          background: #1C1917;
+          color: #FFFFFF;
+          font-size: 13px;
+          font-weight: 500;
+          padding: 5px 10px;
+          border-radius: 6px;
+          white-space: nowrap;
+          pointer-events: none;
+          z-index: 2147483647;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+        }
+        .sidebar-col:not(.is-open) .action-btn:hover::before {
+          content: '';
+          position: absolute;
+          left: calc(100% + 6px);
+          top: 50%;
+          transform: translateY(-50%);
+          border: 4px solid transparent;
+          border-right-color: #1C1917;
+          pointer-events: none;
+          z-index: 2147483647;
+        }
         .sidebar-col.is-open .action-btn { width: 176px; gap: 8px; padding: 0 18px; justify-content: center; }
-        .action-btn:hover { box-shadow: 0 6px 24px rgba(252,101,20,0.48), 0 2px 8px rgba(252,101,20,0.24); }
+        .action-btn:hover { box-shadow: 0 6px 24px rgba(var(--brand-rgb),0.48), 0 2px 8px rgba(var(--brand-rgb),0.24); }
         .action-btn-label { opacity: 0; max-width: 0; overflow: hidden; pointer-events: none; transition: opacity 0.14s ease, max-width 0.28s cubic-bezier(0.16,1,0.3,1); }
         .sidebar-col.is-open .action-btn-label { opacity: 1; max-width: 140px; pointer-events: auto; transition: opacity 0.2s ease 0.14s, max-width 0.28s cubic-bezier(0.16,1,0.3,1); }
         .sidebar-toggle-btn { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; border: 1px solid rgba(0,0,0,0.09); background: #FFFFFF; color: #78716C; cursor: pointer; flex-shrink: 0; transition: background 0.13s ease, border-color 0.13s ease, color 0.13s ease; }
         .sidebar-toggle-btn:hover { background: #F3F2F1; border-color: rgba(0,0,0,0.14); color: #1C1917; }
         .sidebar-badge { flex-shrink: 0; opacity: 0; max-width: 0; overflow: hidden; pointer-events: none; transition: opacity 0.14s ease, max-width 0.28s cubic-bezier(0.16,1,0.3,1); }
         .sidebar-col.is-open .sidebar-badge { opacity: 1; max-width: 36px; pointer-events: auto; }
-        .sidebar-user { display: flex; align-items: center; gap: 0; width: 100%; justify-content: center; overflow: hidden; transition: gap 0.28s ease; border-radius: 12px; padding: 4px; cursor: pointer; }
-        .sidebar-col.is-open .sidebar-user { gap: 10px; justify-content: flex-start; padding-left: 4px; }
-        .sidebar-user:hover { background: rgba(0,0,0,0.04); }
-        .sidebar-user-info { min-width: 0; opacity: 0; max-width: 0; overflow: hidden; pointer-events: none; transition: opacity 0.14s ease, max-width 0.28s cubic-bezier(0.16,1,0.3,1); }
-        .sidebar-col.is-open .sidebar-user-info { opacity: 1; max-width: 140px; pointer-events: auto; transition: opacity 0.2s ease 0.14s, max-width 0.28s cubic-bezier(0.16,1,0.3,1); }
         .user-menu-item { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 9px; font-size: 13px; font-weight: 500; color: #374151; cursor: pointer; text-decoration: none; transition: background 0.12s ease; }
         .user-menu-item:hover { background: rgba(0,0,0,0.04); }
         .user-menu-item.danger { color: #EF4444; }
@@ -162,9 +230,9 @@ export default function ReceptionLayout() {
       <aside className={`sidebar-col${open ? ' is-open' : ''}`}>
 
         {/* Logo */}
-        <a href="/reception" style={{ display: 'flex', alignItems: 'center', width: 40, justifyContent: 'center', transition: 'width 0.28s cubic-bezier(0.16,1,0.3,1)', ...(open ? { width: '100%' } : {}) }}>
+        <Link to="/reception" style={{ display: 'flex', alignItems: 'center', width: 40, justifyContent: 'center', transition: 'width 0.28s cubic-bezier(0.16,1,0.3,1)', ...(open ? { width: '100%' } : {}) }}>
           <GlidoLogo height={open ? 17 : 11} onDark={false} />
-        </a>
+        </Link>
 
         {/* Nav pill */}
         <nav className="nav-pill">
@@ -177,9 +245,10 @@ export default function ReceptionLayout() {
                   to={item.to}
                   end={item.to === '/reception'}
                   className={({ isActive: a }) => `nav-item${a ? ' active' : ''}`}
+                  data-label={item.label}
                 >
                   <div className="nav-item-icon">
-                    <Icon name={item.icon} size={18} style={{ color: isActive ? '#fff' : 'rgba(255,255,255,0.55)' }} />
+                    <Icon name={item.icon} size={18} style={{ color: isActive ? '#fff' : '#C7C7C6' }} />
                   </div>
                   <span className="nav-item-label">{item.label}</span>
                   {'badge' in item && item.badge && walkInCount > 0 && (
@@ -198,10 +267,10 @@ export default function ReceptionLayout() {
                         to={sub.to}
                         className={({ isActive: a }) => a ? 'nav-subitem active' : 'nav-subitem'}
                         style={({ isActive: a }) => ({
-                          fontSize: 13, fontWeight: a ? 700 : 500,
-                          color: a ? '#ffffff' : 'rgba(255,255,255,0.45)',
-                          textDecoration: 'none', padding: '5px 0',
-                          whiteSpace: 'nowrap', transition: 'color 0.15s ease',
+                          fontSize: 13, fontWeight: a ? 600 : 400,
+                          color: a ? '#ffffff' : 'rgba(255,255,255,0.75)',
+                          textDecoration: 'none', padding: '4px 0',
+                          whiteSpace: 'normal', lineHeight: 1.3, transition: 'color 0.15s ease',
                           display: 'block',
                         })}
                       >
@@ -215,75 +284,31 @@ export default function ReceptionLayout() {
           })}
         </nav>
 
-        {/* User footer */}
-        <div style={{ marginTop: 'auto', width: '100%', position: 'relative' }}>
-          {/* User menu popover */}
-          {userMenuOpen && (
-            <>
-              <div style={{ position: 'fixed', inset: 0, zIndex: 9100 }} onClick={() => setUserMenuOpen(false)} />
-              <div style={{ position: 'fixed', bottom: 76, left: 12, zIndex: 9101, width: 232, background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 16, boxShadow: '0 12px 40px rgba(0,0,0,0.15),0 3px 10px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'rgba(252,101,20,0.025)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 9999, background: 'rgba(252,101,20,0.12)', border: '1.5px solid rgba(252,101,20,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#FC6514', flexShrink: 0 }}>{initials}</div>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1917', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fullName}</p>
-                    <p style={{ fontSize: 11, color: '#A8A29E', whiteSpace: 'nowrap' }}>{tenantLine}</p>
-                  </div>
-                </div>
-                <div style={{ padding: 6 }}>
-                  <button onClick={handleSignOut} className="user-menu-item danger" style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-                    <Icon name={ICONS.logout} size={15} style={{ flexShrink: 0 }} />
-                    Sign Out
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
+        {/* New Booking button */}
+        <button type="button" className="action-btn" onClick={() => navigate('/reception/bookings/new')}>
+          <Icon name={ICONS.add} size={18} style={{ color: '#fff', flexShrink: 0 }} />
+          <span className="action-btn-label">New Booking</span>
+        </button>
 
-          <div className="sidebar-user" onClick={() => setUserMenuOpen(v => !v)} title="Account menu">
-            <div style={{ width: 32, height: 32, borderRadius: 9999, background: 'rgba(252,101,20,0.12)', border: '1px solid rgba(252,101,20,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#FC6514', flexShrink: 0 }}>
-              {profileLoading ? '·' : initials}
-            </div>
-            <div className="sidebar-user-info" style={{ minWidth: 0, overflow: 'hidden' }}>
-              {profileLoading ? (
-                <>
-                  <div style={{ height: 12, width: 96, borderRadius: 6, background: 'rgba(0,0,0,0.08)', marginBottom: 5 }} />
-                  <div style={{ height: 10, width: 64, borderRadius: 6, background: 'rgba(0,0,0,0.06)' }} />
-                </>
-              ) : (
-                <>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%', minWidth: 0 }}>{fullName}</p>
-                  <p style={{ fontSize: 13, color: '#4B5563', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%', minWidth: 0 }}>{tenantLine}</p>
-                  {staffRole && (() => {
-                    const badge =
-                      staffRole === 'super_admin'      ? { label: 'Super Admin', bg: '#F5F3FF', color: '#7C3AED' } :
-                      staffRole === 'reception_admin'  ? { label: 'Admin',       bg: '#EFF6FF', color: '#2563EB' } :
-                                                         { label: 'Staff',       bg: '#F3F4F6', color: '#6B7280' }
-                    return (
-                      <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, fontWeight: 500, display: 'inline-block', marginTop: 2, background: badge.bg, color: badge.color }}>
-                        {badge.label}
-                      </span>
-                    )
-                  })()}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
       </aside>
 
       {/* ── Main area ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#f9f9f9' }}>
         {/* Header */}
-        <header style={{ height: 80, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', background: '#f9f9f9', flexShrink: 0 }}>
+        <header style={{ height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', background: '#f9f9f9', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <button className="sidebar-toggle-btn" type="button" onClick={() => setOpen(v => !v)} title="Toggle sidebar">
               {open ? (
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M9 3L5 7l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <path d="M9 3v18"/>
+                  <path d="M15 9l-3 3 3 3"/>
                 </svg>
               ) : (
-                <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-                  <path d="M2 4h11M2 7.5h11M2 11h11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="3" y1="6" x2="21" y2="6"/>
+                  <line x1="3" y1="12" x2="21" y2="12"/>
+                  <line x1="3" y1="18" x2="21" y2="18"/>
                 </svg>
               )}
             </button>
@@ -293,11 +318,43 @@ export default function ReceptionLayout() {
             {tenant?.logoUrl && (
               <img src={tenant.logoUrl} alt="Company logo" style={{ height: 32, objectFit: 'contain', maxWidth: 100 }} />
             )}
+
+            {/* User avatar + popover */}
+            <div style={{ position: 'relative' }}>
+              {userMenuOpen && (
+                <>
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 9100 }} onClick={() => setUserMenuOpen(false)} />
+                  <div style={{ position: 'fixed', top: 56, right: 16, zIndex: 9101, width: 232, background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 16, boxShadow: '0 12px 40px rgba(0,0,0,0.15),0 3px 10px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'rgba(var(--brand-rgb),0.025)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 9999, background: 'var(--brand-color)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: 'var(--brand-text)', flexShrink: 0 }}>{initials}</div>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fullName}</p>
+                        <p style={{ fontSize: 13, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>{tenantLine}</p>
+                      </div>
+                    </div>
+                    <div style={{ padding: 6 }}>
+                      <button onClick={handleSignOut} className="user-menu-item danger" style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                        <Icon name={ICONS.logout} size={15} style={{ flexShrink: 0 }} />
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+              <div
+                onClick={() => setUserMenuOpen(v => !v)}
+                title="Account menu"
+                style={{ width: 36, height: 36, borderRadius: 9999, background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--brand-text)', flexShrink: 0, cursor: 'pointer' }}
+              >
+                {profileLoading ? '·' : initials}
+              </div>
+            </div>
+
           </div>
         </header>
 
         {/* Content */}
-        <main style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+        <main style={{ flex: 1, overflowY: 'auto', padding: '14px 22px 22px' }}>
           <Outlet />
         </main>
       </div>

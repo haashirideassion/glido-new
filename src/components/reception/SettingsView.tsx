@@ -10,9 +10,9 @@ const TIME_OPTIONS: string[] = Array.from({ length: 37 }, (_, i) => {
 
 const labelStyle = 'display:block; font-size:10px; font-weight:700; color:#78716C; letter-spacing:0.09em; text-transform:uppercase; margin-bottom:8px;'
 const inputStyle = 'width:100%; padding:11px 14px; font-size:14px; color:#1C1917; background:#EBEBEA; border:1px solid rgba(0,0,0,0.10); border-radius:10px; outline:none; transition:border-color 0.15s ease, box-shadow 0.15s ease; box-sizing:border-box;'
-const inputFocus = `onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';"`
+const inputFocus = `onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';"`
 const cardStyle = 'background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07); margin-bottom:20px;'
-const saveBtn = 'display:inline-flex; align-items:center; gap:8px; padding:11px 24px; background:linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%); color:white; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px rgba(252,101,20,0.40), 0 1px 3px rgba(0,0,0,0.40); margin-top:20px; transition:box-shadow 0.15s ease;'
+const saveBtn = 'display:inline-flex; align-items:center; gap:8px; padding:11px 24px; background:linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%); color:white; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px rgba(var(--brand-rgb),0.40), 0 1px 3px rgba(0,0,0,0.40); margin-top:20px; transition:box-shadow 0.15s ease;'
 
 export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeTab?: string; tenant?: any; users?: any[] }) => (
   <div x-data={`{ tab: '${activeTab}' }`}>
@@ -77,23 +77,23 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
           <div style="display:flex; flex-direction:column; gap:16px;">
             <div>
               <label style={labelStyle}>Name</label>
-              <input type="text" name="name" value={tenant?.name ?? ''} style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';" />
+              <input type="text" name="name" value={tenant?.name ?? ''} style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';" />
             </div>
             <div>
               <label style={labelStyle}>Address</label>
-              <textarea name="address" rows={3} style={`${inputStyle} resize:vertical;`} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';">{tenant?.address ?? ''}</textarea>
+              <textarea name="address" rows={3} style={`${inputStyle} resize:vertical;`} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';">{tenant?.address ?? ''}</textarea>
             </div>
             <div>
               <label style={labelStyle}>Contact Email</label>
-              <input type="email" name="contact_email" value={tenant?.contact_email ?? ''} style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';" />
+              <input type="email" name="contact_email" value={tenant?.contact_email ?? ''} style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';" />
             </div>
             <div>
               <label style={labelStyle}>Contact Phone</label>
-              <input type="tel" name="contact_phone" value={tenant?.contact_phone ?? ''} style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';" />
+              <input type="tel" name="contact_phone" value={tenant?.contact_phone ?? ''} style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';" />
             </div>
             <div>
               <label style={labelStyle}>Timezone</label>
-              <select name="timezone" style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';">
+              <select name="timezone" style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';">
                 {['Australia/Sydney', 'Australia/Melbourne', 'Australia/Perth', 'Asia/Kolkata'].map((tz) => (
                   <option key={tz} value={tz} selected={tenant?.timezone === tz}>{tz}</option>
                 ))}
@@ -101,7 +101,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
             </div>
             <div>
               <label style={labelStyle}>Currency</label>
-              <select name="currency" style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';">
+              <select name="currency" style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';">
                 {['AUD', 'INR'].map((c) => (
                   <option key={c} value={c} selected={tenant?.currency === c}>{c}</option>
                 ))}
@@ -129,7 +129,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
             ].map((f) => (
               <div key={f.name}>
                 <label style={labelStyle}>{f.label}</label>
-                <input type={f.type} name={f.name} value={f.val} style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';" />
+                <input type={f.type} name={f.name} value={f.val} style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';" />
               </div>
             ))}
           </div>
@@ -154,17 +154,17 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
             ].map((f) => (
               <div key={f.name}>
                 <label style={labelStyle}>{f.label}</label>
-                <input type="number" name={f.name} value={f.val ?? ''} step={f.step} style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';" />
+                <input type="number" name={f.name} value={f.val ?? ''} step={f.step} style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';" />
               </div>
             ))}
           </div>
           <div style="margin-top:16px; display:flex; align-items:center; gap:10px;">
-            <input type="checkbox" id="gst_enabled" name="gst_enabled" checked={tenant?.gst_enabled} x-model="gstEnabled" x-init={`gstEnabled = ${tenant?.gst_enabled ? 'true' : 'false'}`} style="accent-color:#FC6514; width:16px; height:16px;" />
+            <input type="checkbox" id="gst_enabled" name="gst_enabled" checked={tenant?.gst_enabled} x-model="gstEnabled" x-init={`gstEnabled = ${tenant?.gst_enabled ? 'true' : 'false'}`} style="accent-color:var(--brand-color); width:16px; height:16px;" />
             <label for="gst_enabled" style="font-size:13px; font-weight:500; color:#1C1917; cursor:pointer;">GST Enabled</label>
           </div>
           <div style="margin-top:14px;" x-show="gstEnabled">
             <label style={labelStyle}>GST Rate (%)</label>
-            <input type="number" name="gst_rate" value={tenant?.gst_rate ?? 10} style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';" />
+            <input type="number" name="gst_rate" value={tenant?.gst_rate ?? 10} style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';" />
           </div>
           <button type="submit" style={saveBtn}>Save Changes</button>
         </div>
@@ -187,11 +187,11 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
             ].map((f) => (
               <div key={f.name}>
                 <label style={labelStyle}>{f.label}</label>
-                <input type={f.type} name={f.name} value={f.val ?? ''} placeholder={f.ph} style={inputStyle} onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';" />
+                <input type={f.type} name={f.name} value={f.val ?? ''} placeholder={f.ph} style={inputStyle} onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';" onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';" />
               </div>
             ))}
             <div style="display:flex; align-items:center; gap:10px;">
-              <input type="checkbox" id="require_payment_to_confirm" name="require_payment_to_confirm" checked={tenant?.require_payment_to_confirm} style="accent-color:#FC6514; width:16px; height:16px;" />
+              <input type="checkbox" id="require_payment_to_confirm" name="require_payment_to_confirm" checked={tenant?.require_payment_to_confirm} style="accent-color:var(--brand-color); width:16px; height:16px;" />
               <label for="require_payment_to_confirm" style="font-size:13px; font-weight:500; color:#1C1917; cursor:pointer;">Require payment to confirm booking</label>
             </div>
           </div>
@@ -206,7 +206,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
         <input type="hidden" name="tab" value="Working Hours" />
         <div style={cardStyle}>
           <p style="font-size:15px; font-weight:600; color:#1C1917; margin-bottom:4px; letter-spacing:-0.01em;">Working Hours</p>
-          <p style="font-size:12px; color:#A8A29E; margin-bottom:20px;">Visitors can only book slots within these hours. Changes take effect immediately.</p>
+          <p style="font-size:12px;c3F3D; margin-bottom:20px;">Visitors can only book slots within these hours. Changes take effect immediately.</p>
           <div style="display:flex; flex-direction:column; gap:0;">
             {([
               { label: 'Monday',    name: 'mon' },
@@ -236,7 +236,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
                     />
                     <div
                       style="width:34px; height:20px; border-radius:9999px; transition:background 0.2s ease; cursor:pointer; position:relative;"
-                      x-bind:style={`enabled_${day.name} ? 'background:#FC6514;' : 'background:rgba(0,0,0,0.14);'`}
+                      x-bind:style={`enabled_${day.name} ? 'background:var(--brand-color);' : 'background:rgba(0,0,0,0.14);'`}
                       x-on:click={`enabled_${day.name} = !enabled_${day.name}`}
                     >
                       <div
@@ -251,7 +251,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
                   <label style={labelStyle}>Open</label>
                   <select name={`${day.name}_open`}
                     style={`${inputStyle} padding:8px 12px; cursor:pointer;`}
-                    onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';"
+                    onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';"
                     onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';"
                   >
                     {TIME_OPTIONS.map(t => (
@@ -263,7 +263,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
                   <label style={labelStyle}>Close</label>
                   <select name={`${day.name}_close`}
                     style={`${inputStyle} padding:8px 12px; cursor:pointer;`}
-                    onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';"
+                    onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';"
                     onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';"
                   >
                     {TIME_OPTIONS.map(t => (
@@ -272,7 +272,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
                   </select>
                 </div>
                 <div x-show={`!enabled_${day.name}`} style="grid-column:span 2; padding-top:18px;">
-                  <span style="font-size:12px; color:#A8A29E; font-style:italic;">Closed</span>
+                  <span style="font-size:12px;c3F3D; font-style:italic;">Closed</span>
                 </div>
               </div>
               )
@@ -300,7 +300,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
           <thead>
             <tr style="border-bottom:1px solid rgba(0,0,0,0.07);">
               {['Name','Email','Role','Status',''].map((h) => (
-                <th key={h} style="text-align:left; padding:8px 0; font-size:10px; font-weight:700; color:#A8A29E; letter-spacing:0.07em; text-transform:uppercase;">{h}</th>
+                <th key={h} style="text-align:left; padding:8px 0; font-size:10px; font-weight:700;c3F3D; letter-spacing:0.07em; text-transform:uppercase;">{h}</th>
               ))}
             </tr>
           </thead>
@@ -322,7 +322,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
             ))}
             {(users ?? []).length === 0 && (
               <tr>
-                <td colspan={5} style="padding:40px 0; text-align:center; color:#A8A29E; font-size:13px;">No users found</td>
+                <td colspan={5} style="padding:40px 0; text-align:center;c3F3D; font-size:13px;">No users found</td>
               </tr>
             )}
           </tbody>
@@ -337,13 +337,13 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
         <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; gap:8px;">
           <div>
             <p style="font-size:15px; font-weight:600; color:#1C1917; letter-spacing:-0.01em; margin-bottom:2px;">Reception Staff Permissions</p>
-            <p style="font-size:12px; color:#A8A29E;">Control what your front-desk staff can see and do. Changes apply on next staff login.</p>
+            <p style="font-size:12px;c3F3D;">Control what your front-desk staff can see and do. Changes apply on next staff login.</p>
           </div>
           <button type="button" x-show="!editing"
-            style="padding:8px 16px; font-size:12px; font-weight:600; color:#FC6514; background:rgba(252,101,20,0.08); border:1px solid rgba(252,101,20,0.18); border-radius:8px; cursor:pointer; transition:all 0.15s ease; white-space:nowrap;"
+            style="padding:8px 16px; font-size:12px; font-weight:600; color:var(--brand-color); background:rgba(var(--brand-rgb),0.08); border:1px solid rgba(var(--brand-rgb),0.18); border-radius:8px; cursor:pointer; transition:all 0.15s ease; white-space:nowrap;"
             x-on:click="editing = true"
-            onmouseover="this.style.background='rgba(252,101,20,0.14)'"
-            onmouseout="this.style.background='rgba(252,101,20,0.08)'"
+            onmouseover="this.style.background='rgba(var(--brand-rgb),0.14)'"
+            onmouseout="this.style.background='rgba(var(--brand-rgb),0.08)'"
           >
             Edit Permissions
           </button>
@@ -379,7 +379,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
             ]},
           ].map((section) => (
             <div key={section.group} style="margin-bottom:24px;">
-              <p style="font-size:10px; font-weight:700; color:#A8A29E; letter-spacing:0.10em; text-transform:uppercase; margin-bottom:12px;">{section.group}</p>
+              <p style="font-size:10px; font-weight:700;c3F3D; letter-spacing:0.10em; text-transform:uppercase; margin-bottom:12px;">{section.group}</p>
               <div style="display:flex; flex-direction:column; gap:0;">
                 {section.perms.map((p, pi) => (
                   <div key={p.key}
@@ -388,7 +388,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
                   >
                     <div>
                       <p style="font-size:13px; font-weight:500; color:#1C1917; margin-bottom:2px;">{p.label}</p>
-                      <p style="font-size:11.5px; color:#A8A29E; line-height:1.5;">{p.sub}</p>
+                      <p style="font-size:11.5px;c3F3D; line-height:1.5;">{p.sub}</p>
                     </div>
                     <label style="position:relative; display:inline-flex; align-items:center; cursor:pointer; flex-shrink:0;">
                       <input type="checkbox" name={p.key}
@@ -399,7 +399,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
                       />
                       <div
                         style="width:40px; height:22px; border-radius:9999px; transition:background 0.2s ease; position:relative;"
-                        x-bind:style={`(val_${p.key} ? 'background:#FC6514;' : 'background:rgba(0,0,0,0.14);') + (!editing ? 'opacity:0.5; cursor:not-allowed;' : 'cursor:pointer;')`}
+                        x-bind:style={`(val_${p.key} ? 'background:var(--brand-color);' : 'background:rgba(0,0,0,0.14);') + (!editing ? 'opacity:0.5; cursor:not-allowed;' : 'cursor:pointer;')`}
                         x-on:click="if(editing){ $data['val_' + '${p.key}'] = !$data['val_' + '${p.key}']; dirty = true; }"
                       >
                         <div
@@ -460,10 +460,10 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
                 value={(tenant as any)?.cargowise_api_url ?? ''}
                 style={inputStyle}
                 {...{[inputFocus.split('=')[0].replace('on', 'on')]: true}}
-                onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';"
+                onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';"
                 onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';"
               />
-              <p style="font-size:11.5px; color:#A8A29E; margin-top:5px;">The base URL of your ICS REST endpoint</p>
+              <p style="font-size:11.5px;c3F3D; margin-top:5px;">The base URL of your ICS REST endpoint</p>
             </div>
             <div>
               <label style={labelStyle}>API Key / Bearer Token</label>
@@ -472,10 +472,10 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
                 name="cargowise_api_key"
                 placeholder={(tenant as any)?.cargowise_api_key ? '••••••••' : 'Paste your API key'}
                 style={inputStyle}
-                onfocus="this.style.borderColor='rgba(252,101,20,0.50)'; this.style.boxShadow='0 0 0 3px rgba(252,101,20,0.12)';"
+                onfocus="this.style.borderColor='rgba(var(--brand-rgb),0.50)'; this.style.boxShadow='0 0 0 3px rgba(var(--brand-rgb),0.12)';"
                 onblur="this.style.borderColor='rgba(0,0,0,0.10)'; this.style.boxShadow='none';"
               />
-              <p style="font-size:11.5px; color:#A8A29E; margin-top:5px;">Leave blank to keep the existing key. Stored encrypted at rest.</p>
+              <p style="font-size:11.5px;c3F3D; margin-top:5px;">Leave blank to keep the existing key. Stored encrypted at rest.</p>
             </div>
           </div>
 
@@ -494,7 +494,7 @@ export const SettingsView = ({ activeTab = 'General', tenant, users }: { activeT
         </div>
 
         {/* ICS info box */}
-        <div style="background:rgba(252,101,20,0.04); border:1px solid rgba(252,101,20,0.14); border-radius:14px; padding:18px 20px; margin-bottom:20px;">
+        <div style="background:rgba(var(--brand-rgb),0.04); border:1px solid rgba(var(--brand-rgb),0.14); border-radius:14px; padding:18px 20px; margin-bottom:20px;">
           <p style="font-size:12.5px; font-weight:600; color:#C2410C; margin-bottom:6px;">About ICS Status</p>
           <p style="font-size:12px; color:#78716C; line-height:1.6; margin:0;">
             ICS (Integrated Cargo System) status is provided by Australian Border Force and indicates whether a shipment has been cleared for collection. When ICS API is connected, status is fetched live on each HBL lookup and cached to the shipment record. Without a connection, status shows as <em>Not Checked</em> unless manually updated in the CFS records.

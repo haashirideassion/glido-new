@@ -50,7 +50,7 @@ export function Step2SlotPicker() {
           </div>
           <div>
             <h2 style={{ fontSize: 24, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, margin: 0 }}>Service type</h2>
-            <p style={{ fontSize: 14, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>
+            <p style={{ fontSize: 15, color: '#4F4F4F', lineHeight: 1.5, margin: '4px 0 0' }}>
               {multi
                 ? 'Select the service type for each slot.'
                 : 'Are you collecting cargo from, or delivering cargo to the CFS?'}
@@ -79,7 +79,7 @@ export function Step2SlotPicker() {
                 type="button"
                 onClick={() => setActiveSlot(i)}
                 style={{
-                  padding: '10px 24px', fontSize: 14,
+                  padding: '10px 24px', fontSize: 15,
                   fontWeight: active ? 700 : 500,
                   color: active ? 'var(--brand-color, #FC6514)' : '#6B7280',
                   background: 'none', border: 'none',
@@ -110,7 +110,6 @@ export function Step2SlotPicker() {
           icon={<img src={pickupImg} alt="Pick Up" style={{ width: 80, height: 80, objectFit: 'contain' }} />}
           title="Pick Up"
           desc="Collect cargo from the CFS"
-          sub="ICS auto-checked"
         />
         <OptionCard
           selected={(applyAll ? state.slotConfigs[0]?.serviceType : activeCfg?.serviceType) === 'dropoff'}
@@ -118,16 +117,15 @@ export function Step2SlotPicker() {
           icon={<img src={dropoffImg} alt="Drop Off" style={{ width: 80, height: 80, objectFit: 'contain' }} />}
           title="Drop Off"
           desc="Deliver cargo to the CFS"
-          sub="Container or HBL required"
         />
       </div>
     </div>
   )
 }
 
-function OptionCard({ selected, onClick, icon, title, desc, sub }: {
+function OptionCard({ selected, onClick, icon, title, desc }: {
   selected: boolean; onClick: () => void; icon: React.ReactNode
-  title: string; desc: string; sub: string
+  title: string; desc: string
 }) {
   return (
     <button
@@ -138,7 +136,7 @@ function OptionCard({ selected, onClick, icon, title, desc, sub }: {
         display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
         padding: '20px 18px 18px', borderRadius: 16,
         border: selected ? '2px solid var(--brand-color, #FC6514)' : '1.5px solid rgba(0,0,0,0.08)',
-        background: selected ? 'rgba(252,101,20,0.04)' : '#fff',
+        background: selected ? 'rgba(var(--brand-rgb),0.04)' : '#fff',
         cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s ease',
         width: '100%', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none',
       }}
@@ -159,20 +157,13 @@ function OptionCard({ selected, onClick, icon, title, desc, sub }: {
         width: 112, height: 112, borderRadius: 24,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         marginBottom: 14, flexShrink: 0,
-        background: selected ? 'rgba(252,101,20,0.8)' : '#F3F4F6',
+        background: selected ? 'rgba(var(--brand-rgb),0.8)' : '#F3F4F6',
         color: selected ? '#fff' : '#6B7280', transition: 'all 0.15s ease',
       }}>
         {icon}
       </div>
       <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', marginBottom: 4, lineHeight: 1.2 }}>{title}</p>
-      <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.4, marginBottom: 10 }}>{desc}</p>
-      <span style={{
-        fontSize: 11, padding: '3px 8px', borderRadius: 6,
-        background: selected ? 'rgba(252,101,20,0.10)' : '#F3F4F6',
-        color: selected ? 'var(--brand-color, #FC6514)' : '#6B7280', fontWeight: 500,
-      }}>
-        {sub}
-      </span>
+      <p style={{ fontSize: 15, color: 'var(--text-mid)', lineHeight: 1.4, marginBottom: 0 }}>{desc}</p>
     </button>
   )
 }
@@ -188,8 +179,8 @@ function ApplyAllToggle({ on, onToggle, slotCount, field }: {
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 7,
           padding: '5px 12px', borderRadius: 9999,
-          background: on ? 'rgba(252,101,20,0.10)' : 'rgba(0,0,0,0.06)',
-          border: `1.5px solid ${on ? 'rgba(252,101,20,0.30)' : 'rgba(0,0,0,0.12)'}`,
+          background: on ? 'rgba(var(--brand-rgb),0.10)' : 'rgba(0,0,0,0.06)',
+          border: `1.5px solid ${on ? 'rgba(var(--brand-rgb),0.30)' : 'rgba(0,0,0,0.12)'}`,
           cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit',
         }}
       >
@@ -204,11 +195,11 @@ function ApplyAllToggle({ on, onToggle, slotCount, field }: {
             background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.18)', transition: 'left 0.15s',
           }} />
         </span>
-        <span style={{ fontSize: 12, fontWeight: 600, color: on ? 'var(--brand-color, #FC6514)' : '#6B7280', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: 14, fontWeight: 600, color: on ? 'var(--brand-color, #FC6514)' : '#6B7280', whiteSpace: 'nowrap' }}>
           Apply to all bookings
         </span>
       </button>
-      <span style={{ fontSize: 11, color: '#A8A29E' }}>
+      <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
         {on
           ? `${field} selected for all ${slotCount} bookings`
           : `Use the same ${field} for all ${slotCount} bookings`}

@@ -21,7 +21,7 @@ const STATUS_LABEL: Record<string, string> = { scheduled: 'Scheduled', checked_i
 const STATUS_STYLE: Record<string, string> = {
   checked_in: 'background:rgba(34,197,94,0.12);color:#16A34A;border:1px solid rgba(34,197,94,0.25);',
   completed:  'background:#F5F5F4;color:#78716C;border:1px solid rgba(0,0,0,0.08);',
-  cancelled:  'background:transparent;color:#A8A29E;border:1px solid rgba(0,0,0,0.15);',
+  cancelled:  'background:transparentc3F3D;border:1px solid rgba(0,0,0,0.15);',
   scheduled:  'background:#F5F5F4;color:#57534E;border:1px solid rgba(0,0,0,0.1);',
 }
 
@@ -55,9 +55,9 @@ function SparklineCard({ tile, value, chartId, loading }: { tile: typeof TILES[n
 
   return (
     <div
-      style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 18, padding: 20, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)', transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1),box-shadow 0.2s ease', cursor: 'default' }}
-      onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.10),0 2px 6px rgba(0,0,0,0.06)' }}
-      onMouseOut={e  => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}
+      style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 18, padding: 20, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1),box-shadow 0.2s ease', cursor: 'default' }}
+      onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.05),0 2px 6px rgba(0,0,0,0.03)' }}
+      onMouseOut={e  => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
         <div style={{ width: 40, height: 40, borderRadius: 12, background: tile.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `1px solid ${tile.iconFg}22` }}>
@@ -73,8 +73,8 @@ function SparklineCard({ tile, value, chartId, loading }: { tile: typeof TILES[n
       ) : (
         <>
           <p style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, color: tile.valueFg, marginBottom: 5, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
-          <p style={{ fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 2 }}>{tile.label}</p>
-          <p style={{ fontSize: 14, color: '#4B5563', marginBottom: 14 }}>{tile.sub}</p>
+          <p style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 2 }}>{tile.label}</p>
+          <p style={{ fontSize: 15, color: 'var(--text-muted)', marginBottom: 14 }}>{tile.sub}</p>
         </>
       )}
       <div ref={ref} style={{ height: 44, margin: '0 -20px', width: 'calc(100% + 40px)' }} />
@@ -105,14 +105,14 @@ export function RecentVisitors({ stats, loading }: Props) {
   const recent = [...(stats.recentVisitors ?? [])].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5)
 
   return (
-    <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 18, padding: 28, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)', marginBottom: 16 }}>
+    <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 18, padding: 28, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
           <div>
             <h3 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', margin: 0, letterSpacing: '-0.02em' }}>Recent Visitors</h3>
-            <p style={{ fontSize: 14, color: '#4B5563', margin: '5px 0 0' }}>Latest visitor activity and status updates</p>
+            <p style={{ fontSize: 15, color: 'var(--text-muted)', margin: '5px 0 0' }}>Latest visitor activity and status updates</p>
           </div>
           <div style={{ width: 40, height: 40, background: 'rgba(0,0,0,0.03)', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,0,0,0.05)' }}>
-            <Icon name={ICONS.users} size={20} style={{ color: '#78716C' }} />
+            <Icon name={ICONS.users} size={20} style={{ color: 'var(--text-secondary)' }} />
           </div>
         </div>
 
@@ -142,10 +142,10 @@ export function RecentVisitors({ stats, loading }: Props) {
                 <tr key={b.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.045)' }}>
                   <td style={{ padding: '16px 0' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 9999, background: '#F5F5F4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#78716C', flexShrink: 0, border: '1px solid rgba(0,0,0,0.04)' }}>{initials}</div>
+                      <div style={{ width: 36, height: 36, borderRadius: 9999, background: '#F5F5F4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', flexShrink: 0, border: '1px solid rgba(0,0,0,0.04)' }}>{initials}</div>
                       <div>
                         <p style={{ fontSize: 16, fontWeight: 600, color: '#1C1917', margin: 0 }}>{b.driverName}</p>
-                        <p style={{ fontSize: 14, fontFamily: 'ui-monospace,monospace', color: '#4B5563', margin: '2px 0 0' }}>{b.referenceNumber}</p>
+                        <p style={{ fontSize: 15, fontFamily: 'ui-monospace,monospace', color: 'var(--text-muted)', margin: '2px 0 0' }}>{b.referenceNumber}</p>
                       </div>
                     </div>
                   </td>
@@ -154,7 +154,7 @@ export function RecentVisitors({ stats, loading }: Props) {
                       <span style={{ ...Object.fromEntries(badgeStyle.split(';').filter(Boolean).map(s => { const [k, ...v] = s.split(':'); return [k.trim().replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase()), v.join(':').trim()] })) } as any}>
                         {STATUS_LABEL[b.status] ?? b.status}
                       </span>
-                      <p style={{ fontSize: 14, color: '#4B5563', fontWeight: 500 }}>
+                      <p style={{ fontSize: 15, color: 'var(--text-muted)', fontWeight: 500 }}>
                         {fmtTime(b.updatedAt)}
                       </p>
                     </div>
@@ -163,7 +163,7 @@ export function RecentVisitors({ stats, loading }: Props) {
               )
             }) : (
               <tr>
-                <td colSpan={2} style={{ padding: '48px 0', textAlign: 'center', color: '#A8A29E', fontSize: 13 }}>
+                <td colSpan={2} style={{ padding: '48px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 15 }}>
                   <div style={{ opacity: 0.3, marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
                     <Icon name={ICONS.calendar} size={28} />
                   </div>

@@ -160,7 +160,7 @@ export function ScanScreen() {
 
         {/* Camera error — shown inline when scanner fails */}
         {cameraMsg && (
-          <p style={{ fontSize: 14, color: '#EF4444', marginBottom: 16 }}>{cameraMsg}</p>
+          <p style={{ fontSize: 15, color: '#EF4444', marginBottom: 16 }}>{cameraMsg}</p>
         )}
 
         {/* html5-qrcode mount point — full width, rounded, no dashed border */}
@@ -178,10 +178,10 @@ export function ScanScreen() {
 
         {/* Divider + manual fallback — mirrors LookupScreen's "Or scan your QR code" section */}
         <div style={{ marginTop: 8, paddingTop: 24, borderTop: '1px solid rgba(0,0,0,0.08)' }}>
-          <p style={{ fontSize: 14, color: '#A8A29E', marginBottom: 12 }}>Or enter manually instead</p>
+          <p style={{ fontSize: 15, color: 'var(--text-tertiary)', marginBottom: 12 }}>Or enter manually instead</p>
           <button
             onClick={() => goTo('lookup')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--brand-color)', background: 'none', border: 'none', cursor: 'pointer' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 15, color: 'var(--brand-color)', background: 'none', border: 'none', cursor: 'pointer' }}
           >
             <Icon name={ICONS.search} size={18} />
             Enter Reference Manually

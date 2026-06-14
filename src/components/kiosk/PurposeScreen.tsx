@@ -34,7 +34,7 @@ export function PurposeScreen() {
           <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', lineHeight: 1.2, marginBottom: 8 }}>
             What brings you here today?
           </h2>
-          <p style={{ fontSize: 14, color: '#78716C', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
             Select the option that best describes your visit
           </p>
         </div>
@@ -65,7 +65,7 @@ export function PurposeScreen() {
               }}>
                 {/* Inner wrapper locks the icon to exactly 28×28 */}
                 <span style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 0, flexShrink: 0 }}>
-                  <Icon name={opt.icon} size={28} style={{ color: '#78716C', display: 'block' }} />
+                  <Icon name={opt.icon} size={28} style={{ color: 'var(--text-secondary)', display: 'block' }} />
                 </span>
               </div>
 
@@ -74,7 +74,7 @@ export function PurposeScreen() {
                 <p style={{ fontWeight: 700, fontSize: '1.125rem', color: '#1C1917', margin: 0, lineHeight: 1.2 }}>
                   {opt.label}
                 </p>
-                <p style={{ fontSize: 14, fontWeight: 400, color: '#78716C', margin: '4px 0 0', lineHeight: 1.4 }}>
+                <p style={{ fontSize: 15, fontWeight: 400, color: 'var(--text-secondary)', margin: '4px 0 0', lineHeight: 1.4 }}>
                   {opt.sub}
                 </p>
               </div>

@@ -156,10 +156,10 @@ const DEFAULT_DOC_REQUIREMENTS: DocRequirement[] = COMBO_DEFAULTS
 
 const TABS = ['General', 'Working Hours', 'Slot Config', 'Pricing', 'Payment', 'Integrations', 'Document Requirements', 'User Management']
 
-const LABEL: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 700, color: '#78716C', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 8 }
-const INPUT: React.CSSProperties = { width: '100%', padding: '11px 14px', fontSize: 14, color: '#1C1917', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 10, outline: 'none', transition: 'border-color 0.15s ease, box-shadow 0.15s ease', boxSizing: 'border-box' }
-const CARD: React.CSSProperties  = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)', marginBottom: 20 }
-const SAVE: React.CSSProperties  = { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', background: 'linear-gradient(180deg,#FF7A2A 0%,#E85A0A 100%)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22),0 4px 14px rgba(252,101,20,0.40)', marginTop: 20, transition: 'box-shadow 0.15s ease' }
+const LABEL: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 8 }
+const INPUT: React.CSSProperties = { width: '100%', padding: '11px 14px', fontSize: 15, color: '#1C1917', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 10, outline: 'none', transition: 'border-color 0.15s ease, box-shadow 0.15s ease', boxSizing: 'border-box' }
+const CARD: React.CSSProperties  = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 20 }
+const SAVE: React.CSSProperties  = { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', background: 'var(--brand-color)', color: 'var(--brand-text)', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22),0 4px 14px rgba(var(--brand-rgb),0.40)', marginTop: 20, transition: 'box-shadow 0.15s ease' }
 
 // 30-min increments 00:00 → 23:30
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
@@ -206,7 +206,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     <div>
       <label style={LABEL}>{label}</label>
       {children}
-      {hint && <p style={{ fontSize: 11, color: '#A8A29E', marginTop: 5, lineHeight: 1.4 }}>{hint}</p>}
+      {hint && <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 5, lineHeight: 1.4 }}>{hint}</p>}
     </div>
   )
 }
@@ -214,7 +214,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 function FocusInput({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input {...props} style={{ ...INPUT, ...props.style as React.CSSProperties }}
-      onFocus={e => { e.target.style.borderColor = 'rgba(252,101,20,0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(252,101,20,0.12)' }}
+      onFocus={e => { e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(var(--brand-rgb),0.12)' }}
       onBlur={e  => { e.target.style.borderColor = 'rgba(0,0,0,0.10)'; e.target.style.boxShadow = 'none' }}
     />
   )
@@ -224,7 +224,7 @@ function FocusSelect({ children, disabled, ...props }: React.SelectHTMLAttribute
   return (
     <select {...props} disabled={disabled}
       style={{ ...INPUT, opacity: disabled ? 0.45 : 1, cursor: disabled ? 'not-allowed' : 'default' }}
-      onFocus={e => { if (!disabled) { e.target.style.borderColor = 'rgba(252,101,20,0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(252,101,20,0.12)' } }}
+      onFocus={e => { if (!disabled) { e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(var(--brand-rgb),0.12)' } }}
       onBlur={e  => { e.target.style.borderColor = 'rgba(0,0,0,0.10)'; e.target.style.boxShadow = 'none' }}
     >
       {children}
@@ -236,7 +236,7 @@ function SectionHead({ title, desc }: { title: string; desc?: string }) {
   return (
     <div style={{ marginBottom: 20 }}>
       <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.02em', marginBottom: desc ? 4 : 0 }}>{title}</h3>
-      {desc && <p style={{ fontSize: 13, color: '#78716C' }}>{desc}</p>}
+      {desc && <p style={{ fontSize: 15, color: 'var(--text-secondary)' }}>{desc}</p>}
     </div>
   )
 }
@@ -302,7 +302,7 @@ export default function SettingsPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // General state
-  const [general,         setGeneral]         = useState({ name: '', address: '', logoUrl: '', primaryColor: '#FC6514', timezone: 'Australia/Sydney', contactEmail: '', contactPhone: '' })
+  const [general,         setGeneral]         = useState({ name: '', address: '', logoUrl: '', primaryColor: 'var(--brand-color)', timezone: 'Australia/Sydney', contactEmail: '', contactPhone: '' })
   const [generalLoading,  setGeneralLoading]  = useState(true)
   const [generalSaving,   setGeneralSaving]   = useState(false)
   const [logoUploading,   setLogoUploading]   = useState(false)
@@ -379,7 +379,15 @@ export default function SettingsPage() {
           // Don't overwrite logoUrl if an upload just completed — stale DB value
           // would replace the freshly-uploaded URL before the next save cycle.
           logoUrl:      logoJustUploaded.current ? prev.logoUrl : (tenant.logo_url ?? ''),
-          primaryColor: tenant.primary_color     ?? '#FC6514',
+          primaryColor: (() => {
+            const color = tenant.primary_color ?? 'var(--brand-color)'
+            const r = parseInt(color.slice(1, 3), 16)
+            const g = parseInt(color.slice(3, 5), 16)
+            const b = parseInt(color.slice(5, 7), 16)
+            document.documentElement.style.setProperty('--brand-color', color)
+            document.documentElement.style.setProperty('--brand-rgb', `${r},${g},${b}`)
+            return color
+          })(),
           timezone:     tenant.timezone          ?? 'Australia/Sydney',
           contactEmail: tenant.contact_email     ?? '',
           contactPhone: tenant.contact_phone     ?? '',
@@ -903,7 +911,7 @@ export default function SettingsPage() {
       <div style={{ display: 'flex', gap: 2, background: 'rgba(0,0,0,0.04)', borderRadius: 12, padding: 4, marginBottom: 24, width: '100%' }}>
         {visibleTabs.map(t => (
           <button key={t} onClick={() => { setTab(t); window.location.hash = TAB_TO_HASH[t] ?? '' }} style={{
-            flex: 1, padding: '8px 16px', borderRadius: 9, fontSize: 13, fontWeight: tab === t ? 600 : 500,
+            flex: 1, padding: '8px 16px', borderRadius: 9, fontSize: 15, fontWeight: tab === t ? 600 : 500,
             border: 'none', cursor: 'pointer', transition: 'all 0.15s ease', whiteSpace: 'nowrap', textAlign: 'center',
             background: tab === t ? '#FFFFFF' : 'transparent',
             color: tab === t ? '#1C1917' : '#78716C',
@@ -936,7 +944,7 @@ export default function SettingsPage() {
                     <div key={key}>
                       <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr 90px', gap: 16, alignItems: 'start' }}>
                         {/* Day label — vertically centred to the selector height */}
-                        <span style={{ fontSize: 14, fontWeight: 600, color: day.enabled ? '#1C1917' : '#A8A29E', paddingTop: 22 }}>{label}</span>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: day.enabled ? '#1C1917' : '#433F3D', paddingTop: 22 }}>{label}</span>
 
                         {/* Open selector */}
                         <div>
@@ -951,7 +959,7 @@ export default function SettingsPage() {
                               .map(t => ({ value: t, label: t }))}
                           />
                           {openExceedsMin && (
-                            <p style={{ fontSize: 11, color: '#D97706', marginTop: 4, lineHeight: 1.4 }}>
+                            <p style={{ fontSize: 13, color: '#D97706', marginTop: 4, lineHeight: 1.4 }}>
                               Open time is earlier than the first slot period ({minOpen}). Bookings won't be accepted until {minOpen}.
                             </p>
                           )}
@@ -970,7 +978,7 @@ export default function SettingsPage() {
                               .map(t => ({ value: t, label: t }))}
                           />
                           {closeExceedsMax && (
-                            <p style={{ fontSize: 11, color: '#D97706', marginTop: 4, lineHeight: 1.4 }}>
+                            <p style={{ fontSize: 13, color: '#D97706', marginTop: 4, lineHeight: 1.4 }}>
                               Close time exceeds available slot periods. Bookings will only run until {maxClose}.
                             </p>
                           )}
@@ -982,9 +990,9 @@ export default function SettingsPage() {
                             type="checkbox"
                             checked={day.enabled}
                             onChange={e => setDay(key, 'enabled', e.target.checked)}
-                            style={{ accentColor: '#FC6514', width: 16, height: 16, cursor: 'pointer' }}
+                            style={{ accentColor: 'var(--brand-color)', width: 16, height: 16, cursor: 'pointer' }}
                           />
-                          <span style={{ fontSize: 12, color: '#78716C' }}>Open</span>
+                          <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Open</span>
                         </div>
                       </div>
 
@@ -992,8 +1000,8 @@ export default function SettingsPage() {
                       {day.enabled && dayPeriods.length > 0 && (
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingLeft: 136, marginTop: 6, marginBottom: 4 }}>
                           {dayPeriods.map(p => (
-                            <span key={p.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500, color: '#78716C', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 6, padding: '2px 8px', fontFamily: 'ui-monospace,monospace' }}>
-                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FC6514', flexShrink: 0, display: 'inline-block' }} />
+                            <span key={p.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 6, padding: '2px 8px', fontFamily: 'ui-monospace,monospace' }}>
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--brand-color)', flexShrink: 0, display: 'inline-block' }} />
                               {p.label} · {p.start}–{p.end}
                             </span>
                           ))}
@@ -1025,9 +1033,9 @@ export default function SettingsPage() {
                 {/* Header row */}
                 <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 1fr 1fr', gap: 16, alignItems: 'center' }}>
                   <div />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#A8A29E', letterSpacing: '0.09em', textTransform: 'uppercase' }}>Label</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#A8A29E', letterSpacing: '0.09em', textTransform: 'uppercase' }}>Start</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#A8A29E', letterSpacing: '0.09em', textTransform: 'uppercase' }}>End</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.09em', textTransform: 'uppercase' }}>Label</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.09em', textTransform: 'uppercase' }}>Start</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.09em', textTransform: 'uppercase' }}>End</span>
                 </div>
 
                 {PERIODS.map(({ key, defaultLabel }) => {
@@ -1039,7 +1047,7 @@ export default function SettingsPage() {
                           type="checkbox"
                           checked={p.enabled}
                           onChange={e => setPeriod(key, 'enabled', e.target.checked)}
-                          style={{ accentColor: '#FC6514', width: 16, height: 16, cursor: 'pointer' }}
+                          style={{ accentColor: 'var(--brand-color)', width: 16, height: 16, cursor: 'pointer' }}
                         />
                       </div>
 
@@ -1082,7 +1090,7 @@ export default function SettingsPage() {
       {tab !== 'Working Hours' && (
         <form onSubmit={fakeSave}>
           {saved && (
-            <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.22)', borderRadius: 12, padding: '12px 18px', marginBottom: 20, fontSize: 14, color: '#16A34A', fontWeight: 500 }}>
+            <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.22)', borderRadius: 12, padding: '12px 18px', marginBottom: 20, fontSize: 15, color: '#16A34A', fontWeight: 500 }}>
               ✓ Settings saved successfully.
             </div>
           )}
@@ -1121,7 +1129,7 @@ export default function SettingsPage() {
                       <Field label="CFS Address">
                         <textarea value={general.address} onChange={e => { setGeneral(g => ({ ...g, address: e.target.value })); setGeneralDirty(true) }} placeholder="1 Cargo Way, Port Botany NSW 2036" rows={2}
                           style={{ ...INPUT, resize: 'none' }}
-                          onFocus={e => { e.target.style.borderColor = 'rgba(252,101,20,0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(252,101,20,0.12)' }}
+                          onFocus={e => { e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(var(--brand-rgb),0.12)' }}
                           onBlur={e  => { e.target.style.borderColor = 'rgba(0,0,0,0.10)'; e.target.style.boxShadow = 'none' }}
                         />
                       </Field>
@@ -1144,14 +1152,23 @@ export default function SettingsPage() {
                         {general.logoUrl && (
                           <img src={`${general.logoUrl}?t=${Date.now()}`} alt="Logo" style={{ height: 48, objectFit: 'contain', maxWidth: 160, borderRadius: 8, border: '1px solid rgba(0,0,0,0.08)', background: '#f9fafb' }} />
                         )}
-                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', fontSize: 13, fontWeight: 600, color: '#374151', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 10, cursor: logoUploading ? 'not-allowed' : 'pointer', opacity: logoUploading ? 0.6 : 1, alignSelf: 'flex-start' }}>
+                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 10, cursor: logoUploading ? 'not-allowed' : 'pointer', opacity: logoUploading ? 0.6 : 1, alignSelf: 'flex-start' }}>
                           {logoUploading ? 'Uploading…' : general.logoUrl ? 'Change Logo' : 'Upload Logo'}
                           <input type="file" accept="image/*" style={{ display: 'none' }} disabled={logoUploading} onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f) }} />
                         </label>
                       </div>
                     </Field>
                     <Field label="Brand Colour">
-                      <FocusInput type="color" value={general.primaryColor} onChange={e => { setGeneral(g => ({ ...g, primaryColor: e.target.value })); setGeneralDirty(true) }} style={{ ...INPUT, height: 48, padding: '4px 8px', cursor: 'pointer' }} />
+                      <FocusInput type="color" value={general.primaryColor} onChange={e => {
+                        const color = e.target.value
+                        const r = parseInt(color.slice(1, 3), 16)
+                        const g2 = parseInt(color.slice(3, 5), 16)
+                        const b = parseInt(color.slice(5, 7), 16)
+                        document.documentElement.style.setProperty('--brand-color', color)
+                        document.documentElement.style.setProperty('--brand-rgb', `${r},${g2},${b}`)
+                        setGeneral(g => ({ ...g, primaryColor: color }))
+                        setGeneralDirty(true)
+                      }} style={{ ...INPUT, height: 48, padding: '4px 8px', cursor: 'pointer' }} />
                     </Field>
                   </div>
                 )}
@@ -1227,7 +1244,7 @@ export default function SettingsPage() {
                     if (whClose <= periodEnd) return null
                     return (
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.28)', borderRadius: 10, padding: '11px 14px', marginBottom: 20, marginTop: 16 }}>
-                        <p style={{ fontSize: 12, color: '#92400E', lineHeight: 1.5, margin: 0 }}>
+                        <p style={{ fontSize: 14, color: '#92400E', lineHeight: 1.5, margin: 0 }}>
                           Your working hours extend beyond your enabled slot periods (closes at <strong>{whClose}</strong>, last period ends at <strong>{periodEnd}</strong>). Bookings will only be accepted during enabled slot periods.
                         </p>
                       </div>
@@ -1246,10 +1263,10 @@ export default function SettingsPage() {
                     const buckets = makeTimeBuckets(whOpen, whClose, dur)
                     return (
                       <div style={{ marginTop: 24 }}>
-                        <p style={{ fontSize: 10, fontWeight: 700, color: '#78716C', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 10 }}>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 10 }}>
                           Per-hour Capacity
                         </p>
-                        <p style={{ fontSize: 12, color: '#A8A29E', marginBottom: 12, lineHeight: 1.5 }}>
+                        <p style={{ fontSize: 14, color: 'var(--text-tertiary)', marginBottom: 12, lineHeight: 1.5 }}>
                           Set the maximum number of bookings allowed per time slot. Leave a slot at 0 to block it.
                         </p>
                         <div style={{ border: '1px solid rgba(0,0,0,0.09)', borderRadius: 12, overflow: 'hidden', maxHeight: 320, overflowY: 'auto' }}>
@@ -1266,7 +1283,7 @@ export default function SettingsPage() {
                                 borderBottom: i < buckets.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none',
                               }}
                             >
-                              <span style={{ fontSize: 13, fontWeight: 500, color: '#374151', fontFamily: 'ui-monospace,monospace' }}>
+                              <span style={{ fontSize: 15, fontWeight: 500, color: '#374151', fontFamily: 'ui-monospace,monospace' }}>
                                 {bucketLabel(bucket, dur)}
                               </span>
                               <FocusInput
@@ -1410,7 +1427,7 @@ export default function SettingsPage() {
                           style={{ paddingRight: 44 }}
                         />
                         <button type="button" onClick={() => setShowSecretKey(v => !v)}
-                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#78716C', fontWeight: 500, fontFamily: 'inherit' }}>
+                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500, fontFamily: 'inherit' }}>
                           {showSecretKey ? 'Hide' : 'Show'}
                         </button>
                       </div>
@@ -1439,8 +1456,8 @@ export default function SettingsPage() {
               {/* Require payment toggle */}
               <div style={{ ...CARD, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20 }}>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: '#1C1917', marginBottom: 3 }}>Require payment to confirm booking</p>
-                  <p style={{ fontSize: 13, color: '#78716C' }}>When enabled, visitors must complete payment before their slot is confirmed.</p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', marginBottom: 3 }}>Require payment to confirm booking</p>
+                  <p style={{ fontSize: 15, color: 'var(--text-secondary)' }}>When enabled, visitors must complete payment before their slot is confirmed.</p>
                 </div>
                 {paymentLoading ? (
                   <div style={{ width: 44, height: 24, borderRadius: 9999, background: 'rgba(0,0,0,0.08)', flexShrink: 0 }} />
@@ -1491,7 +1508,7 @@ export default function SettingsPage() {
                           style={{ paddingRight: 44 }}
                         />
                         <button type="button" onClick={() => setShowCwApiKey(v => !v)}
-                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#78716C', fontWeight: 500, fontFamily: 'inherit' }}>
+                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500, fontFamily: 'inherit' }}>
                           {showCwApiKey ? 'Hide' : 'Show'}
                         </button>
                       </div>
@@ -1542,7 +1559,7 @@ export default function SettingsPage() {
                           style={{ paddingRight: 44 }}
                         />
                         <button type="button" onClick={() => setShowSmtpPassword(v => !v)}
-                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#78716C', fontWeight: 500, fontFamily: 'inherit' }}>
+                          style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500, fontFamily: 'inherit' }}>
                           {showSmtpPassword ? 'Hide' : 'Show'}
                         </button>
                       </div>
@@ -1622,7 +1639,7 @@ export default function SettingsPage() {
                             {/* Required + Delete stacked or side by side */}
                             <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                               <button type="button" onClick={() => updateDoc(doc.id, 'required', !doc.required)}
-                                style={{ height: 36, padding: '0 10px', borderRadius: 8, border: '1px solid rgba(0,0,0,0.10)', background: doc.required ? 'rgba(252,101,20,0.08)' : '#F7F6F5', color: doc.required ? '#FC6514' : '#78716C', fontWeight: 600, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+                                style={{ height: 36, padding: '0 10px', borderRadius: 8, border: '1px solid rgba(0,0,0,0.10)', background: doc.required ? 'rgba(var(--brand-rgb),0.08)' : '#F7F6F5', color: doc.required ? 'var(--brand-color)' : '#78716C', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
                                 {doc.required ? 'Required' : 'Optional'}
                               </button>
                               <button type="button" onClick={() => removeDoc(doc.id)}
@@ -1642,7 +1659,7 @@ export default function SettingsPage() {
                                 const on = doc.fileTypes.includes(ft)
                                 return (
                                   <button key={ft} type="button" onClick={() => toggleDocArray(doc.id, 'fileTypes', ft)}
-                                    style={{ padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 9999, border: `1px solid ${on ? 'rgba(252,101,20,0.35)' : 'rgba(0,0,0,0.12)'}`, background: on ? 'rgba(252,101,20,0.08)' : '#FAFAF9', color: on ? '#FC6514' : '#78716C', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.13s' }}>
+                                    style={{ padding: '4px 10px', fontSize: 13, fontWeight: 600, borderRadius: 9999, border: `1px solid ${on ? 'rgba(var(--brand-rgb),0.35)' : 'rgba(0,0,0,0.12)'}`, background: on ? 'rgba(var(--brand-rgb),0.08)' : '#FAFAF9', color: on ? 'var(--brand-color)' : '#78716C', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.13s' }}>
                                     {ft}
                                   </button>
                                 )
@@ -1658,7 +1675,7 @@ export default function SettingsPage() {
                                 const on = doc.appliesTo.includes(opt.key)
                                 return (
                                   <button key={opt.key} type="button" onClick={() => toggleDocArray(doc.id, 'appliesTo', opt.key)}
-                                    style={{ padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 9999, border: `1px solid ${on ? 'rgba(252,101,20,0.35)' : 'rgba(0,0,0,0.12)'}`, background: on ? 'rgba(252,101,20,0.08)' : '#FAFAF9', color: on ? '#FC6514' : '#78716C', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.13s', whiteSpace: 'nowrap' }}>
+                                    style={{ padding: '4px 10px', fontSize: 13, fontWeight: 600, borderRadius: 9999, border: `1px solid ${on ? 'rgba(var(--brand-rgb),0.35)' : 'rgba(0,0,0,0.12)'}`, background: on ? 'rgba(var(--brand-rgb),0.08)' : '#FAFAF9', color: on ? 'var(--brand-color)' : '#78716C', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.13s', whiteSpace: 'nowrap' }}>
                                     {opt.label}
                                   </button>
                                 )
@@ -1676,9 +1693,9 @@ export default function SettingsPage() {
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24 }}>
                 <button type="button" onClick={addDocRow}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: '#FC6514', background: 'rgba(252,101,20,0.06)', border: '1px solid rgba(252,101,20,0.22)', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
-                  onMouseOver={e => (e.currentTarget.style.background = 'rgba(252,101,20,0.10)')}
-                  onMouseOut={e  => (e.currentTarget.style.background = 'rgba(252,101,20,0.06)')}>
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 16px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.06)', border: '1px solid rgba(var(--brand-rgb),0.22)', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
+                  onMouseOver={e => (e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.10)')}
+                  onMouseOut={e  => (e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.06)')}>
                   <Icon name={ICONS.add} size={14} />
                   Add Document Type
                 </button>
@@ -1699,7 +1716,7 @@ export default function SettingsPage() {
 
                   {!showInviteForm ? (
                     <button type="button" onClick={() => setShowInviteForm(true)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#FC6514', background: 'rgba(252,101,20,0.07)', border: '1px solid rgba(252,101,20,0.25)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.25)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit' }}>
                       <Icon name={ICONS.add} size={14} />
                       Invite Staff Member
                     </button>
@@ -1740,7 +1757,7 @@ export default function SettingsPage() {
                           {inviteSending ? 'Sending…' : 'Send Invite'}
                         </button>
                         <button type="button" onClick={() => { setShowInviteForm(false); setInvite({ firstName: '', lastName: '', email: '', role: 'reception_staff' }) }}
-                          style={{ marginTop: 0, padding: '11px 20px', fontSize: 13, fontWeight: 600, color: '#78716C', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ marginTop: 0, padding: '11px 20px', fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit' }}>
                           Cancel
                         </button>
                       </div>
@@ -1757,14 +1774,14 @@ export default function SettingsPage() {
                       {[0,1,2].map(i => <div key={i} style={{ height: 52, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
                     </div>
                   ) : staffUsers.length === 0 ? (
-                    <p style={{ fontSize: 14, color: '#A8A29E', margin: 0 }}>No staff members found.</p>
+                    <p style={{ fontSize: 15, color: 'var(--text-tertiary)', margin: 0 }}>No staff members found.</p>
                   ) : (
                     <div style={{ overflowX: 'visible', overflow: 'visible' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 15 }}>
                         <thead>
                           <tr style={{ background: '#F7F6F5', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
                             {['Name', 'Email', 'Role', 'Status', 'Last Login', 'Actions'].map(h => (
-                              <th key={h} style={{ textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#78716C', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>{h}</th>
+                              <th key={h} style={{ textAlign: 'left', padding: '10px 14px', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em', whiteSpace: 'nowrap' }}>{h}</th>
                             ))}
                           </tr>
                         </thead>
@@ -1774,18 +1791,18 @@ export default function SettingsPage() {
                             const ROLE_BADGE: Record<string, { label: string; bg: string; color: string }> = {
                               super_admin:      { label: 'Super Admin', bg: '#F5F3FF', color: '#7C3AED' },
                               reception_admin:  { label: 'Admin',       bg: '#EFF6FF', color: '#2563EB' },
-                              reception_staff:  { label: 'Staff',       bg: '#F3F4F6', color: '#6B7280' },
+                              reception_staff:  { label: 'Staff',       bg: '#F3F4F6', color: 'var(--text-mid)' },
                             }
-                            const badge = ROLE_BADGE[u.role] ?? { label: u.role, bg: '#F3F4F6', color: '#6B7280' }
+                            const badge = ROLE_BADGE[u.role] ?? { label: u.role, bg: '#F3F4F6', color: 'var(--text-mid)' }
                             const BadgeEl = (
-                              <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 10, background: badge.bg, color: badge.color }}>
+                              <span style={{ display: 'inline-block', fontSize: 13, fontWeight: 600, padding: '3px 9px', borderRadius: 10, background: badge.bg, color: badge.color }}>
                                 {badge.label}
                               </span>
                             )
                             return (
                               <tr key={u.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                                 <td style={{ padding: '12px 14px', fontWeight: 600, color: '#1C1917', whiteSpace: 'nowrap' }}>{name}</td>
-                                <td style={{ padding: '12px 14px', color: '#78716C' }}>{u.email}</td>
+                                <td style={{ padding: '12px 14px', color: 'var(--text-secondary)' }}>{u.email}</td>
                                 <td style={{ padding: '12px 14px', position: 'relative', zIndex: 10 }}>
                                   {u.role === 'super_admin' ? (
                                     // super_admin rows show badge only — role is immutable
@@ -1807,16 +1824,16 @@ export default function SettingsPage() {
                                   )}
                                 </td>
                                 <td style={{ padding: '12px 14px' }}>
-                                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 9999, fontSize: 12, fontWeight: 600, background: u.is_active ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.10)', color: u.is_active ? '#16A34A' : '#DC2626', border: `1px solid ${u.is_active ? 'rgba(34,197,94,0.22)' : 'rgba(239,68,68,0.22)'}` }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 9999, fontSize: 14, fontWeight: 600, background: u.is_active ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.10)', color: u.is_active ? '#16A34A' : '#DC2626', border: `1px solid ${u.is_active ? 'rgba(34,197,94,0.22)' : 'rgba(239,68,68,0.22)'}` }}>
                                     {u.is_active ? 'Active' : 'Inactive'}
                                   </span>
                                 </td>
-                                <td style={{ padding: '12px 14px', color: '#78716C', whiteSpace: 'nowrap' }}>
+                                <td style={{ padding: '12px 14px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
                                   {u.last_login_at ? fmtDateTime(u.last_login_at) : 'Never'}
                                 </td>
                                 <td style={{ padding: '12px 14px' }}>
                                   <button type="button" onClick={() => toggleActive(u.id, u.is_active)}
-                                    style={{ padding: '6px 14px', fontSize: 12, fontWeight: 600, borderRadius: 8, border: `1px solid ${u.is_active ? 'rgba(239,68,68,0.22)' : 'rgba(34,197,94,0.22)'}`, background: u.is_active ? 'rgba(239,68,68,0.06)' : 'rgba(34,197,94,0.06)', color: u.is_active ? '#DC2626' : '#16A34A', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                                    style={{ padding: '6px 14px', fontSize: 14, fontWeight: 600, borderRadius: 8, border: `1px solid ${u.is_active ? 'rgba(239,68,68,0.22)' : 'rgba(34,197,94,0.22)'}`, background: u.is_active ? 'rgba(239,68,68,0.06)' : 'rgba(34,197,94,0.06)', color: u.is_active ? '#DC2626' : '#16A34A', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                                     {u.is_active ? 'Deactivate' : 'Activate'}
                                   </button>
                                 </td>
