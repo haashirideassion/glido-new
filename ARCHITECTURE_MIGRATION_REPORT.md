@@ -1,58 +1,81 @@
-# Glido Frontend — Architecture Migration Report
+# Glido Frontend — Architecture Migration Report (Revised)
 **Prepared for:** Backend Developer  
 **Date:** June 2026  
-**Purpose:** Documents every frontend change required to migrate Glido from direct Supabase calls to the SRD Express + JWT architecture, and specifies all API endpoints the backend must expose.
+**Revision:** v3 — file count reconciled, realtime locked to polling, password migration owner added
+
+---
+
+## 0. Scope Clarification
+
+**The goal is architectural parity, not tooling parity.**
+
+We are adopting SRD-FleetSense's structure and data-flow discipline. We are not copying its tools, routes, or business logic.
+
+| Adopt from SRD | Keep as Glido's own |
+|---|---|
+| Separated frontend + Express/pg backend layout | All features (kiosk, wizard, reception, walk-ins, bookings) |
+| JWT Bearer auth flow (`jsonwebtoken` + `bcryptjs`) | All UI — pages, components, styling, UX |
+| Request pipeline: `apiClient` → `fetcher` → `{success, data, error}` envelope | All business logic and domain |
+| Layering discipline: components → hooks → API → pg → Postgres | The Postgres database (point pg at the existing Supabase DB) |
+
+**Explicitly excluded:** SRD's actual routes — consignments, trip-sheets, zones, nodes, incoming-trucks, Freight Tiger sync, cron jobs. These are SRD's domain and must not be ported. They serve as a reference for shape, not content.
+
+**Framework difference:** SRD's frontend is **Next.js**. Glido stays **Vite + React**. We adopt SRD's backend and its client data-flow pattern, not its frontend framework. SRD's `next.config.mjs` proxy is not replicated.
 
 ---
 
 ## 1. Current State — Glido Frontend
 
-Glido is a **Vite + React SPA** (not Next.js). It communicates with the database exclusively through the Supabase JS client, using the anon key stored in environment variables. There is no custom backend — Supabase acts as both the auth provider and the database API.
+Glido is a **Vite + React SPA**. It communicates with the database exclusively through the Supabase JS client. There is no custom backend — Supabase acts as both the auth provider and the database API.
 
 **Tech stack today:**
 - Framework: Vite + React + React Router v6
 - Auth: Supabase Auth (`supabase.auth.getSession`, `onAuthStateChange`)
 - Database: Direct Supabase PostgREST calls (`supabase.from('table').select(...)`)
-- HTTP abstraction: None — all calls go through `supabase` client
-- State management: React Context only (no Zustand)
-- Backend: None (Supabase is the backend)
+- Storage: `supabase.storage` for file uploads
+- Realtime: `supabase.channel()` for live data subscriptions
+- HTTP abstraction: None — all calls go through the `supabase` client
+- State management: React Context only
 
-**Files that contain Supabase calls (37 files total):**
+**Supabase footprint — 36 files in scope:**
 
-| File | What it does |
-|---|---|
-| `src/lib/supabase.ts` | Creates the Supabase client (anon key, URL) |
-| `src/contexts/AuthContext.tsx` | Supabase Auth session management |
-| `src/contexts/ReceptionAuthContext.tsx` | Secondary auth context for reception staff |
-| `src/lib/auth.ts` | Auth helpers |
-| `src/lib/db/bookings.ts` | All booking CRUD operations |
-| `src/lib/db/slots.ts` | Slot availability queries |
-| `src/lib/db/walk-ins.ts` | Walk-in records |
-| `src/lib/db/tenants.ts` | Tenant config |
-| `src/lib/db/checkin-records.ts` | Check-in log |
-| `src/lib/db/cfs-shipments.ts` | Shipment records |
-| `src/lib/useTenantInfo.ts` | Tenant info hook |
-| `src/pages/StaffLoginPage.tsx` | Staff login using Supabase Auth |
-| `src/pages/VisitorLoginPage.tsx` | Visitor login using Supabase Auth |
-| `src/pages/ForgotPasswordPage.tsx` | Password reset via Supabase Auth |
-| `src/contexts/WizardContext.tsx` | Booking wizard — DB calls |
-| `src/contexts/KioskContext.tsx` | Kiosk flow — DB calls |
-| + ~21 page/component files | Direct `supabase.from(...)` calls |
+The original report assumed Supabase was contained in `lib/db/*` (6 modules) and that UI was a stable consumer. This was verified as inaccurate. Direct `supabase.from` / `auth` / `storage` / `channel` calls live inside UI components and pages, not only in `lib/db/`.
+
+Note: the grep returns 37 matches — the 37th is `src/public/alpine-init.js`, a standalone Alpine.js script that is out of scope for the React migration and excluded from the table below.
+
+| Category | Files | Count |
+|---|---|---|
+| DB abstraction layer | `lib/db/bookings.ts`, `lib/db/slots.ts`, `lib/db/walk-ins.ts`, `lib/db/tenants.ts`, `lib/db/checkin-records.ts`, `lib/db/cfs-shipments.ts` | 6 |
+| Auth contexts | `contexts/AuthContext.tsx`, `contexts/ReceptionAuthContext.tsx`, `contexts/KioskContext.tsx`, `contexts/WizardContext.tsx` | 4 |
+| Auth/lib helpers | `lib/supabase.ts`, `lib/auth.ts`, `lib/useTenantInfo.ts` | 3 |
+| Login / auth pages | `pages/StaffLoginPage.tsx`, `pages/VisitorLoginPage.tsx`, `pages/ForgotPasswordPage.tsx` | 3 |
+| Reception pages (inline DB calls) | `pages/reception/BookingsPage.tsx`, `pages/reception/DashboardPage.tsx`, `pages/reception/BookingDetailPage.tsx`, `pages/reception/VisitorDetailPage.tsx`, `pages/reception/SettingsPage.tsx`, `pages/reception/WalkInsPage.tsx`, `pages/reception/VisitorLogPage.tsx`, `pages/reception/ReportsConfigPage.tsx` | 8 |
+| Portal wizard components (inline DB + storage) | `components/portal/Step1ServiceType.tsx`, `components/portal/Step4ShipmentDetails.tsx`, `components/portal/Step5Documents.tsx`, `components/portal/Step6ContactVehicle.tsx`, `components/portal/Step7Confirmation.tsx` | 5 |
+| Layouts / guards (inline DB + realtime) | `layouts/ReceptionLayout.tsx`, `layouts/PublicLayout.tsx`, `components/ReceptionGuard.tsx` | 3 |
+| Other pages / components | `pages/KioskPage.tsx`, `pages/LandingPage.tsx`, `pages/ProfilePage.tsx`, `components/kiosk/WelcomeScreen.tsx` | 4 |
+| **Total (in scope)** | | **36** |
+
+**Consequence:** The "UI untouched / swap hooks only" assumption does not hold. Migrating these requires editing UI files to first lift inline Supabase calls into custom hooks, then swap the hook internals. This is a per-component refactor, not a mechanical repetition.
 
 ---
 
-## 2. Target State — SRD Architecture
+## 2. Target Architecture
 
-The SRD project uses a **Next.js frontend** that never calls the database directly. All data access goes through a custom **Express backend** over a JWT-authenticated REST API.
+Glido's frontend will remain **Vite + React**. The backend will be a new **Express + PostgreSQL** service. The frontend never calls the database directly — all data access goes through the Express API over JWT Bearer auth.
 
 **Target tech stack:**
-- Auth: Custom JWT (HS256, via `jose` library), stored in `localStorage`
-- HTTP layer: Centralized `apiClient()` function — attaches Bearer token, handles 401 redirect, deduplicates GET requests
-- Fetcher wrappers: `fetcher`, `postFetcher`, `putFetcher`, `deleteFetcher`, `patchFetcher`
-- State: Zustand stores with TTL-based caching and in-flight deduplication
-- Backend proxy: All API calls use relative paths (`/api/v2/...`) — no hardcoded backend URLs in components
+- Auth: Custom JWT (`jsonwebtoken` + `bcryptjs`), token stored in `localStorage`
+- HTTP layer: Centralised `apiClient()` — attaches `Authorization: Bearer <token>`, handles 401 redirect, deduplicates GET requests
+- Fetcher wrappers: `fetcher`, `postFetcher`, `putFetcher`, `patchFetcher`, `deleteFetcher`
+- State: Zustand (derived/shared state), React Query (server cache), Context (UI-only state)
+- Dev routing: Vite `server.proxy` in development; CORS configured on Express for production
 
-**Key principle:** The browser never holds database credentials. The JWT token is the only credential the frontend manages.
+**Key principle:** The browser never holds database credentials. The JWT token is the only credential the frontend manages. Auth is Bearer-only — no cookies anywhere in the flow.
+
+**Request pipeline:**
+```
+Component → Custom Hook → fetcher/apiClient → Express → Postgres
+```
 
 ---
 
@@ -60,76 +83,65 @@ The SRD project uses a **Next.js frontend** that never calls the database direct
 
 ### 3.1 New Files to Create
 
-These files do not exist in Glido and must be created from scratch, modelled on the SRD equivalents.
-
 #### `src/lib/api-client.ts`
-The single HTTP entry point for all API calls. Responsibilities:
+The single HTTP entry point. Responsibilities:
 - Reads JWT from `localStorage` (key: `glido_auth_token`)
 - Attaches `Authorization: Bearer <token>` to every request
-- Uses relative paths (`/api/v2/...`) — Vite dev proxy routes these to Express
-- Deduplicates concurrent GET requests using an in-flight Map
-- On 401 response: clears token, redirects to `/login`
-- On 5xx response: shows a toast error
-- On network failure: shows a connection error toast
+- Calls Express directly (CORS) — no proxy needed in production
+- Deduplicates concurrent GET requests via an in-flight Map
+- On 401: clears token, redirects to `/login`
+- On 5xx: shows toast error
+- On network failure: shows connection error toast
 
 #### `src/lib/fetcher.ts`
-Convenience wrappers around `apiClient`. Must export:
+Convenience wrappers around `apiClient`:
 - `fetcher(url, options?)` — GET
 - `postFetcher(url, body)` — POST
 - `putFetcher(url, body)` — PUT
 - `patchFetcher(url, body)` — PATCH
 - `deleteFetcher(url)` — DELETE
-- `rawFetcher(url, options?)` — for blob/file responses (e.g. report downloads)
+- `rawFetcher(url, options?)` — for blob/file responses
 
 #### `src/lib/jwt.ts`
-Client-side JWT helpers:
-- `decodeJwtPayload(token)` — decodes payload without verifying signature (for instant UI restore on reload)
+Client-side JWT helpers (decode only — no signing, that's the backend's job):
+- `decodeJwtPayload(token)` — decodes payload without verifying signature, for instant UI restore on reload
 - `setToken(token | null)` — stores/removes token from `localStorage`
 - `getToken()` — retrieves token from `localStorage`
 
 ---
 
-### 3.2 Files to Replace — Auth Layer
+### 3.2 Auth Layer — Rewrite (3 files)
 
-#### `src/contexts/AuthContext.tsx` — Full Rewrite
-
+#### `src/contexts/AuthContext.tsx` — Full rewrite
 Remove all Supabase Auth dependency. The new version must:
-
-1. On mount, read JWT from `localStorage` and decode it locally (no network) to instantly restore the session and prevent the login-page flash
-2. Validate expiry from the JWT `exp` claim — clear the token without a network call if expired
-3. In the background, call `GET /api/v2/auth/me` to verify the token server-side (catches revocations)
+1. On mount, read JWT from `localStorage` and decode it locally (no network) to instantly restore the session
+2. Validate the `exp` claim — clear the token without a network call if expired
+3. In the background, call `GET /api/v2/auth/me` to verify server-side (catches revocations)
 4. Only redirect to `/login` on a definitive 401 — never on network errors or 5xx
 5. Expose: `user`, `isAuthenticated`, `isLoading`, `login(email, password)`, `logout()`
-6. `login()` must call `POST /api/v2/auth/login`, store the returned JWT, and set the user state
-7. `logout()` must clear the token from `localStorage` and redirect to `/login`
+6. `login()` calls `POST /api/v2/auth/login`, stores the returned JWT, sets user state
+7. `logout()` clears the token from `localStorage` and redirects to `/login`
 
-The `AuthUser` interface remains the same (`id`, `email`, `role`, `firstName`).
+**Remove:** `src/contexts/ReceptionAuthContext.tsx` — consolidate into the single `AuthContext`. Role checking reads `user.role` from the JWT.
 
-**Remove:** `src/contexts/ReceptionAuthContext.tsx` — consolidate into the single `AuthContext`. Role checking is handled by reading `user.role` from the JWT.
+#### `src/pages/StaffLoginPage.tsx` — Edit
+Replace `supabase.auth.signInWithPassword(...)` with `login(email, password)` from `useAuth()`.
 
-#### `src/pages/StaffLoginPage.tsx` — Minor Edit
-Replace `supabase.auth.signInWithPassword(...)` with a call to `login(email, password)` from `useAuth()`. No other structural changes needed.
+#### `src/pages/VisitorLoginPage.tsx` — Edit
+Same as above.
 
-#### `src/pages/VisitorLoginPage.tsx` — Minor Edit
-Same as above — replace Supabase Auth call with `login()` from context.
-
-#### `src/pages/ForgotPasswordPage.tsx` — Depends on Backend
-Replace `supabase.auth.resetPasswordForEmail(...)` with `POST /api/v2/auth/forgot-password`. The UI flow stays the same.
-
-#### `src/lib/supabase.ts` — Delete
-This file is removed entirely once all consumers are migrated.
+#### `src/pages/ForgotPasswordPage.tsx` — Edit
+Replace `supabase.auth.resetPasswordForEmail(...)` with `POST /api/v2/auth/forgot-password`. Note: this is blocked by the password migration work item below.
 
 ---
 
-### 3.3 Files to Replace — Database Layer
+### 3.3 DB Abstraction Layer — Mechanical Swap (6 files)
 
-All files in `src/lib/db/` currently call Supabase directly. Each function must be rewritten to call the corresponding Express REST endpoint via `fetcher`.
-
-The function signatures stay **identical** — only the implementation changes. This is the key advantage of the existing abstraction: components do not need to change, only the `db/` files.
+All files in `src/lib/db/` call Supabase directly. Each function is rewritten to call the corresponding Express endpoint via `fetcher`. Function signatures stay identical — only the implementation changes.
 
 #### `src/lib/db/bookings.ts`
 
-| Current Supabase function | Replacement call |
+| Current | Replacement |
 |---|---|
 | `getBookings()` | `GET /api/v2/bookings` |
 | `getBookingsByDateRange(from, to)` | `GET /api/v2/bookings?from=&to=` |
@@ -187,9 +199,39 @@ The function signatures stay **identical** — only the implementation changes. 
 
 ---
 
-### 3.4 Vite Dev Proxy — `vite.config.ts`
+### 3.4 UI Component Refactors — Per-Component (21 files)
 
-Since Glido is a Vite SPA (not Next.js), there are no server-side API routes. API calls must be proxied to Express during development. Add the following to `vite.config.ts`:
+These files have inline `supabase.from` / `auth` / `storage` / `channel` calls embedded directly in component logic. Each requires a two-step refactor: (1) lift the inline Supabase call into a custom hook, (2) swap the hook's internals to use `fetcher`. The visual UI is preserved throughout — only the data layer changes.
+
+| File | Inline calls to lift |
+|---|---|
+| `pages/reception/BookingsPage.tsx` | `supabase.from(...)` + realtime `.channel()` |
+| `pages/reception/DashboardPage.tsx` | `supabase.from(...)` + realtime `.channel()` |
+| `pages/reception/BookingDetailPage.tsx` | `supabase.from(...)` × 4 + `supabase.storage` |
+| `pages/reception/VisitorDetailPage.tsx` | `supabase.from(...)` + `supabase.storage` |
+| `pages/reception/SettingsPage.tsx` | `supabase.from(...)` + `supabase.storage` + auth inline |
+| `pages/reception/WalkInsPage.tsx` | `supabase.from(...)` + realtime `.channel()` |
+| `pages/reception/VisitorLogPage.tsx` | `supabase.from(...)` |
+| `pages/reception/ReportsConfigPage.tsx` | `supabase.from(...)` |
+| `components/portal/Step1ServiceType.tsx` | `supabase.from(...)` |
+| `components/portal/Step4ShipmentDetails.tsx` | `supabase.from(...)` |
+| `components/portal/Step5Documents.tsx` | `supabase.storage` |
+| `components/portal/Step6ContactVehicle.tsx` | `supabase.from(...)` + `supabase.storage` |
+| `components/portal/Step7Confirmation.tsx` | `supabase.from(...)` |
+| `layouts/ReceptionLayout.tsx` | `supabase.from(...)` + realtime `.channel()` |
+| `layouts/PublicLayout.tsx` | `supabase.auth` inline |
+| `components/ReceptionGuard.tsx` | `supabase.auth` inline |
+| `contexts/KioskContext.tsx` | `supabase.from(...)` |
+| `contexts/WizardContext.tsx` | `supabase.from(...)` |
+| `pages/KioskPage.tsx` | `supabase.from(...)` |
+| `pages/LandingPage.tsx` | `supabase.from(...)` |
+| `pages/ProfilePage.tsx` | `supabase.from(...)` + `supabase.auth` |
+
+---
+
+### 3.5 Vite Dev Config — `vite.config.ts`
+
+In development, add a proxy entry so `/api` calls reach the local Express server:
 
 ```ts
 server: {
@@ -202,110 +244,160 @@ server: {
 }
 ```
 
-In production, Nginx (or the hosting platform) handles the proxy — same pattern as the SRD project.
+In production, Express must have CORS configured to allow requests from the Glido frontend origin. There is no server-side proxy — this is Bearer-only auth, so CORS is the correct pattern.
 
 ---
 
-### 3.5 Optional — Zustand Store
+### 3.6 Remove Supabase
 
-The SRD project uses a Zustand store (`useDashboardStore`) to cache dashboard data with a 15-second TTL, preventing duplicate API calls across components.
+Once all 36 files are migrated:
+- Delete `src/lib/supabase.ts`
+- Remove `@supabase/supabase-js` from `package.json`
+- Remove `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from all environment files
 
-Glido currently has no equivalent. This is **optional for v1** — React Context is sufficient — but recommended once traffic grows. If added, it should follow the same pattern:
-- Single `fetchDashboard()` action
-- TTL check before re-fetching
-- `_inFlightPromise` deduplication guard
-- Single atomic `set()` call
+Note: `components/kiosk/WelcomeScreen.tsx` imports only the `DEFAULT_TENANT_ID` constant from `supabase.ts` — no DB calls. When `supabase.ts` is deleted, move this constant to a shared `src/lib/constants.ts` file and update the import. This is a one-line fix, not a component refactor.
 
 ---
 
-## 4. API Endpoints the Backend Must Expose
+## 4. Dedicated Work Items
 
-This is the complete list of endpoints the migrated Glido frontend expects. All endpoints are prefixed `/api/v2/` and require `Authorization: Bearer <token>` except where marked public.
+These three items are launch-relevant and require their own planning. They are not covered by the standard migration sweep above.
+
+### Work Item A — Storage Uploads
+
+Glido currently uses `supabase.storage` for file uploads in 4 components. Each needs a backend upload/signed-URL endpoint and a client-side rewrite.
+
+| File | Current usage |
+|---|---|
+| `pages/reception/BookingDetailPage.tsx` | Document uploads against a booking |
+| `pages/reception/SettingsPage.tsx` | Logo / branding asset uploads |
+| `pages/reception/VisitorDetailPage.tsx` | Visitor document uploads |
+| `components/portal/Step6ContactVehicle.tsx` | Vehicle document uploads in booking wizard |
+
+**Backend must expose:**
+- `POST /api/v2/uploads` — accepts multipart/form-data, stores file, returns URL
+- `GET /api/v2/uploads/signed-url?key=` — returns a time-limited signed URL for retrieval
+
+**Frontend rewrite:** Replace each `supabase.storage.from(...).upload(...)` call with a `rawFetcher` POST to the upload endpoint.
+
+---
+
+### Work Item B — Realtime Subscriptions
+
+Glido uses `supabase.channel()` for live data in 4 places. SRD has no realtime equivalent. **Decision locked: polling for launch. WebSockets deferred post-launch.**
+
+| File | What it subscribes to | Polling replacement |
+|---|---|---|
+| `pages/reception/BookingsPage.tsx` | Booking status changes | `setInterval` → `GET /api/v2/bookings?date=today` every 15s |
+| `pages/reception/WalkInsPage.tsx` | New walk-in arrivals | `setInterval` → `GET /api/v2/walk-ins` every 15s |
+| `layouts/ReceptionLayout.tsx` | Walk-in count badge in navigation | `setInterval` → `GET /api/v2/walk-ins` every 15s |
+| `pages/reception/DashboardPage.tsx` | Live KPI tile updates | `setInterval` → `GET /api/v2/dashboard` every 15s |
+
+Each `.channel()` subscription is replaced with a `useEffect` + `setInterval` that calls the corresponding REST endpoint. No new backend work required — the existing endpoints are reused. Polling interval can be tuned per component.
+
+---
+
+### Work Item C — Password Migration ⚠️ Launch Blocker
+
+**Owner:** To be assigned — backend lead + product must align before Phase 2 (auth cutover) begins.  
+**Deadline:** Decision must be made and implementation complete before Phase 2 ships. Nobody can log in at cutover until this is resolved.
+
+Supabase Auth holds the password hashes for all existing Glido users. These hashes use Supabase's internal format and cannot be exported or re-used in the new Express/bcrypt system.
+
+**Consequence:** Every existing user will be unable to log in after cutover unless a migration path is in place.
+
+**Choose one — decision must be made before Phase 2 coding begins:**
+
+| Option | Description | Impact |
+|---|---|---|
+| Reset-email flow | At cutover, send all existing users a password-reset email. They set a new password on the new system before they can log in. | Requires email delivery working on launch day. Users get one email, expect some friction. |
+| Forced reset at first login | Migrate user records (email, role) but not passwords. On first login attempt, detect missing hash and redirect to reset flow. | Smoother UX — users hit friction only when they actually log in. Requires a `password_reset_required` flag in the `app_users` table. |
+
+---
+
+## 5. API Endpoints the Backend Must Expose
+
+All endpoints prefixed `/api/v2/`. All require `Authorization: Bearer <token>` except where marked public.
 
 ### Auth
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| POST | `/api/v2/auth/login` | Public | Email + password → returns `{ success, data: { token, user } }` |
+| POST | `/api/v2/auth/login` | Public | Returns `{ success, data: { token, user } }` |
 | GET | `/api/v2/auth/me` | Required | Returns current user from JWT |
-| POST | `/api/v2/auth/logout` | Required | Invalidates session (optional if stateless JWT) |
+| POST | `/api/v2/auth/logout` | Required | Stateless JWT — optional, can be no-op |
 | POST | `/api/v2/auth/forgot-password` | Public | Sends reset email |
 | POST | `/api/v2/auth/reset-password` | Public | Accepts reset token + new password |
 
 ### Bookings
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET | `/api/v2/bookings` | Required | List bookings — supports query params: `date`, `from`, `to`, `ref`, `rego`, `userId`, `groupRef`, `status` |
+| GET | `/api/v2/bookings` | Required | Supports: `date`, `from`, `to`, `ref`, `rego`, `userId`, `groupRef`, `status` |
 | GET | `/api/v2/bookings/find?q=` | Required | Find by ID or reference number |
-| GET | `/api/v2/bookings/:id` | Required | Single booking by ID |
+| GET | `/api/v2/bookings/:id` | Required | Single booking |
 | POST | `/api/v2/bookings` | Required | Create booking |
-| PATCH | `/api/v2/bookings/:id/checkin` | Required | Mark as checked in |
-| PATCH | `/api/v2/bookings/:id/complete` | Required | Mark as completed (accepts `{ notes }` body) |
-| PATCH | `/api/v2/bookings/:id/reschedule` | Required | Reschedule (accepts `{ date, startTime, endTime }`) |
-| PATCH | `/api/v2/bookings/:id/cancel` | Required | Cancel (only if status = scheduled) |
+| PATCH | `/api/v2/bookings/:id/checkin` | Required | Mark checked in |
+| PATCH | `/api/v2/bookings/:id/complete` | Required | Mark completed — body: `{ notes? }` |
+| PATCH | `/api/v2/bookings/:id/reschedule` | Required | Body: `{ date, startTime, endTime }` |
+| PATCH | `/api/v2/bookings/:id/cancel` | Required | Guard: only if `status = scheduled` |
 
 ### Dashboard
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET | `/api/v2/dashboard` | Required | KPI stats for today — `todaysVisitors`, `checkedIn`, `pending`, `icsHeld`, `recentVisitors` |
+| GET | `/api/v2/dashboard` | Required | Returns `todaysVisitors`, `checkedIn`, `pending`, `icsHeld`, `recentVisitors` |
 
 ### Slots
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET | `/api/v2/slots` | Required | Slots — supports `date`, `from`, `to` query params |
-| GET | `/api/v2/slots/busyness?date=` | Required | Busyness level per slot for a given date |
+| GET | `/api/v2/slots` | Required | Supports `date`, `from`, `to` |
+| GET | `/api/v2/slots/busyness?date=` | Required | Busyness level per slot |
 
 ### Walk-ins
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | GET | `/api/v2/walk-ins` | Required | All walk-in records |
-| POST | `/api/v2/walk-ins` | Required | Create walk-in |
-| PATCH | `/api/v2/walk-ins/:id` | Required | Update walk-in |
+| POST | `/api/v2/walk-ins` | Required | Create |
+| PATCH | `/api/v2/walk-ins/:id` | Required | Update |
 
 ### Tenants
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | GET | `/api/v2/tenants/:id` | Required | Get tenant config |
-| PATCH | `/api/v2/tenants/:id` | Required | Update tenant settings |
+| PATCH | `/api/v2/tenants/:id` | Required | Update settings |
 
 ### Check-in Records
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | GET | `/api/v2/checkin-records?bookingId=` | Required | Records for a booking |
-| POST | `/api/v2/checkin-records` | Required | Create check-in record |
+| POST | `/api/v2/checkin-records` | Required | Create record |
 
 ### Shipments (CFS)
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | GET | `/api/v2/shipments` | Required | All shipments |
-| GET | `/api/v2/shipments?billNumber=` | Required | Filter by house bill number |
+| GET | `/api/v2/shipments?billNumber=` | Required | Filter by bill number |
+
+### Uploads (Work Item A)
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/api/v2/uploads` | Required | Multipart upload — returns `{ url }` |
+| GET | `/api/v2/uploads/signed-url?key=` | Required | Returns time-limited signed URL |
 
 ---
 
-## 5. Standard API Response Shape
-
-All endpoints must return the same envelope the SRD backend uses, so the frontend `apiClient` can handle errors consistently:
+## 6. Standard API Response Envelope
 
 ```json
-// Success
 { "success": true, "data": { ... } }
-
-// Error
 { "success": false, "error": { "message": "Human-readable message" } }
 ```
 
-HTTP status codes:
-- `200` — success
-- `400` — bad request (validation error)
-- `401` — unauthenticated (triggers frontend redirect to `/login`)
-- `403` — forbidden (wrong role)
-- `404` — not found
-- `500` — server error (triggers frontend toast)
+HTTP status codes: `200` success, `400` validation error, `401` unauthenticated (triggers `/login` redirect), `403` forbidden, `404` not found, `500` server error (triggers toast).
 
 ---
 
-## 6. JWT Token Shape
+## 7. JWT Token Shape
 
-The frontend decodes the JWT payload client-side (without verifying) to restore the session instantly on page reload. The payload must include:
+The frontend decodes the JWT payload client-side (without verifying signature) to restore the session on page reload. The backend (`jsonwebtoken` + `bcryptjs`) must sign tokens with a payload containing:
 
 ```json
 {
@@ -317,25 +409,27 @@ The frontend decodes the JWT payload client-side (without verifying) to restore 
 }
 ```
 
-The `role` field drives route guarding (`ReceptionGuard`) and feature visibility throughout the app.
+Token expiry: `JWT_EXPIRATION || '1h'` (matches SRD backend pattern).
 
 ---
 
-## 7. Migration Effort Summary
+## 8. Revised Effort Estimate
 
-| Area | Files | Effort |
-|---|---|---|
-| New files (`api-client`, `fetcher`, `jwt`) | 3 new files | ~3 hrs |
-| Auth context rewrite | 2 files (AuthContext, ReceptionAuthContext) | ~3 hrs |
-| Login pages (minor edit) | 2 files | ~1 hr |
-| `src/lib/db/` rewrites | 6 files | ~1 day |
-| Vite proxy config | 1 line | ~15 min |
-| Component-level Supabase calls (scattered) | ~21 files | ~4 hrs |
-| **Total frontend** | | **~2.5 days** |
-| **Backend (Express endpoints)** | | **~5–7 days** |
+| Area | Files | Type | Effort |
+|---|---|---|---|
+| New lib files (`api-client`, `fetcher`, `jwt`) | 3 | New | ~3 hrs |
+| Auth context + login pages rewrite | 5 | Rewrite | ~4 hrs |
+| `src/lib/db/` rewrites | 6 | Mechanical swap | ~1 day |
+| UI component refactors (inline Supabase → hooks) | 21 | Per-component refactor | ~3–4 days |
+| Vite dev config | 1 | Config | ~15 min |
+| Storage uploads (Work Item A) | 4 | Refactor + new endpoints | ~2 days |
+| Realtime replacement — polling (Work Item B) | 4 | Refactor | ~1 day |
+| Password migration (Work Item C) | — | Decision + implementation | ~1–2 days |
+| **Total frontend** | | | **~10–12 days** |
+| **Backend (Express endpoints)** | | | **~5–7 days** |
 
-**The frontend changes are purely mechanical.** Because all database calls are already isolated in `src/lib/db/`, no component logic changes. The migration is: swap the implementation inside each `db/*.ts` function, rewrite `AuthContext`, add the three new lib files, and configure the Vite proxy.
+**Key correction from v1:** The 21 UI component files require per-component refactoring (lift inline calls into hooks, then swap hook internals). This is not mechanical repetition and drives the majority of the frontend estimate.
 
 ---
 
-*End of report*
+*End of report — v3*

@@ -59,7 +59,7 @@ export function Step3HoldConfirm() {
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <img src={packageImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
           </div>
           <div>
@@ -148,20 +148,20 @@ function ApplyAllToggle({ on, onToggle, slotCount, field }: {
         onClick={onToggle}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 7,
-          padding: '5px 12px', borderRadius: 9999,
+          padding: '5px 12px', borderRadius: 'var(--r-full)',
           background: on ? 'rgba(var(--brand-rgb),0.10)' : 'rgba(0,0,0,0.06)',
           border: `1.5px solid ${on ? 'rgba(var(--brand-rgb),0.30)' : 'rgba(0,0,0,0.12)'}`,
           cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit',
         }}
       >
         <span style={{
-          position: 'relative', width: 28, height: 16, borderRadius: 9999,
+          position: 'relative', width: 28, height: 16, borderRadius: 'var(--r-full)',
           background: on ? 'var(--brand-color, #FC6514)' : '#D1D5DB',
           display: 'inline-block', flexShrink: 0, transition: 'background 0.15s',
         }}>
           <span style={{
             position: 'absolute', top: 2, left: on ? 14 : 2,
-            width: 12, height: 12, borderRadius: 9999,
+            width: 12, height: 12, borderRadius: 'var(--r-full)',
             background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.18)', transition: 'left 0.15s',
           }} />
         </span>
@@ -189,7 +189,7 @@ function LoadCard({ selected, onClick, icon, label, sub, bullets }: {
       style={{
         position: 'relative',
         display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-        padding: '20px 18px 18px', borderRadius: 16,
+        padding: '20px 18px 18px', borderRadius: 'var(--r-lg)',
         border: selected ? '2px solid var(--brand-color, #FC6514)' : '1.5px solid rgba(0,0,0,0.08)',
         background: selected ? 'rgba(var(--brand-rgb),0.04)' : '#fff',
         cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s ease',
@@ -199,7 +199,7 @@ function LoadCard({ selected, onClick, icon, label, sub, bullets }: {
       {selected && (
         <div style={{
           position: 'absolute', top: 12, right: 12,
-          width: 20, height: 20, borderRadius: 9999,
+          width: 20, height: 20, borderRadius: 'var(--r-full)',
           background: 'var(--brand-color, #FC6514)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
@@ -209,7 +209,7 @@ function LoadCard({ selected, onClick, icon, label, sub, bullets }: {
         </div>
       )}
       <div style={{
-        width: 112, height: 112, borderRadius: 24,
+        width: 112, height: 112, borderRadius: 'var(--r-xl)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         marginBottom: 14, flexShrink: 0,
         background: selected ? 'rgba(var(--brand-rgb),0.8)' : '#F3F4F6',

@@ -154,12 +154,27 @@ const DEFAULT_DOC_REQUIREMENTS: DocRequirement[] = COMBO_DEFAULTS
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const TABS = ['General', 'Working Hours', 'Slot Config', 'Pricing', 'Payment', 'Integrations', 'Document Requirements', 'User Management']
+const GROUPS = [
+  { id: 'General',      label: 'General',      sections: ['General', 'Working Hours'] },
+  { id: 'Bookings',     label: 'Bookings',     sections: ['Slot Config', 'Pricing', 'Payment'] },
+  { id: 'Integrations', label: 'Integrations', sections: ['Integrations', 'Document Requirements'] },
+  { id: 'Team',         label: 'Team',         sections: ['User Management'] },
+] as const
+type GroupId = typeof GROUPS[number]['id']
 
 const LABEL: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 8 }
-const INPUT: React.CSSProperties = { width: '100%', padding: '11px 14px', fontSize: 15, color: '#1C1917', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 10, outline: 'none', transition: 'border-color 0.15s ease, box-shadow 0.15s ease', boxSizing: 'border-box' }
-const CARD: React.CSSProperties  = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 20 }
-const SAVE: React.CSSProperties  = { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', background: 'var(--brand-color)', color: 'var(--brand-text)', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22),0 4px 14px rgba(var(--brand-rgb),0.40)', marginTop: 20, transition: 'box-shadow 0.15s ease' }
+
+function GroupLabel({ children, first }: { children: React.ReactNode; first?: boolean }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: `${first ? 8 : 28}px 0 14px` }}>
+      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{children}</span>
+      <span style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.07)' }} />
+    </div>
+  )
+}
+const INPUT: React.CSSProperties = { width: '100%', padding: '11px 14px', fontSize: 15, color: '#1C1917', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 'var(--r-sm)', outline: 'none', transition: 'border-color 0.15s ease, box-shadow 0.15s ease', boxSizing: 'border-box' }
+const CARD: React.CSSProperties  = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-lg)', padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 20 }
+const SAVE: React.CSSProperties  = { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', background: 'var(--brand-color)', color: 'var(--brand-text)', border: 'none', borderRadius: 'var(--r-sm)', fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22),0 4px 14px rgba(var(--brand-rgb),0.40)', marginTop: 20, transition: 'box-shadow 0.15s ease' }
 
 // 30-min increments 00:00 → 23:30
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
@@ -255,10 +270,10 @@ function Skeleton() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {DAYS.map(d => (
         <div key={d.key} style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr 80px', gap: 16, alignItems: 'center' }}>
-          <div style={{ height: 14, width: 80, borderRadius: 6, background: 'rgba(0,0,0,0.07)' }} />
-          <div style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />
-          <div style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />
-          <div style={{ height: 16, width: 60, borderRadius: 6, background: 'rgba(0,0,0,0.06)' }} />
+          <div style={{ height: 14, width: 80, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.07)' }} />
+          <div style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />
+          <div style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />
+          <div style={{ height: 16, width: 60, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />
         </div>
       ))}
     </div>
@@ -271,27 +286,23 @@ export default function SettingsPage() {
   usePageTitle('Glido | Settings')
   const { isAdmin, isSuperAdmin, userId: currentUserId } = useReceptionAuth()
 
-  // ── Visible tabs — hide User Management from reception_staff ─────────────
-  const visibleTabs = TABS.filter(t => t !== 'User Management' || isAdmin)
+  // ── Visible groups — hide Team (User Management) from reception_staff ─────
+  const visibleGroups = GROUPS.filter(g => g.id !== 'Team' || isAdmin)
 
-  // ── Hash ↔ tab mapping ────────────────────────────────────────────────────
-  const HASH_TO_TAB: Record<string, string> = {
-    '#general':      'General',
-    '#working-hours':'Working Hours',
-    '#slot-config':  'Slot Config',
-    '#pricing':      'Pricing',
-    '#payment':      'Payment',
-    '#integrations':        'Integrations',
-    '#doc-requirements':    'Document Requirements',
-    '#user-management':     'User Management',
+  // ── Hash ↔ group mapping (backward-compat with old per-section hashes) ────
+  const HASH_TO_GROUP: Record<string, GroupId> = {
+    '#general': 'General', '#working-hours': 'General',
+    '#slot-config': 'Bookings', '#pricing': 'Bookings', '#payment': 'Bookings',
+    '#integrations': 'Integrations', '#doc-requirements': 'Integrations',
+    '#user-management': 'Team',
   }
-  const TAB_TO_HASH: Record<string, string> = Object.fromEntries(
-    Object.entries(HASH_TO_TAB).map(([h, t]) => [t, h])
-  )
+  const GROUP_TO_HASH: Record<GroupId, string> = {
+    General: '#general', Bookings: '#slot-config',
+    Integrations: '#integrations', Team: '#user-management',
+  }
+  const tabFromHash = (): GroupId => HASH_TO_GROUP[window.location.hash] ?? 'General'
 
-  const tabFromHash = () => HASH_TO_TAB[window.location.hash] ?? 'General'
-
-  const [tab, setTab] = useState<string>(tabFromHash)
+  const [tab, setTab] = useState<GroupId>(tabFromHash)
   const [saved, setSaved] = useState(false)
 
   // Sync tab when the hash changes (back/forward navigation)
@@ -805,7 +816,7 @@ export default function SettingsPage() {
   const usersLoadedRef     = useRef(false)
   const logoJustUploaded   = useRef(false)
   useEffect(() => {
-    if (tab === 'User Management' && isAdmin) {
+    if (tab === 'Team' && isAdmin) {
       if (!usersLoadedRef.current) {
         usersLoadedRef.current = true
         loadStaffUsers()
@@ -906,23 +917,24 @@ export default function SettingsPage() {
   }
 
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
       {/* Tab switcher */}
-      <div style={{ display: 'flex', gap: 2, background: 'rgba(0,0,0,0.04)', borderRadius: 12, padding: 4, marginBottom: 24, width: '100%' }}>
-        {visibleTabs.map(t => (
-          <button key={t} onClick={() => { setTab(t); window.location.hash = TAB_TO_HASH[t] ?? '' }} style={{
-            flex: 1, padding: '8px 16px', borderRadius: 9, fontSize: 15, fontWeight: tab === t ? 600 : 500,
+      <div style={{ display: 'flex', gap: 2, background: 'rgba(0,0,0,0.04)', borderRadius: 'var(--r-md)', padding: 4, marginBottom: 24, width: '100%' }}>
+        {visibleGroups.map(g => (
+          <button key={g.id} onClick={() => { setTab(g.id); window.location.hash = GROUP_TO_HASH[g.id] }} style={{
+            flex: 1, padding: '8px 16px', borderRadius: 'var(--r-sm)', fontSize: 15, fontWeight: tab === g.id ? 600 : 500,
             border: 'none', cursor: 'pointer', transition: 'all 0.15s ease', whiteSpace: 'nowrap', textAlign: 'center',
-            background: tab === t ? '#FFFFFF' : 'transparent',
-            color: tab === t ? '#1C1917' : '#78716C',
-            boxShadow: tab === t ? '0 1px 3px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.05)' : 'none',
-          }}>{t}</button>
+            background: tab === g.id ? '#FFFFFF' : 'transparent',
+            color: tab === g.id ? '#1C1917' : 'var(--text-secondary)',
+            boxShadow: tab === g.id ? '0 1px 3px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.05)' : 'none',
+          }}>{g.label}</button>
         ))}
       </div>
 
-      {/* ── Working Hours tab ── */}
-      {tab === 'Working Hours' && (
-        <form onSubmit={saveWorkingHours}>
+      {/* ── Working Hours (General group, rendered after Business Profile) ── */}
+      {tab === 'General' && (
+        <form onSubmit={saveWorkingHours} style={{ order: 2 }}>
+          <GroupLabel>Working Hours</GroupLabel>
           {/* Operating Hours card */}
           <div style={CARD}>
             <SectionHead title="Operating Hours" desc="Set when your facility accepts visitor bookings." />
@@ -1000,7 +1012,7 @@ export default function SettingsPage() {
                       {day.enabled && dayPeriods.length > 0 && (
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingLeft: 136, marginTop: 6, marginBottom: 4 }}>
                           {dayPeriods.map(p => (
-                            <span key={p.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 6, padding: '2px 8px', fontFamily: 'ui-monospace,monospace' }}>
+                            <span key={p.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 'var(--r-sm)', padding: '2px 8px', fontFamily: 'ui-monospace,monospace' }}>
                               <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--brand-color)', flexShrink: 0, display: 'inline-block' }} />
                               {p.label} · {p.start}–{p.end}
                             </span>
@@ -1021,10 +1033,10 @@ export default function SettingsPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {[0,1,2].map(i => (
                   <div key={i} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 1fr 1fr', gap: 16, alignItems: 'center' }}>
-                    <div style={{ height: 16, width: 16, borderRadius: 4, background: 'rgba(0,0,0,0.07)' }} />
-                    <div style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />
-                    <div style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />
-                    <div style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />
+                    <div style={{ height: 16, width: 16, borderRadius: 'var(--r-xs)', background: 'rgba(0,0,0,0.07)' }} />
+                    <div style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />
+                    <div style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />
+                    <div style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />
                   </div>
                 ))}
               </div>
@@ -1086,24 +1098,25 @@ export default function SettingsPage() {
         </form>
       )}
 
-      {/* ── All other tabs — unchanged, with fake save ── */}
-      {tab !== 'Working Hours' && (
-        <form onSubmit={fakeSave}>
+      {/* ── fakeSave sections for every group ── */}
+      {true && (
+        <form onSubmit={fakeSave} style={{ order: 1 }}>
           {saved && (
-            <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.22)', borderRadius: 12, padding: '12px 18px', marginBottom: 20, fontSize: 15, color: '#16A34A', fontWeight: 500 }}>
+            <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.22)', borderRadius: 'var(--r-md)', padding: '12px 18px', marginBottom: 20, fontSize: 15, color: '#16A34A', fontWeight: 500 }}>
               ✓ Settings saved successfully.
             </div>
           )}
 
-          {/* General */}
+          {/* General — Business Profile */}
           {tab === 'General' && (
             <div>
+              <GroupLabel first>Business Profile</GroupLabel>
               {/* Facility Details */}
               <div style={CARD}>
                 <SectionHead title="Facility Details" desc="Basic information about your Container Freight Station." />
                 {generalLoading ? (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    {[0,1,2,3,4,5].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                    {[0,1,2,3,4,5].map(i => <div key={i} style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />)}
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -1143,16 +1156,16 @@ export default function SettingsPage() {
                 <SectionHead title="Branding" desc="Logo and colour scheme shown on the visitor portal." />
                 {generalLoading ? (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    {[0,1].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                    {[0,1].map(i => <div key={i} style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />)}
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                     <Field label="Logo">
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {general.logoUrl && (
-                          <img src={`${general.logoUrl}?t=${Date.now()}`} alt="Logo" style={{ height: 48, objectFit: 'contain', maxWidth: 160, borderRadius: 8, border: '1px solid rgba(0,0,0,0.08)', background: '#f9fafb' }} />
+                          <img src={`${general.logoUrl}?t=${Date.now()}`} alt="Logo" style={{ height: 48, objectFit: 'contain', maxWidth: 160, borderRadius: 'var(--r-sm)', border: '1px solid rgba(0,0,0,0.08)', background: '#f9fafb' }} />
                         )}
-                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 10, cursor: logoUploading ? 'not-allowed' : 'pointer', opacity: logoUploading ? 0.6 : 1, alignSelf: 'flex-start' }}>
+                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 'var(--r-sm)', cursor: logoUploading ? 'not-allowed' : 'pointer', opacity: logoUploading ? 0.6 : 1, alignSelf: 'flex-start' }}>
                           {logoUploading ? 'Uploading…' : general.logoUrl ? 'Change Logo' : 'Upload Logo'}
                           <input type="file" accept="image/*" style={{ display: 'none' }} disabled={logoUploading} onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f) }} />
                         </label>
@@ -1181,12 +1194,13 @@ export default function SettingsPage() {
           )}
 
           {/* Slot Config */}
-          {tab === 'Slot Config' && (
+          {tab === 'Bookings' && <GroupLabel first>Slot Config</GroupLabel>}
+          {tab === 'Bookings' && (
             <div style={CARD}>
               <SectionHead title="Slot Configuration" desc="Control how booking slots are structured and managed." />
               {slotConfigLoading ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                  {[0,1,2,3,4].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                  {[0,1,2,3,4].map(i => <div key={i} style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />)}
                 </div>
               ) : (
                 <>
@@ -1243,7 +1257,7 @@ export default function SettingsPage() {
                     const whClose   = wh.map(d => d.close).sort().reverse()[0]
                     if (whClose <= periodEnd) return null
                     return (
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.28)', borderRadius: 10, padding: '11px 14px', marginBottom: 20, marginTop: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.28)', borderRadius: 'var(--r-sm)', padding: '11px 14px', marginBottom: 20, marginTop: 16 }}>
                         <p style={{ fontSize: 14, color: '#92400E', lineHeight: 1.5, margin: 0 }}>
                           Your working hours extend beyond your enabled slot periods (closes at <strong>{whClose}</strong>, last period ends at <strong>{periodEnd}</strong>). Bookings will only be accepted during enabled slot periods.
                         </p>
@@ -1269,7 +1283,7 @@ export default function SettingsPage() {
                         <p style={{ fontSize: 14, color: 'var(--text-tertiary)', marginBottom: 12, lineHeight: 1.5 }}>
                           Set the maximum number of bookings allowed per time slot. Leave a slot at 0 to block it.
                         </p>
-                        <div style={{ border: '1px solid rgba(0,0,0,0.09)', borderRadius: 12, overflow: 'hidden', maxHeight: 320, overflowY: 'auto' }}>
+                        <div style={{ border: '1px solid rgba(0,0,0,0.09)', borderRadius: 'var(--r-md)', overflow: 'hidden', maxHeight: 320, overflowY: 'auto' }}>
                           {buckets.map((bucket, i) => (
                             <div
                               key={bucket}
@@ -1316,14 +1330,15 @@ export default function SettingsPage() {
           )}
 
           {/* Pricing */}
-          {tab === 'Pricing' && (
+          {tab === 'Bookings' && <GroupLabel>Pricing</GroupLabel>}
+          {tab === 'Bookings' && (
             <div>
               {/* Storage Charges */}
               <div style={CARD}>
                 <SectionHead title="Storage Charges" desc="Rates applied to LCL pickups with stored cargo." />
                 {pricingLoading ? (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    {[0,1,2,3].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                    {[0,1,2,3].map(i => <div key={i} style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />)}
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -1352,7 +1367,7 @@ export default function SettingsPage() {
                 <SectionHead title="Free Storage Period" desc="Days of free storage before charges begin." />
                 {pricingLoading ? (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    {[0,1].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                    {[0,1].map(i => <div key={i} style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />)}
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -1375,14 +1390,15 @@ export default function SettingsPage() {
           )}
 
           {/* Payment */}
-          {tab === 'Payment' && (
+          {tab === 'Bookings' && <GroupLabel>Payment</GroupLabel>}
+          {tab === 'Bookings' && (
             <div>
               {/* EFT */}
               <div style={CARD}>
                 <SectionHead title="Bank Transfer (EFT)" desc="Account details displayed to visitors choosing EFT payment." />
                 {paymentLoading ? (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    {[0,1,2,3].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                    {[0,1,2,3].map(i => <div key={i} style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />)}
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -1410,7 +1426,7 @@ export default function SettingsPage() {
                 <SectionHead title="Stripe (Card Payments)" desc="Configure your Stripe account for card payment processing." />
                 {paymentLoading ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                    {[0,1].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                    {[0,1].map(i => <div key={i} style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />)}
                   </div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -1460,20 +1476,20 @@ export default function SettingsPage() {
                   <p style={{ fontSize: 15, color: 'var(--text-secondary)' }}>When enabled, visitors must complete payment before their slot is confirmed.</p>
                 </div>
                 {paymentLoading ? (
-                  <div style={{ width: 44, height: 24, borderRadius: 9999, background: 'rgba(0,0,0,0.08)', flexShrink: 0 }} />
+                  <div style={{ width: 44, height: 24, borderRadius: 'var(--r-full)', background: 'rgba(0,0,0,0.08)', flexShrink: 0 }} />
                 ) : (
                   <button
                     type="button"
                     onClick={() => toggleRequirePayment(!requirePayment)}
                     style={{
-                      width: 44, height: 24, borderRadius: 9999, flexShrink: 0, border: 'none', cursor: 'pointer',
+                      width: 44, height: 24, borderRadius: 'var(--r-full)', flexShrink: 0, border: 'none', cursor: 'pointer',
                       background: requirePayment ? 'linear-gradient(135deg,#FF7A2A,#E85A0A)' : 'rgba(0,0,0,0.15)',
                       position: 'relative', transition: 'background 0.2s ease',
                     }}
                   >
                     <span style={{
                       position: 'absolute', top: 3, left: requirePayment ? 23 : 3, width: 18, height: 18,
-                      borderRadius: 9999, background: '#fff', transition: 'left 0.2s ease',
+                      borderRadius: 'var(--r-full)', background: '#fff', transition: 'left 0.2s ease',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.20)',
                     }} />
                   </button>
@@ -1482,7 +1498,8 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Integrations */}
+          {/* Integrations — Connected Systems */}
+          {tab === 'Integrations' && <GroupLabel first>Connected Systems</GroupLabel>}
           {tab === 'Integrations' && (
             <div>
               {/* CargoWise */}
@@ -1490,7 +1507,7 @@ export default function SettingsPage() {
                 <SectionHead title="CargoWise API (ICS)" desc="Enables automatic customs clearance status checks." />
                 {integrationsLoading ? (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    {[0,1,2,3].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                    {[0,1,2,3].map(i => <div key={i} style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />)}
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -1533,7 +1550,7 @@ export default function SettingsPage() {
                 <SectionHead title="Email (SMTP)" desc="Used for booking confirmations and notifications." />
                 {integrationsLoading ? (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                    {[0,1,2,3,4,5].map(i => <div key={i} style={{ height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                    {[0,1,2,3,4,5].map(i => <div key={i} style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />)}
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -1582,12 +1599,13 @@ export default function SettingsPage() {
           )}
 
           {/* Document Requirements */}
-          {tab === 'Document Requirements' && (
+          {tab === 'Integrations' && <GroupLabel>Document Requirements</GroupLabel>}
+          {tab === 'Integrations' && (
             <div style={CARD}>
               <SectionHead title="Document Requirements" desc="Configure which documents are required per service + cargo type combination." />
               {docLoading ? (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-                  {[0,1,2].map(i => <div key={i} style={{ height: 200, borderRadius: 12, background: 'rgba(0,0,0,0.06)' }} />)}
+                  {[0,1,2].map(i => <div key={i} style={{ height: 200, borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.06)' }} />)}
                 </div>
               ) : (
                 <>
@@ -1596,7 +1614,7 @@ export default function SettingsPage() {
                       // Custom mode: either user explicitly clicked "+ Add Custom", or the loaded name isn't in the predefined list
                       const isCustom = customInputIds.has(doc.id) || (!PREDEFINED_DOCS.includes(doc.name) && doc.name !== '')
                       return (
-                        <div key={doc.id} style={{ background: '#F9F9F8', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column', gap: 12, minHeight: 260, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                        <div key={doc.id} style={{ background: '#F9F9F8', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-md)', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12, minHeight: 260, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
 
                           {/* Name dropdown + Required + Delete in one row */}
                           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -1639,11 +1657,11 @@ export default function SettingsPage() {
                             {/* Required + Delete stacked or side by side */}
                             <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                               <button type="button" onClick={() => updateDoc(doc.id, 'required', !doc.required)}
-                                style={{ height: 36, padding: '0 10px', borderRadius: 8, border: '1px solid rgba(0,0,0,0.10)', background: doc.required ? 'rgba(var(--brand-rgb),0.08)' : '#F7F6F5', color: doc.required ? 'var(--brand-color)' : '#78716C', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+                                style={{ height: 36, padding: '0 10px', borderRadius: 'var(--r-sm)', border: '1px solid rgba(0,0,0,0.10)', background: doc.required ? 'rgba(var(--brand-rgb),0.08)' : '#F7F6F5', color: doc.required ? 'var(--brand-color)' : '#78716C', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
                                 {doc.required ? 'Required' : 'Optional'}
                               </button>
                               <button type="button" onClick={() => removeDoc(doc.id)}
-                                style={{ height: 36, width: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid rgba(239,68,68,0.20)', background: 'rgba(239,68,68,0.05)', color: '#EF4444', cursor: 'pointer', transition: 'background 0.15s', flexShrink: 0 }}
+                                style={{ height: 36, width: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--r-sm)', border: '1px solid rgba(239,68,68,0.20)', background: 'rgba(239,68,68,0.05)', color: '#EF4444', cursor: 'pointer', transition: 'background 0.15s', flexShrink: 0 }}
                                 onMouseOver={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.12)')}
                                 onMouseOut={e  => (e.currentTarget.style.background = 'rgba(239,68,68,0.05)')}>
                                 <Icon name={ICONS.trash} size={13} />
@@ -1659,7 +1677,7 @@ export default function SettingsPage() {
                                 const on = doc.fileTypes.includes(ft)
                                 return (
                                   <button key={ft} type="button" onClick={() => toggleDocArray(doc.id, 'fileTypes', ft)}
-                                    style={{ padding: '4px 10px', fontSize: 13, fontWeight: 600, borderRadius: 9999, border: `1px solid ${on ? 'rgba(var(--brand-rgb),0.35)' : 'rgba(0,0,0,0.12)'}`, background: on ? 'rgba(var(--brand-rgb),0.08)' : '#FAFAF9', color: on ? 'var(--brand-color)' : '#78716C', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.13s' }}>
+                                    style={{ padding: '4px 10px', fontSize: 13, fontWeight: 600, borderRadius: 'var(--r-full)', border: `1px solid ${on ? 'rgba(var(--brand-rgb),0.35)' : 'rgba(0,0,0,0.12)'}`, background: on ? 'rgba(var(--brand-rgb),0.08)' : '#FAFAF9', color: on ? 'var(--brand-color)' : '#78716C', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.13s' }}>
                                     {ft}
                                   </button>
                                 )
@@ -1675,7 +1693,7 @@ export default function SettingsPage() {
                                 const on = doc.appliesTo.includes(opt.key)
                                 return (
                                   <button key={opt.key} type="button" onClick={() => toggleDocArray(doc.id, 'appliesTo', opt.key)}
-                                    style={{ padding: '4px 10px', fontSize: 13, fontWeight: 600, borderRadius: 9999, border: `1px solid ${on ? 'rgba(var(--brand-rgb),0.35)' : 'rgba(0,0,0,0.12)'}`, background: on ? 'rgba(var(--brand-rgb),0.08)' : '#FAFAF9', color: on ? 'var(--brand-color)' : '#78716C', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.13s', whiteSpace: 'nowrap' }}>
+                                    style={{ padding: '4px 10px', fontSize: 13, fontWeight: 600, borderRadius: 'var(--r-full)', border: `1px solid ${on ? 'rgba(var(--brand-rgb),0.35)' : 'rgba(0,0,0,0.12)'}`, background: on ? 'rgba(var(--brand-rgb),0.08)' : '#FAFAF9', color: on ? 'var(--brand-color)' : '#78716C', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.13s', whiteSpace: 'nowrap' }}>
                                     {opt.label}
                                   </button>
                                 )
@@ -1693,7 +1711,7 @@ export default function SettingsPage() {
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24 }}>
                 <button type="button" onClick={addDocRow}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 16px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.06)', border: '1px solid rgba(var(--brand-rgb),0.22)', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 16px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.06)', border: '1px solid rgba(var(--brand-rgb),0.22)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
                   onMouseOver={e => (e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.10)')}
                   onMouseOut={e  => (e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.06)')}>
                   <Icon name={ICONS.add} size={14} />
@@ -1706,7 +1724,7 @@ export default function SettingsPage() {
             </div>
           )}
           {/* User Management */}
-          {tab === 'User Management' && (() => {
+          {tab === 'Team' && (() => {
             return (
               <div>
                 {/* Invite section — admins and super_admins only */}
@@ -1716,7 +1734,7 @@ export default function SettingsPage() {
 
                   {!showInviteForm ? (
                     <button type="button" onClick={() => setShowInviteForm(true)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.25)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.25)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}>
                       <Icon name={ICONS.add} size={14} />
                       Invite Staff Member
                     </button>
@@ -1757,7 +1775,7 @@ export default function SettingsPage() {
                           {inviteSending ? 'Sending…' : 'Send Invite'}
                         </button>
                         <button type="button" onClick={() => { setShowInviteForm(false); setInvite({ firstName: '', lastName: '', email: '', role: 'reception_staff' }) }}
-                          style={{ marginTop: 0, padding: '11px 20px', fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ marginTop: 0, padding: '11px 20px', fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}>
                           Cancel
                         </button>
                       </div>
@@ -1771,7 +1789,7 @@ export default function SettingsPage() {
                   <SectionHead title="System Users" desc="View and manage all users with system access." />
                   {usersLoading ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      {[0,1,2].map(i => <div key={i} style={{ height: 52, borderRadius: 10, background: 'rgba(0,0,0,0.06)' }} />)}
+                      {[0,1,2].map(i => <div key={i} style={{ height: 52, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />)}
                     </div>
                   ) : staffUsers.length === 0 ? (
                     <p style={{ fontSize: 15, color: 'var(--text-tertiary)', margin: 0 }}>No staff members found.</p>
@@ -1795,7 +1813,7 @@ export default function SettingsPage() {
                             }
                             const badge = ROLE_BADGE[u.role] ?? { label: u.role, bg: '#F3F4F6', color: 'var(--text-mid)' }
                             const BadgeEl = (
-                              <span style={{ display: 'inline-block', fontSize: 13, fontWeight: 600, padding: '3px 9px', borderRadius: 10, background: badge.bg, color: badge.color }}>
+                              <span style={{ display: 'inline-block', fontSize: 13, fontWeight: 600, padding: '3px 9px', borderRadius: 'var(--r-sm)', background: badge.bg, color: badge.color }}>
                                 {badge.label}
                               </span>
                             )
@@ -1824,7 +1842,7 @@ export default function SettingsPage() {
                                   )}
                                 </td>
                                 <td style={{ padding: '12px 14px' }}>
-                                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 9999, fontSize: 14, fontWeight: 600, background: u.is_active ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.10)', color: u.is_active ? '#16A34A' : '#DC2626', border: `1px solid ${u.is_active ? 'rgba(34,197,94,0.22)' : 'rgba(239,68,68,0.22)'}` }}>
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 'var(--r-full)', fontSize: 14, fontWeight: 600, background: u.is_active ? 'rgba(34,197,94,0.10)' : 'rgba(239,68,68,0.10)', color: u.is_active ? '#16A34A' : '#DC2626', border: `1px solid ${u.is_active ? 'rgba(34,197,94,0.22)' : 'rgba(239,68,68,0.22)'}` }}>
                                     {u.is_active ? 'Active' : 'Inactive'}
                                   </span>
                                 </td>
@@ -1833,7 +1851,7 @@ export default function SettingsPage() {
                                 </td>
                                 <td style={{ padding: '12px 14px' }}>
                                   <button type="button" onClick={() => toggleActive(u.id, u.is_active)}
-                                    style={{ padding: '6px 14px', fontSize: 14, fontWeight: 600, borderRadius: 8, border: `1px solid ${u.is_active ? 'rgba(239,68,68,0.22)' : 'rgba(34,197,94,0.22)'}`, background: u.is_active ? 'rgba(239,68,68,0.06)' : 'rgba(34,197,94,0.06)', color: u.is_active ? '#DC2626' : '#16A34A', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                                    style={{ padding: '6px 14px', fontSize: 14, fontWeight: 600, borderRadius: 'var(--r-sm)', border: `1px solid ${u.is_active ? 'rgba(239,68,68,0.22)' : 'rgba(34,197,94,0.22)'}`, background: u.is_active ? 'rgba(239,68,68,0.06)' : 'rgba(34,197,94,0.06)', color: u.is_active ? '#DC2626' : '#16A34A', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                                     {u.is_active ? 'Deactivate' : 'Activate'}
                                   </button>
                                 </td>

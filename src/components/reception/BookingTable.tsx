@@ -7,7 +7,7 @@ const ICS_LABEL: Record<string, string> = { cleared: 'Cleared', held: 'Held', ex
 const ICS_BAR_COLOR: Record<string, string> = {
   cleared:     '#16A34A',
   held:        '#DC2626',
-  examination: 'var(--brand-color)',
+  examination: '#F59E0B',
   pending:     '#94A3B8',
   unavailable: '#E5E7EB',
 }
@@ -38,7 +38,7 @@ export function BookingTable({ bookings, currentDate, loading }: Props) {
   const navigate = useNavigate()
 
   return (
-    <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 20 }}>
+    <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-md)', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 20 }}>
       {/* Table header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)', flexWrap: 'wrap', gap: 8 }}>
         <div>
@@ -52,7 +52,7 @@ export function BookingTable({ bookings, currentDate, loading }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {ICS_LEGEND.map(l => (
               <span key={l.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#94A3B8', whiteSpace: 'nowrap' }}>
-                <span style={{ width: 8, height: 8, borderRadius: 9999, background: ICS_BAR_COLOR[l.key], flexShrink: 0, display: 'inline-block' }} />
+                <span style={{ width: 8, height: 8, borderRadius: 'var(--r-full)', background: ICS_BAR_COLOR[l.key], flexShrink: 0, display: 'inline-block' }} />
                 {l.label}
               </span>
             ))}
@@ -76,19 +76,14 @@ export function BookingTable({ bookings, currentDate, loading }: Props) {
             <thead>
               <tr style={{ background: '#F7F6F5', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
                 {['', 'Reference', 'Driver', 'Slot', 'Service', 'HBL', 'Status', ''].map((h, i) => (
-                  <th key={i} style={{ textAlign: 'left', padding: '10px 16px', fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap', ...(i === 0 ? { width: 8, padding: 0 } : {}) }}>{h}</th>
+                  <th key={i} style={{ textAlign: 'left', padding: '12px 16px', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', textTransform: 'none', letterSpacing: 0, whiteSpace: 'nowrap', ...(i === 0 ? { width: 10, padding: 0 } : {}) }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {bookings.map(b => {
                 const ics = b.icsStatus ?? ''
-                const rowBg =
-                  ics === 'held'                ? 'rgba(239,68,68,0.08)'  :
-                  b.status === 'checked_in'     ? 'rgba(34,197,94,0.07)'  :
-                  b.status === 'completed'      ? 'rgba(0,0,0,0.025)'     :
-                  b.status === 'cancelled'      ? 'rgba(0,0,0,0.015)'     :
-                                                  ''
+                const rowBg = ics === 'held' ? 'rgba(239,68,68,0.035)' : ''
                 const displayRef = b.groupReference ?? b.referenceNumber
                 const navTarget  = b.groupReference
                   ? `/reception/bookings/group/${b.groupReference}`
@@ -97,16 +92,18 @@ export function BookingTable({ bookings, currentDate, loading }: Props) {
                   <tr
                     key={b.id}
                     style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', cursor: 'pointer', transition: 'background 0.12s ease', background: rowBg }}
-                    onMouseOver={e => (e.currentTarget.style.background = ics === 'held' ? 'rgba(239,68,68,0.13)' : 'rgba(var(--brand-rgb),0.05)')}
+                    onMouseOver={e => (e.currentTarget.style.background = ics === 'held' ? 'rgba(239,68,68,0.07)' : 'rgba(0,0,0,0.02)')}
                     onMouseOut={e  => (e.currentTarget.style.background = rowBg)}
                     onClick={() => navigate(navTarget)}
                   >
                     <td style={{ width: 10, padding: 0, paddingLeft: 4 }}>
-                      <div style={{ width: 6, minHeight: 40, height: '100%', borderRadius: 2, background: ICS_BAR_COLOR[ics] ?? ICS_BAR_COLOR.unavailable }} />
+                      <div style={{ width: 6, minHeight: 40, height: '100%', borderRadius: 'var(--r-xs)', background: ICS_BAR_COLOR[ics] ?? ICS_BAR_COLOR.unavailable }} />
                     </td>
                     <td style={{ padding: '18px 16px', whiteSpace: 'nowrap' }}>
                       <span
-                        style={{ fontFamily: 'ui-monospace,monospace', fontSize: 15, fontWeight: 700, color: 'var(--brand-color)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                        style={{ fontFamily: 'ui-monospace,monospace', fontSize: 15, fontWeight: 700, color: '#1C1917', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, transition: 'color 0.15s' }}
+                        onMouseOver={e => (e.currentTarget.style.color = 'var(--brand-color)')}
+                        onMouseOut={e  => (e.currentTarget.style.color = '#1C1917')}
                         title="Click to copy"
                         onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(displayRef).then(() => toast('Reference copied', 'info')).catch(() => {}) }}
                       >
@@ -136,7 +133,7 @@ export function BookingTable({ bookings, currentDate, loading }: Props) {
                       {(() => {
                         const cfg = STATUS_CONFIG[b.status] ?? STATUS_CONFIG.scheduled
                         return (
-                          <span style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`, borderRadius: 20, padding: '5px 10px 5px 8px', fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                          <span style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}`, borderRadius: 'var(--r-xl)', padding: '5px 10px 5px 8px', fontSize: 13, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                               <path d={cfg.icon} />
                             </svg>
@@ -145,7 +142,11 @@ export function BookingTable({ bookings, currentDate, loading }: Props) {
                         )
                       })()}
                     </td>
-                    <td style={{ padding: '18px 16px', color: 'rgba(0,0,0,0.30)' }}>→</td>
+                    <td style={{ padding: '18px 16px' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12h14M13 6l6 6-6 6"/>
+                      </svg>
+                    </td>
                   </tr>
                 )
               })}

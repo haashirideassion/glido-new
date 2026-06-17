@@ -44,7 +44,7 @@ function Chart({ id, init }: { id: string; init: (el: HTMLDivElement) => any }) 
 }
 
 const PAGE = 50
-const CARD: React.CSSProperties = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }
+const CARD: React.CSSProperties = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-lg)', padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }
 
 export default function ReportsPage() {
   usePageTitle('Glido | Reports')
@@ -100,28 +100,32 @@ export default function ReportsPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <p style={{ fontSize: 15, color: 'var(--text-secondary)' }}>{bookings.length} bookings · {from && to ? `${from} → ${to}` : 'all time'}</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ padding: '10px 14px', height: 44, fontSize: 15, border: '1px solid rgba(0,0,0,0.10)', borderRadius: 8, background: '#F7F6F5', color: '#1C1917', outline: 'none' }} />
+          <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={{ padding: '10px 14px', height: 44, fontSize: 15, border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-sm)', background: '#F7F6F5', color: '#1C1917', outline: 'none' }} />
           <span style={{ color: 'var(--text-tertiary)' }}>→</span>
-          <input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ padding: '10px 14px', height: 44, fontSize: 15, border: '1px solid rgba(0,0,0,0.10)', borderRadius: 8, background: '#F7F6F5', color: '#1C1917', outline: 'none' }} />
-          <button onClick={load} style={{ height: 44, padding: '0 20px', fontSize: 15, fontWeight: 600, background: '#1C1917', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Filter</button>
+          <input type="date" value={to} onChange={e => setTo(e.target.value)} style={{ padding: '10px 14px', height: 44, fontSize: 15, border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-sm)', background: '#F7F6F5', color: '#1C1917', outline: 'none' }} />
+          <button onClick={load} style={{ height: 44, padding: '0 20px', fontSize: 15, fontWeight: 600, background: '#1C1917', color: '#fff', border: 'none', borderRadius: 'var(--r-sm)', cursor: 'pointer' }}>Filter</button>
           {(from || to) && <button onClick={() => { setFrom(''); setTo(''); load() }} style={{ height: 44, padding: '0 14px', fontSize: 15, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>Clear</button>}
-          <button onClick={exportCsv} style={{ height: 44, padding: '0 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={exportCsv} style={{ height: 44, padding: '0 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             <Icon name={ICONS.download} size={15} /> Export CSV
           </button>
         </div>
       </div>
 
       {/* KPI strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'stretch', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-lg)', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
         {[
           { label: 'Total',     value: bookings.length,                                      color: '#1C1917' },
           { label: 'Completed', value: bookings.filter(b => b.status === 'completed').length, color: '#22C55E' },
           { label: 'Cancelled', value: bookings.filter(b => b.status === 'cancelled').length, color: '#EF4444' },
           { label: 'Scheduled', value: bookings.filter(b => b.status === 'scheduled').length, color: 'var(--text-secondary)' },
-        ].map(s => (
-          <div key={s.label} style={{ ...CARD, padding: '18px 24px' }}>
-            <p style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-0.04em', color: s.color, lineHeight: 1, marginBottom: 6 }}>{s.value}</p>
-            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-muted)' }}>{s.label}</p>
+        ].map((s, i) => (
+          <div key={s.label}
+            style={{ flex: 1, minWidth: 0, padding: '22px 26px', borderLeft: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.07)', transition: 'background 0.18s ease' }}
+            onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.015)')}
+            onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
+          >
+            <p style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-0.04em', color: s.color, lineHeight: 1, margin: '0 0 6px', fontVariantNumeric: 'tabular-nums' }}>{s.value}</p>
+            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-tertiary)', margin: 0 }}>{s.label}</p>
           </div>
         ))}
       </div>
@@ -145,7 +149,7 @@ export default function ReportsPage() {
           <div style={{ height: 220 }}>
             <Chart id="r-status" init={el => {
               const ch = echarts.init(el, null, { renderer: 'svg' })
-              ch.setOption({ tooltip: { trigger: 'item', backgroundColor: 'rgba(28,25,23,0.88)', borderColor: 'transparent', padding: [8, 12], textStyle: { color: '#FCFBF8', fontFamily: FONT, fontSize: 14 }, formatter: '{b}: <b>{c}</b> ({d}%)' }, legend: { orient: 'vertical', right: 0, top: 'center', itemWidth: 8, itemHeight: 8, textStyle: { color: 'var(--text-secondary)', fontFamily: FONT, fontSize: 13 } }, series: [{ type: 'pie', radius: ['52%', '78%'], center: ['38%', '50%'], avoidLabelOverlap: false, label: { show: false }, data: statusCounts.map(([s, n]) => ({ value: n, name: STATUS_LABEL[s] ?? s, itemStyle: { color: STATUS_COLORS[s] ?? '#A8A29E', borderRadius: 3 } })) }] })
+              ch.setOption({ tooltip: { trigger: 'item', backgroundColor: 'rgba(28,25,23,0.88)', borderColor: 'transparent', padding: [8, 12], textStyle: { color: '#FCFBF8', fontFamily: FONT, fontSize: 14 }, formatter: '{b}: <b>{c}</b> ({d}%)' }, legend: { orient: 'vertical', right: 0, top: 'center', itemWidth: 8, itemHeight: 8, textStyle: { color: 'var(--text-secondary)', fontFamily: FONT, fontSize: 13 } }, series: [{ type: 'pie', radius: ['52%', '78%'], center: ['38%', '50%'], avoidLabelOverlap: false, label: { show: false }, data: statusCounts.map(([s, n]) => ({ value: n, name: STATUS_LABEL[s] ?? s, itemStyle: { color: STATUS_COLORS[s] ?? '#A8A29E', borderRadius: 'var(--r-xs)' } })) }] })
               return ch
             }} />
           </div>
@@ -189,7 +193,7 @@ export default function ReportsPage() {
             <thead>
               <tr style={{ background: 'rgba(0,0,0,0.02)', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
                 {['Reference', 'Date', 'Time', 'Driver', 'Service', 'HBL', 'Amount', 'Status'].map(h => (
-                  <th key={h} style={{ padding: '14px 20px', textAlign: 'left', fontSize: 15, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#374151', whiteSpace: 'nowrap' }}>{h}</th>
+                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 15, fontWeight: 500, letterSpacing: 0, textTransform: 'none', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -202,19 +206,19 @@ export default function ReportsPage() {
                 const rowBg = i % 2 !== 0 ? 'rgba(0,0,0,0.01)' : 'transparent'
                 const sStyle = STATUS_STYLE[b.status] ?? STATUS_STYLE.scheduled
                 return (
-                  <tr key={b.id} style={{ borderTop: '1px solid rgba(0,0,0,0.05)', background: rowBg, cursor: 'pointer', transition: 'background 0.1s' }}
+                  <tr key={b.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', background: rowBg, cursor: 'pointer', transition: 'background 0.1s' }}
                     onMouseOver={e => (e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.03)')}
                     onMouseOut={e  => (e.currentTarget.style.background = rowBg)}
                   >
-                    <td style={{ padding: '14px 20px', fontFamily: 'ui-monospace,monospace', fontSize: 15, fontWeight: 700, color: 'var(--brand-color)', whiteSpace: 'nowrap' }}>{b.referenceNumber}</td>
-                    <td style={{ padding: '14px 20px', fontSize: 15, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{b.slotDate}</td>
-                    <td style={{ padding: '14px 20px', fontSize: 15, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{b.slotStartTime} – {b.slotEndTime}</td>
-                    <td style={{ padding: '14px 20px', fontSize: 15, fontWeight: 600, color: DARK, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.driverName}</td>
-                    <td style={{ padding: '14px 20px', fontSize: 15, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{b.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {(b.loadType ?? '').toUpperCase()}</td>
-                    <td style={{ padding: '14px 20px', fontFamily: 'ui-monospace,monospace', fontSize: 15, color: 'var(--text-muted)' }}>{b.houseBillNumber ?? b.containerNumber ?? '—'}</td>
-                    <td style={{ padding: '14px 20px', fontSize: 15, fontWeight: 600, color: DARK }}>{b.totalAmount ? `$${b.totalAmount.toFixed(2)}` : '—'}</td>
-                    <td style={{ padding: '14px 20px' }}>
-                      <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 9999, fontSize: 15, fontWeight: 600, ...(Object.fromEntries(sStyle.split(';').filter(Boolean).map(s => { const [k, ...v] = s.split(':'); return [k.trim().replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase()), v.join(':').trim()] }))) } as any}>
+                    <td style={{ padding: '18px 16px', fontFamily: 'ui-monospace,monospace', fontSize: 15, fontWeight: 700, color: '#1C1917', whiteSpace: 'nowrap' }}>{b.referenceNumber}</td>
+                    <td style={{ padding: '18px 16px', fontSize: 15, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{b.slotDate}</td>
+                    <td style={{ padding: '18px 16px', fontSize: 15, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{b.slotStartTime} – {b.slotEndTime}</td>
+                    <td style={{ padding: '18px 16px', fontSize: 15, fontWeight: 600, color: DARK, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.driverName}</td>
+                    <td style={{ padding: '18px 16px', fontSize: 15, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{b.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {(b.loadType ?? '').toUpperCase()}</td>
+                    <td style={{ padding: '18px 16px', fontFamily: 'ui-monospace,monospace', fontSize: 15, color: 'var(--text-muted)' }}>{b.houseBillNumber ?? b.containerNumber ?? '—'}</td>
+                    <td style={{ padding: '18px 16px', fontSize: 15, fontWeight: 600, color: DARK }}>{b.totalAmount ? `$${b.totalAmount.toFixed(2)}` : '—'}</td>
+                    <td style={{ padding: '18px 16px' }}>
+                      <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 'var(--r-full)', fontSize: 15, fontWeight: 600, ...(Object.fromEntries(sStyle.split(';').filter(Boolean).map(s => { const [k, ...v] = s.split(':'); return [k.trim().replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase()), v.join(':').trim()] }))) } as any}>
                         {STATUS_LABEL[b.status] ?? b.status}
                       </span>
                     </td>
@@ -243,7 +247,7 @@ export default function ReportsPage() {
 
 function PageBtn({ label, onClick, active }: { label: string; onClick: () => void; active?: boolean }) {
   return (
-    <button onClick={onClick} style={{ padding: '6px 12px', fontSize: 15, fontWeight: active ? 700 : 500, borderRadius: 8, cursor: 'pointer', border: `1px solid ${active ? '#1C1917' : 'rgba(0,0,0,0.10)'}`, background: active ? '#1C1917' : '#fff', color: active ? '#fff' : '#78716C', transition: 'all 0.12s' }}>
+    <button onClick={onClick} style={{ padding: '6px 12px', fontSize: 15, fontWeight: active ? 700 : 500, borderRadius: 'var(--r-sm)', cursor: 'pointer', border: `1px solid ${active ? '#1C1917' : 'rgba(0,0,0,0.10)'}`, background: active ? '#1C1917' : '#fff', color: active ? '#fff' : '#78716C', transition: 'all 0.12s' }}>
       {label}
     </button>
   )

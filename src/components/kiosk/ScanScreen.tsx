@@ -144,7 +144,7 @@ export function ScanScreen() {
       <div style={{ width: '100%', maxWidth: 448, textAlign: 'center' }}>
 
         {/* Icon — orange rounded square, identical to LookupScreen's search icon */}
-        <div style={{ width: 64, height: 64, background: 'rgba(var(--brand-rgb),0.09)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+        <div style={{ width: 64, height: 64, background: 'rgba(var(--brand-rgb),0.09)', borderRadius: 'var(--r-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
           <Icon name={ICONS.qrCode} size={36} style={{ color: 'var(--brand-color)' }} />
         </div>
 
@@ -169,7 +169,7 @@ export function ScanScreen() {
           style={{
             width: '100%',
             minHeight: 300,
-            borderRadius: 16,
+            borderRadius: 'var(--r-lg)',
             overflow: 'hidden',
             background: '#111',
             marginBottom: 24,

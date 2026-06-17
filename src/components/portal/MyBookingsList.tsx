@@ -21,7 +21,7 @@ function SourceBadge({ source }: { source?: string | null }) {
   if (!source) return null
   const s = SOURCE_BADGE[source] ?? SOURCE_BADGE.guest
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '3px 8px', borderRadius: 9999, background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>
+    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
       {s.label}
     </span>
   )
@@ -188,7 +188,7 @@ export function MyBookingsList({ bookings, query, onCancelled }: Props) {
   if (bookings.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '64px 0 48px' }}>
-        <div style={{ width: 48, height: 48, borderRadius: 10, background: '#EBEBEA', border: '1px solid rgba(0,0,0,0.09)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+        <div style={{ width: 48, height: 48, borderRadius: 'var(--r-sm)', background: '#EBEBEA', border: '1px solid rgba(0,0,0,0.09)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
           <Icon name={ICONS.bookings} size={22} style={{ color: 'var(--text-tertiary)' }} />
         </div>
         <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', marginBottom: 6, letterSpacing: '-0.01em' }}>
@@ -197,7 +197,7 @@ export function MyBookingsList({ bookings, query, onCancelled }: Props) {
         <p style={{ fontSize: 15, color: 'var(--text-secondary)', marginBottom: 24 }}>
           {query ? 'Check the reference number and try again.' : 'Your booking history will appear here.'}
         </p>
-        <Link to="/book" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', borderRadius: 9999, textDecoration: 'none', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)' }}>
+        <Link to="/book" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', borderRadius: 'var(--r-full)', textDecoration: 'none', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)' }}>
           <Icon name={ICONS.calendar} size={14} /> Book a Visit
         </Link>
       </div>
@@ -216,14 +216,14 @@ export function MyBookingsList({ bookings, query, onCancelled }: Props) {
           return (
             <div
               key={b.id}
-              style={{ display: 'block', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 12, padding: '18px 20px', transition: 'border-color 0.15s ease,box-shadow 0.15s ease,transform 0.15s cubic-bezier(0.16,1,0.3,1)', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 16px rgba(0,0,0,0.06)', cursor: 'default' }}
+              style={{ display: 'block', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-md)', padding: '18px 20px', transition: 'border-color 0.15s ease,box-shadow 0.15s ease,transform 0.15s cubic-bezier(0.16,1,0.3,1)', boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 16px rgba(0,0,0,0.06)', cursor: 'default' }}
               onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(var(--brand-rgb),0.30)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(var(--brand-rgb),0.08),0 1px 3px rgba(0,0,0,0.04)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
               onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04),0 4px 16px rgba(0,0,0,0.06)'; e.currentTarget.style.transform = 'translateY(0)' }}
             >
               {/* Top row */}
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
                 <div>
-                  <p style={{ fontFamily: 'ui-monospace,monospace', fontSize: 15.5, fontWeight: 700, color: 'var(--brand-color)', letterSpacing: '0.03em', marginBottom: 3 }}>
+                  <p style={{ fontFamily: 'ui-monospace,monospace', fontSize: 15.5, fontWeight: 700, color: '#1C1917', letterSpacing: '0.03em', marginBottom: 3 }}>
                     {b.referenceNumber}
                   </p>
                   <p style={{ fontSize: 14, color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -233,7 +233,7 @@ export function MyBookingsList({ bookings, query, onCancelled }: Props) {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                   <SourceBadge source={b.bookingSource} />
-                  <span style={{ ...statusStyle, display: 'inline-block', padding: '4px 10px', borderRadius: 9999, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  <span style={{ ...statusStyle, display: 'inline-block', padding: '4px 10px', borderRadius: 'var(--r-full)', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
                     {STATUS_LABEL[b.status] ?? b.status}
                   </span>
                 </div>
@@ -272,7 +272,7 @@ export function MyBookingsList({ bookings, query, onCancelled }: Props) {
                 <button
                   type="button"
                   onClick={() => setDetailBooking(b)}
-                  style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1.5px solid rgba(0,0,0,0.08)', background: '#fff', fontSize: 14, fontWeight: 600, color: '#1C1917', cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ flex: 1, padding: '8px 12px', borderRadius: 'var(--r-sm)', border: '1.5px solid rgba(0,0,0,0.08)', background: '#fff', fontSize: 14, fontWeight: 600, color: '#1C1917', cursor: 'pointer', fontFamily: 'inherit' }}
                   onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.18)'; e.currentTarget.style.background = '#FAFAFA' }}
                   onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)'; e.currentTarget.style.background = '#fff' }}
                 >
@@ -289,7 +289,7 @@ export function MyBookingsList({ bookings, query, onCancelled }: Props) {
         <div style={{ position: 'fixed', inset: 0, zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'rgba(0,0,0,0.45)' }}
           onClick={() => setCancelTarget(null)}
         >
-          <div style={{ background: '#fff', borderRadius: 16, padding: '28px 28px 24px', maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.20)' }}
+          <div style={{ background: '#fff', borderRadius: 'var(--r-lg)', padding: '28px 28px 24px', maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.20)' }}
             onClick={e => e.stopPropagation()}
           >
             <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1C1917', marginBottom: 10, letterSpacing: '-0.02em' }}>Cancel Booking</h2>
@@ -298,11 +298,11 @@ export function MyBookingsList({ bookings, query, onCancelled }: Props) {
             </p>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button type="button" onClick={() => setCancelTarget(null)}
-                style={{ padding: '9px 18px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 9, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ padding: '9px 18px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}>
                 Keep Booking
               </button>
               <button type="button" onClick={confirmCancel} disabled={!!cancellingId}
-                style={{ padding: '9px 18px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: cancellingId ? '#FCA5A5' : '#DC2626', border: 'none', borderRadius: 9, cursor: cancellingId ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.13s' }}>
+                style={{ padding: '9px 18px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: cancellingId ? '#FCA5A5' : '#DC2626', border: 'none', borderRadius: 'var(--r-sm)', cursor: cancellingId ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.13s' }}>
                 {cancellingId ? 'Cancelling…' : 'Cancel Booking'}
               </button>
             </div>
@@ -339,15 +339,19 @@ function BookingDetailPanel({ booking: b, onClose }: { booking: Booking; onClose
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid rgba(0,0,0,0.07)', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
           <div>
             <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Booking Details</p>
-            <p style={{ fontFamily: 'ui-monospace,monospace', fontSize: 15, fontWeight: 700, color: 'var(--brand-color)' }}>{b.referenceNumber}</p>
+            <p style={{ fontFamily: 'ui-monospace,monospace', fontSize: 15, fontWeight: 700, color: '#1C1917' }}>{b.referenceNumber}</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ ...statusStyle, display: 'inline-block', padding: '4px 10px', borderRadius: 9999, fontSize: 13, fontWeight: 600 }}>
+            <span style={{ ...statusStyle, display: 'inline-block', padding: '4px 10px', borderRadius: 'var(--r-full)', fontSize: 13, fontWeight: 600 }}>
               {STATUS_LABEL[b.status] ?? b.status}
             </span>
-            <button type="button" onClick={onClose}
-              style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid rgba(0,0,0,0.10)', background: '#F7F6F5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-              <Icon name={ICONS.close} size={15} style={{ color: 'var(--text-secondary)' }} />
+            <button type="button" onClick={onClose} aria-label="Close"
+              style={{ width: 34, height: 34, borderRadius: 'var(--r-full)', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, color: 'var(--text-secondary)', transition: 'background 0.15s ease, color 0.15s ease' }}
+              onMouseOver={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.06)'; e.currentTarget.style.color = '#1C1917' }}
+              onMouseOut={e  => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6 6 18M6 6l12 12"/>
+              </svg>
             </button>
           </div>
         </div>
@@ -401,11 +405,11 @@ function BookingDetailPanel({ booking: b, onClose }: { booking: Booking; onClose
         {/* Footer actions */}
         <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(0,0,0,0.07)', display: 'flex', gap: 8, position: 'sticky', bottom: 0, background: '#fff' }}>
           <button type="button" onClick={() => downloadQR(b)}
-            style={{ flex: 1, padding: '10px 12px', borderRadius: 9, border: '1.5px solid rgba(0,0,0,0.10)', background: '#fff', fontSize: 15, fontWeight: 600, color: '#1C1917', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
+            style={{ flex: 1, padding: '10px 12px', borderRadius: 'var(--r-sm)', border: '1.5px solid rgba(0,0,0,0.10)', background: '#fff', fontSize: 15, fontWeight: 600, color: '#1C1917', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
             <Icon name={ICONS.qrCode} size={15} /> Download QR
           </button>
           <button type="button" onClick={() => downloadPDF(b)}
-            style={{ flex: 1, padding: '10px 12px', borderRadius: 9, border: 'none', background: 'var(--brand-color)', color: 'var(--brand-text)', fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.30)' }}>
+            style={{ flex: 1, padding: '10px 12px', borderRadius: 'var(--r-sm)', border: 'none', background: 'var(--brand-color)', color: 'var(--brand-text)', fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.30)' }}>
             <Icon name={ICONS.download} size={15} /> Export PDF
           </button>
         </div>

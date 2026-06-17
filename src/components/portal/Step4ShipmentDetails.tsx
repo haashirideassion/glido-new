@@ -246,7 +246,7 @@ export function Step4ShipmentDetails() {
     return (
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-          <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <img src={datetimeImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
           </div>
           <div>
@@ -332,7 +332,7 @@ export function Step4ShipmentDetails() {
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <img src={datetimeImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
           </div>
           <div>
@@ -346,20 +346,20 @@ export function Step4ShipmentDetails() {
             onClick={() => toggleApplyAll(!applyAll)}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 7,
-              padding: '5px 12px', borderRadius: 9999,
+              padding: '5px 12px', borderRadius: 'var(--r-full)',
               background: applyAll ? 'rgba(var(--brand-rgb),0.10)' : 'rgba(0,0,0,0.06)',
               border: `1.5px solid ${applyAll ? 'rgba(var(--brand-rgb),0.30)' : 'rgba(0,0,0,0.12)'}`,
               cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit',
             }}
           >
             <span style={{
-              position: 'relative', width: 28, height: 16, borderRadius: 9999,
+              position: 'relative', width: 28, height: 16, borderRadius: 'var(--r-full)',
               background: applyAll ? 'var(--brand-color, #FC6514)' : '#D1D5DB',
               display: 'inline-block', flexShrink: 0, transition: 'background 0.15s',
             }}>
               <span style={{
                 position: 'absolute', top: 2, left: applyAll ? 14 : 2,
-                width: 12, height: 12, borderRadius: 9999,
+                width: 12, height: 12, borderRadius: 'var(--r-full)',
                 background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.18)', transition: 'left 0.15s',
               }} />
             </span>
@@ -535,7 +535,7 @@ function DateStrip({ dates, selectedDate, wh, cutoff, isTodayPastCutoff, onSelec
             }}
             style={{
               position: 'relative', flex: '0 0 64px', width: 64,
-              padding: '10px 0', borderRadius: 16, textAlign: 'center',
+              padding: '10px 0', borderRadius: 'var(--r-lg)', textAlign: 'center',
               transition: 'all 0.15s ease', cursor: disabled ? 'not-allowed' : 'pointer',
               opacity: disabled ? 0.38 : 1,
               border: sel ? '2px solid var(--brand-color)' : '1.5px solid rgba(0,0,0,0.08)',
@@ -550,13 +550,13 @@ function DateStrip({ dates, selectedDate, wh, cutoff, isTodayPastCutoff, onSelec
               {d.num}
             </p>
             {d.isToday && !cutoffDisabled && (
-              <div style={{ width: 4, height: 4, borderRadius: 999, background: 'var(--brand-color)', margin: '6px auto 0' }} />
+              <div style={{ width: 4, height: 4, borderRadius: 'var(--r-full)', background: 'var(--brand-color)', margin: '6px auto 0' }} />
             )}
             {d.isToday && cutoffDisabled && cutoff && (
               <p style={{ fontSize: 9, color: '#EF4444', lineHeight: 1.2, margin: '4px 0 0' }}>After {cutoff}</p>
             )}
             {sel && (
-              <div style={{ position: 'absolute', top: -7, right: -7, width: 18, height: 18, borderRadius: 999, background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ position: 'absolute', top: -7, right: -7, width: 18, height: 18, borderRadius: 'var(--r-full)', background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ color: '#fff', fontSize: 10, fontWeight: 800, lineHeight: 1 }}>✓</span>
               </div>
             )}
@@ -582,7 +582,7 @@ function PeriodTabs({ groups, active, onChange }: {
           fontSize: 14, fontWeight: 700, color: 'var(--brand-color)',
           background: 'rgba(var(--brand-rgb),0.08)',
           border: '1px solid rgba(var(--brand-rgb),0.18)',
-          borderRadius: 20, padding: '4px 12px',
+          borderRadius: 'var(--r-xl)', padding: '4px 12px',
           textTransform: 'uppercase', letterSpacing: '0.06em',
         }}>
           {groups[0].period.label.replace(' Slots', '')}
@@ -591,7 +591,7 @@ function PeriodTabs({ groups, active, onChange }: {
     )
   }
   return (
-    <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: '#F3F4F6', borderRadius: 12, padding: 4 }}>
+    <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: '#F3F4F6', borderRadius: 'var(--r-md)', padding: 4 }}>
       {groups.map(({ key, period }) => {
         const sel = key === active
         return (
@@ -600,7 +600,7 @@ function PeriodTabs({ groups, active, onChange }: {
             type="button"
             onClick={() => onChange(key)}
             style={{
-              flex: 1, padding: '8px 12px', borderRadius: 9, border: 'none', fontFamily: 'inherit',
+              flex: 1, padding: '8px 12px', borderRadius: 'var(--r-sm)', border: 'none', fontFamily: 'inherit',
               fontSize: 15, fontWeight: sel ? 700 : 500, cursor: 'pointer',
               background: sel ? '#fff' : 'transparent',
               color: sel ? 'var(--brand-color)' : '#6B7280',
@@ -634,7 +634,7 @@ function SlotGrid({ slots, selectedId, onSelect }: {
             onClick={() => !full && onSelect(slot)}
             style={{
               width: '100%', position: 'relative', display: 'flex', flexDirection: 'column',
-              padding: '14px 18px', borderRadius: 16, textAlign: 'left',
+              padding: '14px 18px', borderRadius: 'var(--r-lg)', textAlign: 'left',
               transition: 'all 0.15s ease', boxSizing: 'border-box', fontFamily: 'inherit',
               border: selected ? '2px solid var(--brand-color)' : '1.5px solid rgba(0,0,0,0.08)',
               background: full ? '#FAFAFA' : selected ? 'rgba(var(--brand-rgb),0.03)' : '#fff',
@@ -647,7 +647,7 @@ function SlotGrid({ slots, selectedId, onSelect }: {
                 {slot.startTime}
               </span>
               {selected && (
-                <div style={{ width: 20, height: 20, borderRadius: 999, background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: 20, height: 20, borderRadius: 'var(--r-full)', background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="10" height="8" viewBox="0 0 12 10" fill="none">
                     <path d="M1 5L4.5 8.5L11 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
@@ -693,7 +693,7 @@ function SlotGroup({ label, slots, selectedId, onSelect }: {
               onClick={() => !full && onSelect(slot)}
               style={{
                 width: '100%', position: 'relative', display: 'flex', flexDirection: 'column',
-                padding: '14px 18px', borderRadius: 16, textAlign: 'left',
+                padding: '14px 18px', borderRadius: 'var(--r-lg)', textAlign: 'left',
                 transition: 'all 0.15s ease', boxSizing: 'border-box', fontFamily: 'inherit',
                 border: selected ? '2px solid var(--brand-color)' : '1.5px solid rgba(0,0,0,0.08)',
                 background: full ? '#FAFAFA' : selected ? 'rgba(var(--brand-rgb),0.03)' : '#fff',
@@ -707,7 +707,7 @@ function SlotGroup({ label, slots, selectedId, onSelect }: {
                   {slot.startTime}
                 </span>
                 {selected && (
-                  <div style={{ width: 20, height: 20, borderRadius: 999, background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 'var(--r-full)', background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg width="10" height="8" viewBox="0 0 12 10" fill="none">
                       <path d="M1 5L4.5 8.5L11 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>

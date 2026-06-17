@@ -7,7 +7,7 @@ import { toast } from '@/lib/toast'
 
 const FIELD: React.CSSProperties = {
   width: '100%', padding: '11px 14px', fontSize: 15, color: '#1C1917',
-  background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10,
+  background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-sm)',
   outline: 'none', boxSizing: 'border-box',
   transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
 }
@@ -113,11 +113,11 @@ export default function StaffLoginPage() {
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 400 }}>
 
         {/* Card */}
-        <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 24, padding: '44px 40px', boxShadow: '0 2px 8px rgba(0,0,0,0.04),0 16px 48px rgba(0,0,0,0.09)' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 'var(--r-xl)', padding: '44px 40px', boxShadow: '0 2px 8px rgba(0,0,0,0.04),0 16px 48px rgba(0,0,0,0.09)' }}>
 
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: 36 }}>
-            <div style={{ width: 52, height: 52, borderRadius: 14, background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 4px 14px rgba(var(--brand-rgb),0.38)' }}>
+            <div style={{ width: 52, height: 52, borderRadius: 'var(--r-md)', background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: '0 4px 14px rgba(var(--brand-rgb),0.38)' }}>
               <Icon name={ICONS.users} size={24} style={{ color: 'var(--brand-text)' }} />
             </div>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', marginBottom: 6 }}>
@@ -154,7 +154,7 @@ export default function StaffLoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              style={{ width: '100%', padding: '13px 20px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 9999, cursor: isSubmitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)', opacity: isSubmitting ? 0.7 : 1, transition: 'opacity 0.15s' }}
+              style={{ width: '100%', padding: '13px 20px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 'var(--r-full)', cursor: isSubmitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)', opacity: isSubmitting ? 0.7 : 1, transition: 'opacity 0.15s' }}
             >
               {isSubmitting ? 'Signing in…' : 'Sign in to Reception →'}
             </button>

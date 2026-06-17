@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { NavLink, Outlet, useLocation, Link, useNavigate } from 'react-router-dom'
 import { GlidoLogo } from '@/lib/GlidoLogo'
 import { todaySydney } from '@/lib/time'
@@ -40,9 +40,11 @@ export default function ReceptionLayout() {
     await supabase.auth.signOut()
     navigate('/login', { replace: true })
   }
-  const [open, setOpen] = useState(() => localStorage.getItem('glido-sidebar') === '1')
+  const [open, setOpen] = useState(() => localStorage.getItem('glido-sidebar') !== '0')
   const [walkInCount, setWalkInCount] = useState(0)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [sidebarExtra, setSidebarExtra] = useState<React.ReactNode>(null)
+  const setSidebarExtraStable = useCallback((node: React.ReactNode) => setSidebarExtra(node), [])
 
   // Staff profile loaded directly from Supabase session — no AuthContext
   const [staffName,   setStaffName]   = useState<string | null>(null)
@@ -59,7 +61,9 @@ export default function ReceptionLayout() {
     document.documentElement.style.setProperty('--brand-color', color)
     document.documentElement.style.setProperty('--brand-rgb', `${r},${g},${b}`)
     const luminance = (0.2126 * (r/255)**2.2 + 0.7152 * (g/255)**2.2 + 0.0722 * (b/255)**2.2)
-    const brandText = luminance > 0.18 ? '#000000' : '#ffffff'
+    const contrastWithBlack = (luminance + 0.05) / 0.05
+    const contrastWithWhite = 1.05 / (luminance + 0.05)
+    const brandText = contrastWithBlack >= contrastWithWhite ? '#000000' : '#ffffff'
     document.documentElement.style.setProperty('--brand-text', brandText)
     try { localStorage.setItem('glido_brand_color', color) } catch(e) {}
   }, [tenant?.primaryColor])
@@ -71,6 +75,21 @@ export default function ReceptionLayout() {
     '/reception/visitors': 'Visitor Management',
   }
   const title = PAGE_TITLE_OVERRIDE[pathname] ?? activeNav?.label ?? 'Dashboard'
+
+  const PAGE_SUBTITLE: Record<string, string> = {
+    '/reception/bookings':  'Manage and track all depot bookings',
+    '/reception/visitors':  'Visitor check-ins and walk-ins',
+    '/reception/reports':   'Analytics, exports and ABF logs',
+    '/reception/settings':  'Configure your facility',
+  }
+  // Dashboard shows the live date instead of a static description
+  const todayLabel = new Date().toLocaleDateString('en-AU', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    timeZone: 'Australia/Sydney',
+  })
+  const subtitle = pathname === '/reception'
+    ? todayLabel
+    : (PAGE_SUBTITLE[pathname] ?? '')
 
   useEffect(() => { initToast() }, [])
 
@@ -182,36 +201,8 @@ export default function ReceptionLayout() {
           pointer-events: none;
           z-index: 2147483647;
         }
-        .action-btn { width: 48px; height: 48px; border-radius: 999px; background: var(--brand-color); color: #fff; display: flex; align-items: center; justify-content: center; gap: 0; border: none; cursor: pointer; flex-shrink: 0; transition: width 0.28s cubic-bezier(0.16,1,0.3,1), gap 0.28s ease, box-shadow 0.15s ease; box-shadow: 0 4px 16px rgba(var(--brand-rgb),0.38), 0 1px 4px rgba(var(--brand-rgb),0.20); text-decoration: none; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; position: relative; }
+        .action-btn { width: 48px; height: 48px; border-radius: 999px; background: var(--brand-color); color: var(--brand-text); display: flex; align-items: center; justify-content: center; gap: 0; border: none; cursor: pointer; flex-shrink: 0; transition: width 0.28s cubic-bezier(0.16,1,0.3,1), gap 0.28s ease, box-shadow 0.15s ease; box-shadow: 0 4px 16px rgba(var(--brand-rgb),0.38), 0 1px 4px rgba(var(--brand-rgb),0.20); text-decoration: none; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; position: relative; }
         .sidebar-col:not(.is-open) .action-btn { overflow: visible; }
-        .sidebar-col:not(.is-open) .action-btn:hover::after {
-          content: 'New Booking';
-          position: absolute;
-          left: calc(100% + 10px);
-          top: 50%;
-          transform: translateY(-50%);
-          background: #1C1917;
-          color: #FFFFFF;
-          font-size: 13px;
-          font-weight: 500;
-          padding: 5px 10px;
-          border-radius: 6px;
-          white-space: nowrap;
-          pointer-events: none;
-          z-index: 2147483647;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.18);
-        }
-        .sidebar-col:not(.is-open) .action-btn:hover::before {
-          content: '';
-          position: absolute;
-          left: calc(100% + 6px);
-          top: 50%;
-          transform: translateY(-50%);
-          border: 4px solid transparent;
-          border-right-color: #1C1917;
-          pointer-events: none;
-          z-index: 2147483647;
-        }
         .sidebar-col.is-open .action-btn { width: 176px; gap: 8px; padding: 0 18px; justify-content: center; }
         .action-btn:hover { box-shadow: 0 6px 24px rgba(var(--brand-rgb),0.48), 0 2px 8px rgba(var(--brand-rgb),0.24); }
         .action-btn-label { opacity: 0; max-width: 0; overflow: hidden; pointer-events: none; transition: opacity 0.14s ease, max-width 0.28s cubic-bezier(0.16,1,0.3,1); }
@@ -252,7 +243,7 @@ export default function ReceptionLayout() {
                   </div>
                   <span className="nav-item-label">{item.label}</span>
                   {'badge' in item && item.badge && walkInCount > 0 && (
-                    <span className="sidebar-badge" style={{ width: 20, height: 20, borderRadius: 9999, background: '#EF4444', color: '#fff', fontSize: 10, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 4 }}>
+                    <span className="sidebar-badge" style={{ width: 20, height: 20, borderRadius: 'var(--r-full)', background: '#EF4444', color: '#fff', fontSize: 10, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 4 }}>
                       {walkInCount}
                     </span>
                   )}
@@ -284,18 +275,41 @@ export default function ReceptionLayout() {
           })}
         </nav>
 
-        {/* New Booking button */}
         <button type="button" className="action-btn" onClick={() => navigate('/reception/bookings/new')}>
-          <Icon name={ICONS.add} size={18} style={{ color: '#fff', flexShrink: 0 }} />
+          <Icon name={ICONS.add} size={18} style={{ color: 'var(--brand-text)', flexShrink: 0 }} />
           <span className="action-btn-label">New Booking</span>
         </button>
+
+        {/* Page-injected sidebar slot */}
+        {sidebarExtra && (
+          open ? (
+            <div style={{ width: 176 }}>
+              {sidebarExtra}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              data-label="Filters"
+              aria-label="Filters"
+              className="nav-item"
+              style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}
+            >
+              <div className="nav-item-icon" style={{ background: '#1C1917', borderRadius: 'var(--r-full)', width: 48, height: 48 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 4h18l-7 8v6l-4 2v-8z"/>
+                </svg>
+              </div>
+            </button>
+          )
+        )}
 
       </aside>
 
       {/* ── Main area ── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#f9f9f9' }}>
         {/* Header */}
-        <header style={{ height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', background: '#f9f9f9', flexShrink: 0 }}>
+        <header style={{ height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', background: '#f9f9f9', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <button className="sidebar-toggle-btn" type="button" onClick={() => setOpen(v => !v)} title="Toggle sidebar">
               {open ? (
@@ -306,17 +320,25 @@ export default function ReceptionLayout() {
                 </svg>
               ) : (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="3" y1="6" x2="21" y2="6"/>
-                  <line x1="3" y1="12" x2="21" y2="12"/>
-                  <line x1="3" y1="18" x2="21" y2="18"/>
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <path d="M9 3v18"/>
+                  <path d="M12 9l3 3-3 3"/>
                 </svg>
               )}
             </button>
-            <h1 style={{ fontSize: 28, fontWeight: 600, color: '#1C1917', letterSpacing: '-0.02em' }}>{title}</h1>
+            <div>
+              <h1 style={{ fontSize: 26, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.02em', margin: 0, lineHeight: 1.15 }}>{title}</h1>
+              {subtitle && (
+                <p style={{ fontSize: 14, color: 'var(--text-tertiary)', margin: '2px 0 0', lineHeight: 1.2 }}>{subtitle}</p>
+              )}
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             {tenant?.logoUrl && (
-              <img src={tenant.logoUrl} alt="Company logo" style={{ height: 32, objectFit: 'contain', maxWidth: 100 }} />
+              <>
+                <img src={tenant.logoUrl} alt="Company logo" style={{ height: 30, objectFit: 'contain', maxWidth: 100 }} />
+                <span style={{ width: 1, height: 26, background: 'rgba(0,0,0,0.10)', flexShrink: 0 }} />
+              </>
             )}
 
             {/* User avatar + popover */}
@@ -324,9 +346,9 @@ export default function ReceptionLayout() {
               {userMenuOpen && (
                 <>
                   <div style={{ position: 'fixed', inset: 0, zIndex: 9100 }} onClick={() => setUserMenuOpen(false)} />
-                  <div style={{ position: 'fixed', top: 56, right: 16, zIndex: 9101, width: 232, background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 16, boxShadow: '0 12px 40px rgba(0,0,0,0.15),0 3px 10px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+                  <div style={{ position: 'fixed', top: 56, right: 16, zIndex: 9101, width: 232, background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 'var(--r-lg)', boxShadow: '0 12px 40px rgba(0,0,0,0.15),0 3px 10px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'rgba(var(--brand-rgb),0.025)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-                      <div style={{ width: 38, height: 38, borderRadius: 9999, background: 'var(--brand-color)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: 'var(--brand-text)', flexShrink: 0 }}>{initials}</div>
+                      <div style={{ width: 38, height: 38, borderRadius: 'var(--r-full)', background: 'var(--brand-color)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: 'var(--brand-text)', flexShrink: 0 }}>{initials}</div>
                       <div style={{ minWidth: 0 }}>
                         <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fullName}</p>
                         <p style={{ fontSize: 13, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>{tenantLine}</p>
@@ -344,7 +366,7 @@ export default function ReceptionLayout() {
               <div
                 onClick={() => setUserMenuOpen(v => !v)}
                 title="Account menu"
-                style={{ width: 36, height: 36, borderRadius: 9999, background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--brand-text)', flexShrink: 0, cursor: 'pointer' }}
+                style={{ width: 36, height: 36, borderRadius: 'var(--r-full)', background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--brand-text)', flexShrink: 0, cursor: 'pointer' }}
               >
                 {profileLoading ? '·' : initials}
               </div>
@@ -355,7 +377,7 @@ export default function ReceptionLayout() {
 
         {/* Content */}
         <main style={{ flex: 1, overflowY: 'auto', padding: '14px 22px 22px' }}>
-          <Outlet />
+          <Outlet context={{ setSidebarExtra: setSidebarExtraStable }} />
         </main>
       </div>
     </div>

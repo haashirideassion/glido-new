@@ -51,20 +51,20 @@ export const VisitorLogView = ({ records, stats, filters }: Props) => {
       </div>
 
       {/* ── KPI Summary ─────────────────────────────────────────────────── */}
-      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
+      <div style="display:flex; align-items:stretch; background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07);">
         {[
           { label: 'Total Visitors',  value: stats.totalVisitors,   icon: ICONS.walkIn,   color: '#1C1917' },
           { label: 'Currently On-Site', value: stats.currentlyOnSite, icon: ICONS.check,    color: 'var(--brand-color)' },
           { label: 'Completed Visits', value: stats.completedVisits, icon: ICONS.bookings, color: '#22C55E' },
-        ].map((kpi) => (
-          <div key={kpi.label} style="background:#FFFFFF; border:1px solid rgba(0,0,0,0.07); border-radius:16px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07); display:flex; align-items:center; justify-content:space-between;">
-            <div>
-              <p style="font-size:38px; font-weight:800; color:#1C1917; margin:0; letter-spacing:-0.03em; line-height:1;">{kpi.value}</p>
-              <p style="font-size:14px; font-weight:600; color:#4B5563; margin:2px 0 0;">{kpi.label}</p>
+        ].map((kpi, i) => (
+          <div key={kpi.label} style={`flex:1; min-width:0; padding:22px 26px; ${i === 0 ? '' : 'border-left:1px solid rgba(0,0,0,0.07);'}`}>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+              <div style={`width:34px; height:34px; border-radius:12px; background:rgba(0,0,0,0.03); display:flex; align-items:center; justify-content:center; color:${kpi.color};`}>
+                <Icon name={kpi.icon} size={17} />
+              </div>
+              <p style="font-size:14px; font-weight:600; color:#44403C; margin:0;">{kpi.label}</p>
             </div>
-            <div style={`width:44px; height:44px; border-radius:12px; background:rgba(0,0,0,0.02); display:flex; align-items:center; justify-content:center; color:${kpi.color};`}>
-              <Icon name={kpi.icon} size={22} />
-            </div>
+            <p style="font-size:40px; font-weight:800; color:#1C1917; margin:0; letter-spacing:-0.04em; line-height:1;">{kpi.value}</p>
           </div>
         ))}
       </div>
@@ -154,7 +154,7 @@ export const VisitorLogView = ({ records, stats, filters }: Props) => {
                   'Date', 'Full Name', 'Address', 'ID Type', 'ID Number', 'DOB', 
                   'ID Signed By', 'Reason', 'Person Visited', 'Escort', 'Entry Time', 'Exit Time'
                 ].map(h => (
-                  <th key={h} style="text-align:left; padding:16px 20px; color:#374151; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; font-size:14px;">{h}</th>
+                  <th key={h} style="text-align:left; padding:12px 16px; color:var(--text-secondary); font-weight:500; text-transform:none; letter-spacing:0; font-size:14px;">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -165,19 +165,19 @@ export const VisitorLogView = ({ records, stats, filters }: Props) => {
                 const reason = r.walk_in_reason || b?.service_type?.toUpperCase() || '—'
                 
                 return (
-                  <tr key={r.id} style="border-bottom:1px solid rgba(0,0,0,0.05); transition:background 0.1s ease;" onmouseover="this.style.background='rgba(0,0,0,0.015)'" onmouseout="this.style.background='transparent'">
-                    <td style="padding:16px 20px; color:#1C1917; font-weight:500; font-size:15px;">{formatDate(r.check_in_time)}</td>
-                    <td style="padding:16px 20px; font-weight:700; color:#1C1917; font-size:16px;">{name}</td>
-                    <td style="padding:16px 20px; color:#4B5563; max-width:200px; overflow:hidden; text-overflow:ellipsis; font-size:16px;">{r.licence_address || '—'}</td>
-                    <td style="padding:16px 20px; color:#4B5563; font-size:15px;">{r.licence_scan_method || 'Manual'}</td>
-                    <td style="padding:16px 20px; font-family:ui-monospace,monospace; color:var(--brand-color); font-weight:700; font-size:16px;">{r.licence_number || '—'}</td>
-                    <td style="padding:16px 20px; color:#4B5563; font-size:15px;">{formatDate(r.licence_dob)}</td>
-                    <td style="padding:16px 20px; color:#4B5563; font-style:italic; font-size:15px;">Pending</td>
-                    <td style="padding:16px 20px;"><span style="background:rgba(0,0,0,0.04); padding:4px 10px; border-radius:6px; font-weight:600; color:#374151; font-size:14px;">{reason}</span></td>
-                    <td style="padding:16px 20px; color:#1C1917; font-weight:600; font-size:16px;">{r.visit_person_name || '—'}</td>
-                    <td style="padding:16px 20px; color:#4B5563; font-style:italic; font-size:15px;">None</td>
-                    <td style="padding:16px 20px; color:#16A34A; font-weight:700; font-size:15px;">{formatDateTime(r.check_in_time)}</td>
-                    <td style="padding:16px 20px; color:#4B5563; font-size:15px;">{b?.completed_at ? formatDateTime(b.completed_at) : '—'}</td>
+                  <tr key={r.id} style="border-bottom:1px solid rgba(0,0,0,0.08); transition:background 0.1s ease;" onmouseover="this.style.background='rgba(0,0,0,0.015)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding:18px 16px; color:#1C1917; font-weight:500; font-size:15px;">{formatDate(r.check_in_time)}</td>
+                    <td style="padding:18px 16px; font-weight:700; color:#1C1917; font-size:16px;">{name}</td>
+                    <td style="padding:18px 16px; color:#4B5563; max-width:200px; overflow:hidden; text-overflow:ellipsis; font-size:16px;">{r.licence_address || '—'}</td>
+                    <td style="padding:18px 16px; color:#4B5563; font-size:15px;">{r.licence_scan_method || 'Manual'}</td>
+                    <td style="padding:18px 16px; font-family:ui-monospace,monospace; color:#1C1917; font-weight:700; font-size:16px;">{r.licence_number || '—'}</td>
+                    <td style="padding:18px 16px; color:#4B5563; font-size:15px;">{formatDate(r.licence_dob)}</td>
+                    <td style="padding:18px 16px; color:#4B5563; font-style:italic; font-size:15px;">Pending</td>
+                    <td style="padding:18px 16px;"><span style="background:rgba(0,0,0,0.04); padding:4px 10px; border-radius:6px; font-weight:600; color:#374151; font-size:14px;">{reason}</span></td>
+                    <td style="padding:18px 16px; color:#1C1917; font-weight:600; font-size:16px;">{r.visit_person_name || '—'}</td>
+                    <td style="padding:18px 16px; color:#4B5563; font-style:italic; font-size:15px;">None</td>
+                    <td style="padding:18px 16px; color:#16A34A; font-weight:700; font-size:15px;">{formatDateTime(r.check_in_time)}</td>
+                    <td style="padding:18px 16px; color:#4B5563; font-size:15px;">{b?.completed_at ? formatDateTime(b.completed_at) : '—'}</td>
                   </tr>
                 )
               })}

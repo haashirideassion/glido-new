@@ -52,7 +52,7 @@ export default function NotFound() {
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '13px 28px', fontSize: 15, fontWeight: 600, color: '#374151',
               background: '#fff', border: '1.5px solid #e5e7eb',
-              borderRadius: 9999, cursor: 'pointer', fontFamily: 'inherit',
+              borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit',
               transition: 'border-color 0.15s ease, color 0.15s ease, transform 0.18s ease',
             }}
             onMouseOver={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.color = '#1C1917'; e.currentTarget.style.transform = 'translateY(-2px)' }}
@@ -68,7 +68,7 @@ export default function NotFound() {
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '13px 28px', fontSize: 15, fontWeight: 600, color: '#fff',
               background: 'linear-gradient(135deg,#FF7A2A 0%,#E85A0A 100%)',
-              borderRadius: 9999, textDecoration: 'none',
+              borderRadius: 'var(--r-full)', textDecoration: 'none',
               boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)',
               transition: 'transform 0.18s ease, box-shadow 0.18s ease',
             }}

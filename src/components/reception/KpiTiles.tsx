@@ -1,9 +1,6 @@
-import { useEffect, useRef } from 'react'
 import { Icon, ICONS } from '@/lib/Icon'
 import { fmtTime } from '@/lib/time'
 import type { DashboardStats, Booking } from '@/data/types'
-
-declare const echarts: any
 
 interface Props {
   stats:    DashboardStats
@@ -25,59 +22,30 @@ const STATUS_STYLE: Record<string, string> = {
   scheduled:  'background:#F5F5F4;color:#57534E;border:1px solid rgba(0,0,0,0.1);',
 }
 
-function SparklineCard({ tile, value, chartId, loading }: { tile: typeof TILES[number]; value: number; chartId: string; loading?: boolean }) {
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!ref.current) return
-    const data: number[] = []  // no fake trend data — real historical data not yet available
-    let chart: any
-
-    const init = () => {
-      if (typeof echarts === 'undefined') { setTimeout(init, 100); return }
-      if (!ref.current) return
-      chart = echarts.init(ref.current, null, { renderer: 'svg' })
-      chart.setOption({
-        animation: false,
-        grid: { top: 2, right: 2, bottom: 2, left: 2 },
-        xAxis: { type: 'category', show: false, boundaryGap: false },
-        yAxis: { type: 'value', show: false, min: 'dataMin', max: 'dataMax' },
-        series: [{
-          type: 'line', data, smooth: 0.4, symbol: 'none',
-          lineStyle: { color: tile.line, width: 1.5 },
-          areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: tile.fillStart }, { offset: 1, color: tile.fillEnd }] } },
-        }],
-      })
-    }
-    init()
-    return () => chart?.dispose()
-  }, [value]) // eslint-disable-line react-hooks/exhaustive-deps
-
+function StatSegment({ tile, value, loading, isFirst }: { tile: typeof TILES[number]; value: number; loading?: boolean; isFirst: boolean }) {
   return (
     <div
-      style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 18, padding: 20, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1),box-shadow 0.2s ease', cursor: 'default' }}
-      onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.05),0 2px 6px rgba(0,0,0,0.03)' }}
-      onMouseOut={e  => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}
+      style={{
+        flex: 1, minWidth: 0, padding: '22px 26px', position: 'relative',
+        borderLeft: isFirst ? 'none' : '1px solid rgba(0,0,0,0.07)',
+        transition: 'background 0.18s ease',
+      }}
+      onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.015)')}
+      onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 12, background: tile.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `1px solid ${tile.iconFg}22` }}>
-          <Icon name={tile.icon} size={20} style={{ color: tile.iconFg }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{ width: 34, height: 34, borderRadius: 'var(--r-md)', background: tile.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `1px solid ${tile.iconFg}22` }}>
+          <Icon name={tile.icon} size={17} style={{ color: tile.iconFg }} />
         </div>
+        <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tile.label}</p>
       </div>
+
       {loading ? (
-        <>
-          <div style={{ width: 64, height: 38, borderRadius: 8, background: 'rgba(0,0,0,0.07)', marginBottom: 5, animation: 'dash-pulse 1.5s ease-in-out infinite' }} />
-          <div style={{ width: 110, height: 14, borderRadius: 5, background: 'rgba(0,0,0,0.06)', marginBottom: 6, animation: 'dash-pulse 1.5s ease-in-out infinite' }} />
-          <div style={{ width: 80, height: 12, borderRadius: 5, background: 'rgba(0,0,0,0.05)', marginBottom: 14, animation: 'dash-pulse 1.5s ease-in-out infinite' }} />
-        </>
+        <div style={{ width: 56, height: 40, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.07)', animation: 'dash-pulse 1.5s ease-in-out infinite' }} />
       ) : (
-        <>
-          <p style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, color: tile.valueFg, marginBottom: 5, fontVariantNumeric: 'tabular-nums' }}>{value}</p>
-          <p style={{ fontSize: 15, fontWeight: 600, color: '#374151', marginBottom: 2 }}>{tile.label}</p>
-          <p style={{ fontSize: 15, color: 'var(--text-muted)', marginBottom: 14 }}>{tile.sub}</p>
-        </>
+        <p style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, color: tile.valueFg, margin: '0 0 6px', fontVariantNumeric: 'tabular-nums' }}>{value}</p>
       )}
-      <div ref={ref} style={{ height: 44, margin: '0 -20px', width: 'calc(100% + 40px)' }} />
+      <p style={{ fontSize: 14, color: 'var(--text-tertiary)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tile.sub}</p>
     </div>
   )
 }
@@ -86,14 +54,19 @@ export function KpiTiles({ stats, loading }: Props) {
   return (
     <>
       <style>{`@keyframes dash-pulse{0%,100%{opacity:1}50%{opacity:0.45}}`}</style>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 16 }}>
-        {TILES.map(t => (
-          <SparklineCard
+      <div style={{
+        display: 'flex', alignItems: 'stretch',
+        background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)',
+        borderRadius: 'var(--r-lg)', overflow: 'hidden', marginBottom: 16,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)',
+      }}>
+        {TILES.map((t, i) => (
+          <StatSegment
             key={t.statKey}
             tile={t}
             value={stats[t.statKey] ?? 0}
-            chartId={`kpi-${t.statKey}`}
             loading={loading}
+            isFirst={i === 0}
           />
         ))}
       </div>
@@ -105,14 +78,11 @@ export function RecentVisitors({ stats, loading }: Props) {
   const recent = [...(stats.recentVisitors ?? [])].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5)
 
   return (
-    <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 18, padding: 28, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+    <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-lg)', padding: 28, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <div>
-            <h3 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', margin: 0, letterSpacing: '-0.02em' }}>Recent Visitors</h3>
-            <p style={{ fontSize: 15, color: 'var(--text-muted)', margin: '5px 0 0' }}>Latest visitor activity and status updates</p>
-          </div>
-          <div style={{ width: 40, height: 40, background: 'rgba(0,0,0,0.03)', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,0,0,0.05)' }}>
-            <Icon name={ICONS.users} size={20} style={{ color: 'var(--text-secondary)' }} />
+            <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1C1917', margin: 0, letterSpacing: '-0.01em' }}>Recent Visitors</h3>
+            <p style={{ fontSize: 14, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>{recent.length} record{recent.length !== 1 ? 's' : ''}</p>
           </div>
         </div>
 
@@ -121,13 +91,13 @@ export function RecentVisitors({ stats, loading }: Props) {
             {[0,1,2,3].map(i => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid rgba(0,0,0,0.045)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 9999, background: 'rgba(0,0,0,0.07)', flexShrink: 0, animation: 'dash-pulse 1.5s ease-in-out infinite' }} />
+                  <div style={{ width: 36, height: 36, borderRadius: 'var(--r-full)', background: 'rgba(0,0,0,0.07)', flexShrink: 0, animation: 'dash-pulse 1.5s ease-in-out infinite' }} />
                   <div>
-                    <div style={{ width: 120, height: 14, borderRadius: 5, background: 'rgba(0,0,0,0.07)', marginBottom: 6, animation: 'dash-pulse 1.5s ease-in-out infinite' }} />
-                    <div style={{ width: 90, height: 12, borderRadius: 5, background: 'rgba(0,0,0,0.05)', animation: 'dash-pulse 1.5s ease-in-out infinite' }} />
+                    <div style={{ width: 120, height: 14, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.07)', marginBottom: 6, animation: 'dash-pulse 1.5s ease-in-out infinite' }} />
+                    <div style={{ width: 90, height: 12, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.05)', animation: 'dash-pulse 1.5s ease-in-out infinite' }} />
                   </div>
                 </div>
-                <div style={{ width: 72, height: 26, borderRadius: 9999, background: 'rgba(0,0,0,0.06)', animation: 'dash-pulse 1.5s ease-in-out infinite' }} />
+                <div style={{ width: 72, height: 26, borderRadius: 'var(--r-full)', background: 'rgba(0,0,0,0.06)', animation: 'dash-pulse 1.5s ease-in-out infinite' }} />
               </div>
             ))}
           </div>
@@ -142,7 +112,7 @@ export function RecentVisitors({ stats, loading }: Props) {
                 <tr key={b.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.045)' }}>
                   <td style={{ padding: '16px 0' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 9999, background: '#F5F5F4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', flexShrink: 0, border: '1px solid rgba(0,0,0,0.04)' }}>{initials}</div>
+                      <div style={{ width: 36, height: 36, borderRadius: 'var(--r-full)', background: '#F5F5F4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', flexShrink: 0, border: '1px solid rgba(0,0,0,0.04)' }}>{initials}</div>
                       <div>
                         <p style={{ fontSize: 16, fontWeight: 600, color: '#1C1917', margin: 0 }}>{b.driverName}</p>
                         <p style={{ fontSize: 15, fontFamily: 'ui-monospace,monospace', color: 'var(--text-muted)', margin: '2px 0 0' }}>{b.referenceNumber}</p>

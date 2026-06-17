@@ -700,25 +700,25 @@
     border-radius: 0.25rem;
   }
   .rounded-2xl {
-    border-radius: 32px;
+    border-radius: var(--r-xl);
   }
   .rounded-3xl {
     border-radius: var(--radius-3xl);
   }
   .rounded-full {
-    border-radius: 9999px;
+    border-radius: var(--r-full);
   }
   .rounded-lg {
-    border-radius: 16px;
+    border-radius: var(--r-lg);
   }
   .rounded-md {
-    border-radius: 10px;
+    border-radius: var(--r-sm);
   }
   .rounded-none {
     border-radius: 0;
   }
   .rounded-xl {
-    border-radius: 24px;
+    border-radius: var(--r-xl);
   }
   .rounded-tl-lg {
     border-top-left-radius: 16px;
@@ -2428,7 +2428,7 @@
   .gl-card {
     background: #FFFFFF;
     border: 1px solid rgba(0,0,0,0.07);
-    border-radius: 16px;
+    border-radius: var(--r-lg);
     box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 20px rgba(0,0,0,0.07);
     transition: transform 200ms cubic-bezier(0.16,1,0.3,1), box-shadow 200ms cubic-bezier(0.16,1,0.3,1), border-color 200ms ease;
   }
@@ -2439,22 +2439,22 @@
   }
   .card-shell {
     background: #FFFFFF;
-    border-radius: 16px;
+    border-radius: var(--r-lg);
     box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 16px 48px rgba(0,0,0,0.12);
     border: 1px solid rgba(0,0,0,0.06);
   }
   .card-shell-inner {
-    border-radius: 16px;
+    border-radius: var(--r-lg);
     background: #FFFFFF;
   }
   .card-shell-sm {
     background: #FFFFFF;
-    border-radius: 10px;
+    border-radius: var(--r-sm);
     box-shadow: 0 2px 8px rgba(0,0,0,0.10), 0 8px 24px rgba(0,0,0,0.10);
     border: 1px solid rgba(0,0,0,0.07);
   }
   .card-shell-sm-inner {
-    border-radius: 10px;
+    border-radius: var(--r-sm);
     background: #FFFFFF;
   }
   .glass {
@@ -2482,7 +2482,7 @@
     background: linear-gradient( 90deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.04) 100% );
     background-size: 800px 100%;
     animation: shimmer 1.4s linear infinite;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
   }
   .shadow-orange-glow {
     box-shadow: rgba(var(--brand-rgb),0.45) 0px 0px 24px 0px;
@@ -2630,7 +2630,7 @@
     background: var(--brand-color);
     color: var(--brand-text);
     border: 1px solid rgba(0,0,0,0.18);
-    border-radius: 9999px;
+    border-radius: var(--r-full);
     font-size: 15px;
     font-weight: 600;
     letter-spacing: -0.01em;
@@ -2660,7 +2660,7 @@
     background: linear-gradient(180deg, #4ADE80 0%, #16A34A 100%);
     color: #FFFFFF;
     border: 1px solid rgba(0,0,0,0.18);
-    border-radius: 9999px;
+    border-radius: var(--r-full);
     font-size: 15px;
     font-weight: 600;
     letter-spacing: -0.01em;
@@ -2688,7 +2688,7 @@
     background: #FFFFFF;
     color: #E85A0A;
     border: 1px solid rgba(var(--brand-rgb),0.28);
-    border-radius: 9999px;
+    border-radius: var(--r-full);
     font-size: 15px;
     font-weight: 600;
     letter-spacing: -0.01em;
@@ -2717,7 +2717,7 @@
     background: linear-gradient(180deg, #F87171 0%, #DC2626 100%);
     color: #FFFFFF;
     border: 1px solid rgba(0,0,0,0.18);
-    border-radius: 9999px;
+    border-radius: var(--r-full);
     font-size: 15px;
     font-weight: 600;
     letter-spacing: -0.01em;
@@ -2745,7 +2745,7 @@
     background: #FFFFFF;
     color: #DC2626;
     border: 1px solid rgba(239,68,68,0.30);
-    border-radius: 9999px;
+    border-radius: var(--r-full);
     font-size: 15px;
     font-weight: 600;
     letter-spacing: -0.01em;
@@ -2774,7 +2774,7 @@
     background: #FFFFFF;
     color: #57534E;
     border: 1px solid rgba(0,0,0,0.12);
-    border-radius: 9999px;
+    border-radius: var(--r-full);
     font-size: 15px;
     font-weight: 500;
     cursor: pointer;
@@ -2802,7 +2802,7 @@
     background: linear-gradient(180deg, #2C2825 0%, #1C1917 100%);
     color: #F3F2F0;
     border: 1px solid rgba(0,0,0,0.30);
-    border-radius: 9999px;
+    border-radius: var(--r-full);
     font-size: 15px;
     font-weight: 600;
     letter-spacing: -0.01em;
@@ -2852,7 +2852,7 @@
     height: 1px;
     margin: 0 3px;
     background: rgba(0,0,0,0.10);
-    border-radius: 9999px;
+    border-radius: var(--r-full);
     transition: background 0.35s ease;
   }
   .wiz-line.filled {
@@ -2861,12 +2861,12 @@
   .wizard-card {
     background: #FFFFFF;
     border: 1px solid rgba(0,0,0,0.07);
-    border-radius: 14px;
+    border-radius: var(--r-md);
   }
   .wizard-field {
     width: 100%;
     padding: 11px 14px;
-    border-radius: 10px;
+    border-radius: var(--r-sm);
     border: 1.5px solid #e5e7eb;
     background: #fff;
     font-size: 15px;
@@ -2885,7 +2885,7 @@
   .wizard-stepper-btn {
     width: 40px;
     height: 40px;
-    border-radius: 10px;
+    border-radius: var(--r-sm);
     border: 1.5px solid #e5e7eb;
     background: #fff;
     font-size: 20px;
@@ -2910,7 +2910,7 @@
   }
   .wizard-chip {
     padding: 5px 14px;
-    border-radius: 9999px;
+    border-radius: var(--r-full);
     border: 1.5px solid #e5e7eb;
     background: #fff;
     font-size: 15px;
@@ -2929,7 +2929,7 @@
     align-items: center;
     gap: 16px;
     padding: 20px 24px;
-    border-radius: 14px;
+    border-radius: var(--r-md);
     border: 1.5px solid #e5e7eb;
     background: #fff;
     cursor: pointer;
@@ -2947,7 +2947,7 @@
   .feature-card {
     background: #FFFFFF;
     border: 1px solid rgba(0,0,0,0.07);
-    border-radius: 16px;
+    border-radius: var(--r-lg);
     padding: 32px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07);
     transition: transform 250ms cubic-bezier(0.16,1,0.3,1), box-shadow 250ms cubic-bezier(0.16,1,0.3,1), border-color 250ms ease;
@@ -2960,7 +2960,7 @@
   .feature-card .icon-wrap {
     width: 48px;
     height: 48px;
-    border-radius: 10px;
+    border-radius: var(--r-sm);
     background: rgba(var(--brand-rgb),0.08);
     border: 1px solid rgba(var(--brand-rgb),0.16);
     display: flex;
@@ -2977,7 +2977,7 @@
   .step-card {
     background: #FFFFFF;
     border: 1px solid rgba(0,0,0,0.07);
-    border-radius: 16px;
+    border-radius: var(--r-lg);
     padding: 28px;
     position: relative;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07);
@@ -2999,7 +2999,7 @@
   .stat-card {
     background: #FFFFFF;
     border: 1px solid rgba(0,0,0,0.07);
-    border-radius: 16px;
+    border-radius: var(--r-lg);
     padding: 32px 24px;
     text-align: center;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07);
@@ -3025,7 +3025,7 @@
   .kpi-tile {
     background: #FFFFFF;
     border: 1px solid rgba(0,0,0,0.07);
-    border-radius: 16px;
+    border-radius: var(--r-lg);
     padding: 20px 24px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.07);
     transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s ease;
@@ -3037,7 +3037,7 @@
   .quote-card {
     background: #FFFFFF;
     border: 1px solid rgba(0,0,0,0.07);
-    border-radius: 24px;
+    border-radius: var(--r-xl);
     padding: 48px;
     position: relative;
     overflow: hidden;
@@ -3058,7 +3058,7 @@
     width: 8px;
     height: 8px;
     background: var(--brand-color);
-    border-radius: 9999px;
+    border-radius: var(--r-full);
     animation: glowPulse 2s linear infinite;
     flex-shrink: 0;
   }
@@ -3067,7 +3067,7 @@
     align-items: center;
     gap: 6px;
     padding: 6px 14px 6px 10px;
-    border-radius: 9999px;
+    border-radius: var(--r-full);
     font-size: 14px;
     font-weight: 500;
     background: rgba(0,0,0,0.04);

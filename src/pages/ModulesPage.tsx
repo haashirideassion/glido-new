@@ -103,7 +103,7 @@ export default function ModulesPage() {
               onClick={() => navigate(m.route)}
               style={{
                 background: '#FFFFFF',
-                borderRadius: 20,
+                borderRadius: 'var(--r-xl)',
                 padding: 32,
                 minHeight: 280,
                 boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 20px rgba(0,0,0,0.07)',
@@ -115,7 +115,7 @@ export default function ModulesPage() {
             >
               {/* Icon */}
               <div style={{
-                width: 72, height: 72, borderRadius: 18,
+                width: 72, height: 72, borderRadius: 'var(--r-lg)',
                 background: m.iconBg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 marginBottom: 22, flexShrink: 0,

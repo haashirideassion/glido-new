@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import type { ReactNode } from 'react'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import { CustomSelect } from '@/components/ui/CustomSelect'
 import { usePageTitle } from '@/lib/usePageTitle'
 import { Icon, ICONS } from '@/lib/Icon'
@@ -106,7 +107,7 @@ function presetDates(p: Preset): { from: string; to: string } {
 // ── Shared input field style ──────────────────────────────────────────────────
 const FIELD: React.CSSProperties = {
   padding: '10px 14px', height: 44, fontSize: 15, color: '#1C1917',
-  background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8,
+  background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)',
   outline: 'none', boxSizing: 'border-box',
 }
 
@@ -129,6 +130,10 @@ export default function WalkInsPage() {
     setDateFrom(from)
     setDateTo(to)
   }
+
+  const { setSidebarExtra } = useOutletContext<{ setSidebarExtra: (n: ReactNode) => void }>()
+  const hasFilters = !!(typeFilter || search || preset !== 'today')
+  const clearAll = () => { setTypeFilter(''); setSearch(''); applyPreset('today') }
 
   // ── Data fetching ─────────────────────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -226,115 +231,113 @@ export default function WalkInsPage() {
     { key: 'completed', label: 'Completed',  sub: 'Processed bookings', icon: ICONS.bookings,  iconBg: 'rgba(107,114,128,0.10)', iconFg: '#6B7280', val: kpi.completed },
   ]
 
+  // ── Sidebar filter card ───────────────────────────────────────────────────────
+  useEffect(() => {
+    setSidebarExtra(
+      <div style={{ width: 176 }}>
+        <div style={{ background: '#FFFFFF', borderRadius: 'var(--r-xl)', border: '1px solid rgba(0,0,0,0.08)', padding: 18, display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: 0 }}>Filters</p>
+            {hasFilters && (
+              <button onClick={clearAll} style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', transition: 'color 0.15s' }}
+                onMouseOver={e => (e.currentTarget.style.color = 'var(--brand-color)')}
+                onMouseOut={e  => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+              >Clear</button>
+            )}
+          </div>
+
+          <CustomSelect placeholder="All Types" value={typeFilter} onChange={setTypeFilter}
+            options={[{ value: 'walkin', label: 'Walk-in Only' }, { value: 'booking', label: 'Booking Only' }]} />
+
+          {/* Range presets */}
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Range</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {PRESETS.map(p => {
+                const active = preset === p.id
+                return (
+                  <button key={p.id} type="button" onClick={() => applyPreset(p.id)}
+                    style={{ height: 36, fontSize: 13, fontWeight: active ? 700 : 500, borderRadius: 'var(--r-sm)', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', fontFamily: 'inherit',
+                      background: active ? 'rgba(var(--brand-rgb),0.10)' : '#F7F6F5',
+                      border: `1px solid ${active ? 'rgba(var(--brand-rgb),0.28)' : 'rgba(0,0,0,0.06)'}`,
+                      color: active ? 'var(--brand-color)' : 'var(--text-secondary)' }}>
+                    {p.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Custom dates */}
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Custom Dates</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPreset('all') }}
+                style={{ width: '100%', height: 38, padding: '0 10px', fontSize: 13, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+              <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPreset('all') }}
+                style={{ width: '100%', height: 38, padding: '0 10px', fontSize: 13, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+    return () => setSidebarExtra(null)
+  }, [typeFilter, search, preset, dateFrom, dateTo, hasFilters, setSidebarExtra])
+
   return (
     <>
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <style>{`@keyframes vp-pulse{0%,100%{opacity:1}50%{opacity:0.45}}`}</style>
 
       {/* KPI tiles */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16 }}>
-        {loading
-          ? KPI_DEF.map(t => (
-              <div key={t.key} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 18, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: '#F3F3F2', animation: 'vp-pulse 1.5s ease-in-out infinite' }} />
-                </div>
-                <div style={{ width: 60, height: 38, borderRadius: 6, background: '#F3F3F2', marginBottom: 8, animation: 'vp-pulse 1.5s ease-in-out infinite' }} />
-                <div style={{ width: 100, height: 14, borderRadius: 4, background: '#F3F3F2', animation: 'vp-pulse 1.5s ease-in-out infinite' }} />
+      <div style={{ display: 'flex', alignItems: 'stretch', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-lg)', overflow: 'hidden', marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
+        {KPI_DEF.map((t, i) => (
+          <div key={t.key}
+            style={{ flex: 1, minWidth: 0, padding: '22px 26px', borderLeft: i === 0 ? 'none' : '1px solid rgba(0,0,0,0.07)', transition: 'background 0.18s ease' }}
+            onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.015)')}
+            onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 'var(--r-md)', background: t.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `1px solid ${t.iconFg}22` }}>
+                <Icon name={t.icon} size={17} style={{ color: t.iconFg }} />
               </div>
-            ))
-          : KPI_DEF.map(t => (
-              <div key={t.key}
-                style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 18, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', transition: 'transform 0.2s cubic-bezier(0.16,1,0.3,1),box-shadow 0.2s ease' }}
-                onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.05),0 2px 6px rgba(0,0,0,0.03)' }}
-                onMouseOut={e  => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: t.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${t.iconFg}22` }}>
-                    <Icon name={t.icon} size={20} style={{ color: t.iconFg }} />
-                  </div>
-                </div>
-                <p style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, color: '#1C1917', marginBottom: 5, fontVariantNumeric: 'tabular-nums' }}>{t.val}</p>
-                <p style={{ fontSize: 15, fontWeight: 700, color: '#1C1917', marginBottom: 2 }}>{t.label}</p>
-                <p style={{ fontSize: 15, color: 'var(--text-muted)', margin: 0 }}>{t.sub}</p>
-              </div>
-            ))
-        }
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.label}</p>
+            </div>
+            {loading
+              ? <div style={{ width: 56, height: 40, borderRadius: 'var(--r-sm)', background: '#F3F3F2', animation: 'vp-pulse 1.5s ease-in-out infinite' }} />
+              : <p style={{ fontSize: 40, fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1, color: '#1C1917', margin: '0 0 6px', fontVariantNumeric: 'tabular-nums' }}>{t.val}</p>}
+            <p style={{ fontSize: 14, color: 'var(--text-tertiary)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.sub}</p>
+          </div>
+        ))}
       </div>
 
-      {/* ── Filter bar ── */}
-      <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-
-        {/* Row 1 — Primary: Search + Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', pointerEvents: 'none' }}>
-              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-            </svg>
-            <input
-              type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search name, phone, ref…"
-              size={32}
-              style={{ height: 40, padding: '0 14px 0 38px', fontSize: 15, color: '#1C1917', background: '#fff', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: 10, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s, box-shadow 0.15s', fontFamily: 'inherit' }}
-              onFocus={e => { e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(var(--brand-rgb),0.10)' }}
-              onBlur={e  => { e.target.style.borderColor = 'rgba(0,0,0,0.12)';            e.target.style.boxShadow = 'none' }}
-            />
-          </div>
-          <div style={{ flex: 1 }} />
-          <button onClick={exportCsv}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 40, padding: '0 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 10, cursor: 'pointer', transition: 'background 0.12s', flexShrink: 0, fontFamily: 'inherit' }}
-            onMouseOver={e => { e.currentTarget.style.background = '#F7F6F5' }}
-            onMouseOut={e  => { e.currentTarget.style.background = '#fff' }}
-          >
-            <Icon name={ICONS.download} size={15} /> Export CSV
-          </button>
+      {/* ── Search + actions bar ── */}
+      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', pointerEvents: 'none' }}>
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <input
+            type="text" value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search name, phone, ref…"
+            size={32}
+            style={{ height: 40, padding: '0 14px 0 38px', fontSize: 15, color: '#1C1917', background: '#fff', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s, box-shadow 0.15s', fontFamily: 'inherit' }}
+            onFocus={e => { e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(var(--brand-rgb),0.10)' }}
+            onBlur={e  => { e.target.style.borderColor = 'rgba(0,0,0,0.12)';            e.target.style.boxShadow = 'none' }}
+          />
         </div>
-
-        {/* Row 2 — Secondary: Filters */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap', overflowX: 'auto' }}>
-          {/* Type filter grouped */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F7F6F5', borderRadius: 9, padding: '4px 6px', border: '1px solid rgba(0,0,0,0.06)', flexShrink: 0 }}>
-            <CustomSelect
-              placeholder="All Types"
-              value={typeFilter}
-              onChange={v => setTypeFilter(v)}
-              width={140}
-              options={[
-                { value: 'walkin',  label: 'Walk-in Only' },
-                { value: 'booking', label: 'Booking Only' },
-              ]}
-            />
-          </div>
-
-          {/* Divider */}
-          <div style={{ width: 1, height: 24, background: 'rgba(0,0,0,0.08)', flexShrink: 0 }} />
-
-          {/* Time presets */}
-          <div style={{ display: 'flex', alignItems: 'center', background: '#F7F6F5', borderRadius: 9, padding: 3, border: '1px solid rgba(0,0,0,0.06)', flexShrink: 0, height: 36, boxSizing: 'border-box' }}>
-            {PRESETS.map(p => {
-              const active = preset === p.id
-              return (
-                <button key={p.id} type="button" onClick={() => applyPreset(p.id)}
-                  style={{ height: 30, padding: '0 13px', fontSize: 14, fontWeight: active ? 700 : 500, borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all 0.15s', background: active ? '#FFFFFF' : 'transparent', color: active ? 'var(--brand-color)' : '#44403C', boxShadow: active ? '0 1px 3px rgba(0,0,0,0.10)' : 'none', whiteSpace: 'nowrap', fontFamily: 'inherit' }}>
-                  {p.label}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Date range */}
-          <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPreset('all') }}
-            style={{ height: 36, padding: '0 12px', fontSize: 14, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', flexShrink: 0 }} />
-          <span style={{ color: 'var(--text-tertiary)', flexShrink: 0, fontSize: 14 }}>→</span>
-          <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPreset('all') }}
-            style={{ height: 36, padding: '0 12px', fontSize: 14, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', flexShrink: 0 }} />
-        </div>
-
+        <button onClick={exportCsv}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 40, padding: '0 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', cursor: 'pointer', transition: 'background 0.12s', flexShrink: 0, fontFamily: 'inherit' }}
+          onMouseOver={e => { e.currentTarget.style.background = '#F7F6F5' }}
+          onMouseOut={e  => { e.currentTarget.style.background = '#fff' }}
+        >
+          <Icon name={ICONS.download} size={15} /> Export CSV
+        </button>
       </div>
 
       {/* Table */}
-      <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
+      <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-md)', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
         {/* Table header row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.01)' }}>
           <span style={{ fontSize: 15, fontWeight: 600, color: '#374151' }}>
@@ -343,7 +346,7 @@ export default function WalkInsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {ICS_LEGEND.map(l => (
               <span key={l.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#94A3B8', whiteSpace: 'nowrap' }}>
-                <span style={{ width: 8, height: 8, borderRadius: 9999, background: ICS_BAR_COLOR[l.key], flexShrink: 0, display: 'inline-block' }} />
+                <span style={{ width: 8, height: 8, borderRadius: 'var(--r-full)', background: ICS_BAR_COLOR[l.key], flexShrink: 0, display: 'inline-block' }} />
                 {l.label}
               </span>
             ))}
@@ -356,7 +359,7 @@ export default function WalkInsPage() {
               <tr style={{ background: '#F7F6F5', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
                 <th style={{ width: 8, padding: 0 }} />
                 {['Reference', 'Type', 'Name', 'Phone', 'Purpose', 'Arrived', 'Licence'].map(h => (
-                  <th key={h} style={{ textAlign: 'left', padding: '12px 16px', fontSize: 15, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>{h}</th>
+                  <th key={h} style={{ textAlign: 'left', padding: '12px 16px', fontSize: 15, fontWeight: 500, color: 'var(--text-secondary)', textTransform: 'none', letterSpacing: 0, whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -364,19 +367,28 @@ export default function WalkInsPage() {
               {loading ? (
                 <tr><td colSpan={8} style={{ padding: '48px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 15 }}>Loading…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={8} style={{ padding: '48px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 15 }}>No visitors match your filters.</td></tr>
+                <tr><td colSpan={8} style={{ padding: '48px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 15 }}>
+                  {(() => {
+                    const hasOtherFilters = !!(typeFilter || search)
+                    if (hasOtherFilters) return 'No visitors match your filters.'
+                    if (preset === 'today') return 'No visitors for today yet.'
+                    if (preset === '7d')    return 'No visitors in the last 7 days.'
+                    if (preset === '30d')   return 'No visitors in the last 30 days.'
+                    return 'No visitors in the selected range.'
+                  })()}
+                </td></tr>
               ) : filtered.map(v => {
                 return (
                   <tr
                     key={`${v.type}-${v.id}`}
                     style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', transition: 'background 0.12s', cursor: 'pointer' }}
-                    onMouseOver={e => (e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.05)')}
+                    onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.02)')}
                     onMouseOut={e  => (e.currentTarget.style.background = '')}
                     onClick={() => navigate(`/reception/visitors/${v.id}`)}
                   >
                     {/* ICS colour bar */}
                     <td style={{ width: 8, padding: 0, paddingLeft: 4 }}>
-                      <div style={{ width: 4, minHeight: 40, height: '100%', borderRadius: 2, background: ICS_BAR_COLOR[v.icsStatus ?? ''] ?? ICS_BAR_COLOR.unavailable }} />
+                      <div style={{ width: 4, minHeight: 40, height: '100%', borderRadius: 'var(--r-xs)', background: ICS_BAR_COLOR[v.icsStatus ?? ''] ?? ICS_BAR_COLOR.unavailable }} />
                     </td>
 
                     {/* Reference */}
@@ -384,7 +396,9 @@ export default function WalkInsPage() {
                       {v.type === 'booking' && v.bookingRef ? (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                           <span
-                            style={{ fontFamily: 'ui-monospace,monospace', fontSize: 15, fontWeight: 600, color: 'var(--brand-color)', cursor: 'pointer' }}
+                            style={{ fontFamily: 'ui-monospace,monospace', fontSize: 15, fontWeight: 600, color: '#1C1917', cursor: 'pointer', transition: 'color 0.15s' }}
+                            onMouseOver={e => (e.currentTarget.style.color = 'var(--brand-color)')}
+                            onMouseOut={e  => (e.currentTarget.style.color = '#1C1917')}
                             onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(v.bookingRef ?? '') }}
                             title="Copy reference"
                           >
@@ -406,12 +420,12 @@ export default function WalkInsPage() {
                     {/* Type pill */}
                     <td style={{ padding: '18px 16px', whiteSpace: 'nowrap' }}>
                       {v.type === 'booking' ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, padding: '5px 10px 5px 8px', borderRadius: 9999, background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0', whiteSpace: 'nowrap' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, padding: '5px 10px 5px 8px', borderRadius: 'var(--r-full)', background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0', whiteSpace: 'nowrap' }}>
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
                           Checked In
                         </span>
                       ) : (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, padding: '5px 10px 5px 8px', borderRadius: 9999, background: '#F9FAFB', color: '#374151', border: '1px solid #E5E7EB', whiteSpace: 'nowrap' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, padding: '5px 10px 5px 8px', borderRadius: 'var(--r-full)', background: '#F9FAFB', color: '#374151', border: '1px solid #E5E7EB', whiteSpace: 'nowrap' }}>
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>
                           Walk-in
                         </span>
@@ -431,7 +445,7 @@ export default function WalkInsPage() {
 
                     {/* Purpose */}
                     <td style={{ padding: '18px 16px' }}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 14, fontWeight: 600, padding: '5px 10px 5px 8px', borderRadius: 9999, background: '#F9FAFB', color: '#374151', border: '1px solid #E5E7EB', whiteSpace: 'nowrap' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 14, fontWeight: 600, padding: '5px 10px 5px 8px', borderRadius: 'var(--r-full)', background: '#F9FAFB', color: '#374151', border: '1px solid #E5E7EB', whiteSpace: 'nowrap' }}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>
                         {v.purpose}
                       </span>

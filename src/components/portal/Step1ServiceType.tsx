@@ -68,7 +68,7 @@ export function Step1ServiceType() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-        <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ width: 52, height: 52, borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <img src={slotImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
         </div>
         <div>
@@ -82,7 +82,7 @@ export function Step1ServiceType() {
       </div>
 
       {/* Slot counter */}
-      <div style={{ border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: '28px 24px', marginBottom: 28, background: '#fff' }}>
+      <div style={{ border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 'var(--r-lg)', padding: '28px 24px', marginBottom: 28, background: '#fff' }}>
         {/* Big counter display */}
         <div style={{ textAlign: 'center', paddingBottom: 24 }}>
           <p style={{ fontSize: 15, color: '#9CA3AF', marginBottom: 16, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase' }}>How many slots?</p>
@@ -91,7 +91,7 @@ export function Step1ServiceType() {
               type="button"
               onClick={() => dispatch({ type: 'SET', field: 'slotCount', value: Math.max(1, state.slotCount - 1) })}
               disabled={state.slotCount <= 1}
-              style={{ width: 48, height: 48, borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.10)', background: '#fff', fontSize: 24, cursor: state.slotCount <= 1 ? 'not-allowed' : 'pointer', opacity: state.slotCount <= 1 ? 0.35 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', transition: 'opacity 0.15s' }}
+              style={{ width: 48, height: 48, borderRadius: 'var(--r-md)', border: '1.5px solid rgba(0,0,0,0.10)', background: '#fff', fontSize: 24, cursor: state.slotCount <= 1 ? 'not-allowed' : 'pointer', opacity: state.slotCount <= 1 ? 0.35 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', transition: 'opacity 0.15s' }}
             >−</button>
 
             {editing ? (
@@ -108,7 +108,7 @@ export function Step1ServiceType() {
                 style={{
                   fontSize: 64, fontWeight: 800, color: 'var(--brand-color)', lineHeight: 1,
                   width: 96, textAlign: 'center', border: '2px solid rgba(var(--brand-rgb),0.40)',
-                  borderRadius: 10, outline: 'none', background: 'rgba(var(--brand-rgb),0.04)',
+                  borderRadius: 'var(--r-sm)', outline: 'none', background: 'rgba(var(--brand-rgb),0.04)',
                   fontFamily: 'inherit', padding: '0 8px', boxSizing: 'border-box',
                 }}
               />
@@ -126,7 +126,7 @@ export function Step1ServiceType() {
               type="button"
               onClick={() => dispatch({ type: 'SET', field: 'slotCount', value: Math.min(10, state.slotCount + 1) })}
               disabled={state.slotCount >= 10}
-              style={{ width: 48, height: 48, borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.10)', background: '#fff', fontSize: 24, cursor: state.slotCount >= 10 ? 'not-allowed' : 'pointer', opacity: state.slotCount >= 10 ? 0.35 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', transition: 'opacity 0.15s' }}
+              style={{ width: 48, height: 48, borderRadius: 'var(--r-md)', border: '1.5px solid rgba(0,0,0,0.10)', background: '#fff', fontSize: 24, cursor: state.slotCount >= 10 ? 'not-allowed' : 'pointer', opacity: state.slotCount >= 10 ? 0.35 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', transition: 'opacity 0.15s' }}
             >+</button>
           </div>
           <p style={{ fontSize: 15, color: '#9CA3AF', marginTop: 8 }}>slot{state.slotCount !== 1 ? 's' : ''}</p>
@@ -140,7 +140,7 @@ export function Step1ServiceType() {
               type="button"
               onClick={() => dispatch({ type: 'SET', field: 'slotCount', value: n })}
               style={{
-                padding: '8px 20px', fontSize: 15, fontWeight: 600, borderRadius: 9999,
+                padding: '8px 20px', fontSize: 15, fontWeight: 600, borderRadius: 'var(--r-full)',
                 border: state.slotCount === n ? '1.5px solid var(--brand-color, #FC6514)' : '1.5px solid rgba(0,0,0,0.10)',
                 background: state.slotCount === n ? 'rgba(var(--brand-rgb),0.08)' : '#fff',
                 color: state.slotCount === n ? 'var(--brand-color, #FC6514)' : '#6B7280',
@@ -213,7 +213,7 @@ export function Step1ServiceType() {
       {/* Logged-in confirmation badge */}
       {loggedIn && (
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(22,163,74,0.08)', border: '1.5px solid rgba(22,163,74,0.2)', borderRadius: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(22,163,74,0.08)', border: '1.5px solid rgba(22,163,74,0.2)', borderRadius: 'var(--r-md)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <svg width="18" height="18" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
                 <circle cx="8" cy="8" r="7.5" stroke="#22C55E"/>
@@ -243,7 +243,7 @@ export function Step1ServiceType() {
                   type="text"
                   value={modName}
                   onChange={e => setModName(e.target.value)}
-                  style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.12)', fontSize: 15, color: '#1C1917', background: '#fff', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: 'var(--r-md)', border: '1.5px solid rgba(0,0,0,0.12)', fontSize: 15, color: '#1C1917', background: '#fff', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }}
                 />
                 <p style={{ fontSize: 14, color: '#9CA3AF', marginTop: 4, marginBottom: 0 }}>Required — min. 2 characters</p>
               </div>
@@ -255,7 +255,7 @@ export function Step1ServiceType() {
                   type="email"
                   value={modEmail}
                   onChange={e => setModEmail(e.target.value)}
-                  style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.12)', fontSize: 15, color: '#1C1917', background: '#fff', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: 'var(--r-md)', border: '1.5px solid rgba(0,0,0,0.12)', fontSize: 15, color: '#1C1917', background: '#fff', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }}
                 />
                 <p style={{ fontSize: 14, color: '#9CA3AF', marginTop: 4, marginBottom: 0 }}>Booking confirmations sent here</p>
               </div>
@@ -270,7 +270,7 @@ export function Step1ServiceType() {
                   value={modPhone}
                   onChange={e => { setModPhone(sanitize.digitsOnly(e.target.value)); setModPhoneErr('') }}
                   onBlur={e => setModPhoneErr(validators.phoneAU(e.target.value))}
-                  style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.12)', fontSize: 15, color: '#1C1917', background: '#fff', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: 'var(--r-md)', border: '1.5px solid rgba(0,0,0,0.12)', fontSize: 15, color: '#1C1917', background: '#fff', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }}
                 />
                 {modPhoneErr && <p style={{ fontSize: 14, color: '#EF4444', marginTop: 4 }}>{modPhoneErr}</p>}
               </div>
@@ -283,14 +283,14 @@ export function Step1ServiceType() {
                   value={modCompany}
                   onChange={e => setModCompany(e.target.value)}
                   placeholder="Your company or organisation (optional)"
-                  style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.12)', fontSize: 15, color: '#1C1917', background: '#fff', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: 'var(--r-md)', border: '1.5px solid rgba(0,0,0,0.12)', fontSize: 15, color: '#1C1917', background: '#fff', boxSizing: 'border-box', outline: 'none', fontFamily: 'inherit' }}
                 />
               </div>
               <button
                 type="button"
                 onClick={handleDone}
                 disabled={saving}
-                style={{ padding: '11px 24px', borderRadius: 12, border: 'none', background: saving ? '#D1D5DB' : 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', marginTop: 8, fontFamily: 'inherit', transition: 'background 0.15s' }}
+                style={{ padding: '11px 24px', borderRadius: 'var(--r-md)', border: 'none', background: saving ? '#D1D5DB' : 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', marginTop: 8, fontFamily: 'inherit', transition: 'background 0.15s' }}
               >
                 {saving ? 'Saving…' : 'Save changes'}
               </button>

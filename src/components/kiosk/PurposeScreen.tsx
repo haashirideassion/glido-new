@@ -4,7 +4,7 @@ import { Icon, ICONS } from '@/lib/Icon'
 const ICON_BOX: React.CSSProperties = {
   width: 64,
   height: 64,
-  borderRadius: 16,
+  borderRadius: 'var(--r-lg)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -47,7 +47,7 @@ export function PurposeScreen() {
               style={{
                 width: '100%',
                 minHeight: 96,
-                borderRadius: 18,
+                borderRadius: 'var(--r-lg)',
                 padding: '0 24px',
                 display: 'flex',
                 alignItems: 'center',

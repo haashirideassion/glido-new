@@ -78,14 +78,14 @@ export function LookupScreen() {
       <div style={{ width: '100%', maxWidth: 448, textAlign: 'center' }}>
 
         {/* Header */}
-        <div style={{ width: 64, height: 64, background: 'rgba(var(--brand-rgb),0.09)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+        <div style={{ width: 64, height: 64, background: 'rgba(var(--brand-rgb),0.09)', borderRadius: 'var(--r-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
           <Icon name={ICONS.search} size={36} style={{ color: 'var(--brand-color)' }} />
         </div>
         <h2 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: 8, color: '#1C1917' }}>Find Your Booking</h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: 28 }}>Select how you'd like to look up your booking</p>
 
         {/* Tab switcher — same pattern as ScanScreen */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 28, background: 'rgba(0,0,0,0.04)', borderRadius: 14, padding: 4 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 28, background: 'rgba(0,0,0,0.04)', borderRadius: 'var(--r-md)', padding: 4 }}>
           {(['ref', 'rego'] as Tab[]).map(t => {
             const active = tab === t
             return (
@@ -94,7 +94,7 @@ export function LookupScreen() {
                 type="button"
                 onClick={() => setTab(t)}
                 style={{
-                  flex: 1, height: 50, borderRadius: 11,
+                  flex: 1, height: 50, borderRadius: 'var(--r-sm)',
                   fontWeight: 700, fontSize: 15, cursor: 'pointer',
                   border: 'none',
                   background: active ? 'var(--brand-color)' : 'transparent',
@@ -117,7 +117,7 @@ export function LookupScreen() {
               type="text"
               placeholder="GLD-2026-XXXXX"
               className="kiosk-input"
-              style={{ width: '100%', borderRadius: 16, marginBottom: 12, border: `2px solid ${borderColor}`, background: bg, color: '#1C1917', padding: '14px 24px', textTransform: 'uppercase', letterSpacing: '0.1em' }}
+              style={{ width: '100%', borderRadius: 'var(--r-lg)', marginBottom: 12, border: `2px solid ${borderColor}`, background: bg, color: '#1C1917', padding: '14px 24px', textTransform: 'uppercase', letterSpacing: '0.1em' }}
               value={state.referenceInput}
               maxLength={20}
               onChange={handleRefInput}
@@ -133,7 +133,7 @@ export function LookupScreen() {
             )}
             <button
               className="kiosk-btn kiosk-btn-primary"
-              style={{ width: '100%', borderRadius: 16, opacity: state.referenceInput.trim() ? 1 : 0.4, cursor: state.referenceInput.trim() ? 'pointer' : 'not-allowed' }}
+              style={{ width: '100%', borderRadius: 'var(--r-lg)', opacity: state.referenceInput.trim() ? 1 : 0.4, cursor: state.referenceInput.trim() ? 'pointer' : 'not-allowed' }}
               onClick={performLookup}
               disabled={!state.referenceInput.trim() || state.lookupLoading}
             >
@@ -149,7 +149,7 @@ export function LookupScreen() {
               type="text"
               placeholder="e.g. ABC123"
               className="kiosk-input"
-              style={{ width: '100%', borderRadius: 16, marginBottom: 12, border: `2px solid ${regoBorderColor}`, background: regoBg, color: '#1C1917', padding: '14px 24px', textTransform: 'uppercase', letterSpacing: '0.12em' }}
+              style={{ width: '100%', borderRadius: 'var(--r-lg)', marginBottom: 12, border: `2px solid ${regoBorderColor}`, background: regoBg, color: '#1C1917', padding: '14px 24px', textTransform: 'uppercase', letterSpacing: '0.12em' }}
               value={regoInput}
               onChange={e => { setRegoInput(e.target.value.toUpperCase()); setRegoError(false) }}
               onKeyDown={e => e.key === 'Enter' && handleRegoLookup()}
@@ -164,7 +164,7 @@ export function LookupScreen() {
             )}
             <button
               className="kiosk-btn kiosk-btn-primary"
-              style={{ width: '100%', borderRadius: 16, opacity: regoInput.trim() ? 1 : 0.4, cursor: regoInput.trim() ? 'pointer' : 'not-allowed' }}
+              style={{ width: '100%', borderRadius: 'var(--r-lg)', opacity: regoInput.trim() ? 1 : 0.4, cursor: regoInput.trim() ? 'pointer' : 'not-allowed' }}
               onClick={handleRegoLookup}
               disabled={!regoInput.trim() || regoLoading}
             >

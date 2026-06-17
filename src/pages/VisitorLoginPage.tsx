@@ -7,7 +7,7 @@ import { toast } from '@/lib/toast'
 
 const FIELD: React.CSSProperties = {
   width: '100%', padding: '11px 14px', fontSize: 15, color: '#1C1917',
-  background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10,
+  background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-sm)',
   outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
 }
 const LABEL: React.CSSProperties = {
@@ -161,7 +161,7 @@ export default function VisitorLoginPage() {
 
   const PILL_BTN = (active: boolean): React.CSSProperties => ({
     flex: 1, padding: '9px 16px', fontSize: 15, fontWeight: 600, border: 'none',
-    cursor: 'pointer', transition: 'all 0.18s ease', borderRadius: 9999,
+    cursor: 'pointer', transition: 'all 0.18s ease', borderRadius: 'var(--r-full)',
     background: active ? '#fff' : 'transparent',
     color: active ? '#1C1917' : '#78716C',
     boxShadow: active ? '0 1px 5px rgba(0,0,0,0.12)' : 'none',
@@ -179,11 +179,11 @@ export default function VisitorLoginPage() {
       </div>
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 420 }}>
-        <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 24, padding: '28px 36px', boxShadow: '0 2px 8px rgba(0,0,0,0.04),0 16px 48px rgba(0,0,0,0.09)' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 'var(--r-xl)', padding: '28px 36px', boxShadow: '0 2px 8px rgba(0,0,0,0.04),0 16px 48px rgba(0,0,0,0.09)' }}>
 
           {/* Header */}
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <div style={{ width: 52, height: 52, borderRadius: 14, background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', boxShadow: '0 4px 14px rgba(var(--brand-rgb),0.38)' }}>
+            <div style={{ width: 52, height: 52, borderRadius: 'var(--r-md)', background: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', boxShadow: '0 4px 14px rgba(var(--brand-rgb),0.38)' }}>
               <Icon name={ICONS.users} size={24} style={{ color: 'var(--brand-text)' }} />
             </div>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', marginBottom: 5 }}>Sign in to Glido</h1>
@@ -191,7 +191,7 @@ export default function VisitorLoginPage() {
           </div>
 
           {/* Tab switcher */}
-          <div style={{ display: 'flex', gap: 3, background: '#ECEAE8', borderRadius: 9999, padding: 3, marginBottom: 20 }}>
+          <div style={{ display: 'flex', gap: 3, background: '#ECEAE8', borderRadius: 'var(--r-full)', padding: 3, marginBottom: 20 }}>
             <button type="button" onClick={() => setTab('signin')} style={PILL_BTN(tab === 'signin')}>Sign In</button>
             <button type="button" onClick={() => setTab('signup')} style={PILL_BTN(tab === 'signup')}>Create Account</button>
           </div>
@@ -283,7 +283,7 @@ export default function VisitorLoginPage() {
             <span style={{ fontSize: 14, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>or</span>
             <div style={{ flex: 1, height: 1, background: 'rgba(0,0,0,0.08)' }} />
           </div>
-          <Link to={redirect} style={{ display: 'block', marginTop: 12, width: '100%', padding: 12, fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', background: '#fff', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: 12, textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s ease,color 0.15s ease' }}
+          <Link to={redirect} style={{ display: 'block', marginTop: 12, width: '100%', padding: 12, fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', background: '#fff', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-md)', textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s ease,color 0.15s ease' }}
             onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.28)'; e.currentTarget.style.color = '#1C1917' }}
             onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.12)'; e.currentTarget.style.color = '#78716C' }}
           >Continue as Guest</Link>
@@ -300,7 +300,7 @@ export default function VisitorLoginPage() {
 
 function SubmitBtn({ loading, children }: { loading: boolean; children: React.ReactNode }) {
   return (
-    <button type="submit" disabled={loading} style={{ width: '100%', padding: '13px 20px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 9999, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)', marginTop: 2, opacity: loading ? 0.7 : 1, transition: 'opacity 0.15s' }}>
+    <button type="submit" disabled={loading} style={{ width: '100%', padding: '13px 20px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 'var(--r-full)', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)', marginTop: 2, opacity: loading ? 0.7 : 1, transition: 'opacity 0.15s' }}>
       {loading ? (
         <>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ animation: 'spin 0.7s linear infinite', flexShrink: 0 }}>

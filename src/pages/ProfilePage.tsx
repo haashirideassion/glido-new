@@ -16,7 +16,7 @@ function Toast({ message, type, onDone }: { message: string; type: 'success' | '
     <div style={{
       position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)',
       zIndex: 9999, display: 'flex', alignItems: 'center', gap: 10,
-      padding: '12px 20px', borderRadius: 12,
+      padding: '12px 20px', borderRadius: 'var(--r-md)',
       background: type === 'success' ? '#F0FDF4' : '#FEF2F2',
       border: `1px solid ${type === 'success' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
       boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
@@ -37,7 +37,7 @@ function Toast({ message, type, onDone }: { message: string; type: 'success' | '
 const CARD: React.CSSProperties = {
   background: '#fff',
   border: '1px solid rgba(var(--brand-rgb),0.10)',
-  borderRadius: 16,
+  borderRadius: 'var(--r-lg)',
   boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
   padding: '28px 28px 24px',
   marginBottom: 20,
@@ -48,7 +48,7 @@ const INPUT: React.CSSProperties = {
   padding: '11px 14px',
   fontSize: 15,
   border: '1.5px solid rgba(0,0,0,0.10)',
-  borderRadius: 10,
+  borderRadius: 'var(--r-sm)',
   outline: 'none',
   background: '#fff',
   color: '#1C1917',
@@ -130,7 +130,7 @@ function PersonalSection({ email, meta, onSaved }: {
           <button
             type="button"
             onClick={() => setEditing(true)}
-            style={{ fontSize: 15, fontWeight: 600, color: '#000000', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.18)', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ fontSize: 15, fontWeight: 600, color: '#000000', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.18)', borderRadius: 'var(--r-sm)', padding: '7px 14px', cursor: 'pointer', fontFamily: 'inherit' }}
           >
             Edit
           </button>
@@ -203,7 +203,7 @@ function PersonalSection({ email, meta, onSaved }: {
           <button
             type="button"
             onClick={() => { setEditing(false); setErrors({}); setFirstName(meta.first_name ?? ''); setLastName(meta.last_name ?? ''); setPhone(meta.phone ?? '') }}
-            style={{ padding: '10px 20px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ padding: '10px 20px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}
           >
             Cancel
           </button>
@@ -211,7 +211,7 @@ function PersonalSection({ email, meta, onSaved }: {
             type="button"
             onClick={handleSave}
             disabled={saving}
-            style={{ padding: '10px 22px', fontSize: 15, fontWeight: 700, color: '#fff', background: saving ? '#D1D5DB' : 'var(--brand-color)', border: 'none', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
+            style={{ padding: '10px 22px', fontSize: 15, fontWeight: 700, color: 'var(--brand-text)', background: saving ? '#D1D5DB' : 'var(--brand-color)', border: 'none', borderRadius: 'var(--r-sm)', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
           >
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
@@ -247,7 +247,7 @@ function CompanySection({ meta, onSaved }: { meta: Record<string, string>; onSav
           <button
             type="button"
             onClick={() => setEditing(true)}
-            style={{ fontSize: 15, fontWeight: 600, color: '#000000', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.18)', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ fontSize: 15, fontWeight: 600, color: '#000000', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.18)', borderRadius: 'var(--r-sm)', padding: '7px 14px', cursor: 'pointer', fontFamily: 'inherit' }}
           >
             Edit
           </button>
@@ -275,7 +275,7 @@ function CompanySection({ meta, onSaved }: { meta: Record<string, string>; onSav
           <button
             type="button"
             onClick={() => { setEditing(false); setCompanyName(meta.company_name ?? '') }}
-            style={{ padding: '10px 20px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ padding: '10px 20px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}
           >
             Cancel
           </button>
@@ -283,7 +283,7 @@ function CompanySection({ meta, onSaved }: { meta: Record<string, string>; onSav
             type="button"
             onClick={handleSave}
             disabled={saving}
-            style={{ padding: '10px 22px', fontSize: 15, fontWeight: 700, color: '#fff', background: saving ? '#D1D5DB' : 'var(--brand-color)', border: 'none', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
+            style={{ padding: '10px 22px', fontSize: 15, fontWeight: 700, color: 'var(--brand-text)', background: saving ? '#D1D5DB' : 'var(--brand-color)', border: 'none', borderRadius: 'var(--r-sm)', cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
           >
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
@@ -394,7 +394,7 @@ function PasswordSection({ onSaved, onError }: { onSaved: (msg: string) => void;
         type="button"
         onClick={handleUpdate}
         disabled={saving || (!newPw && !confirmPw)}
-        style={{ marginTop: 20, padding: '10px 22px', fontSize: 15, fontWeight: 700, color: '#fff', background: saving || (!newPw && !confirmPw) ? '#D1D5DB' : 'var(--brand-color)', border: 'none', borderRadius: 10, cursor: saving || (!newPw && !confirmPw) ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
+        style={{ marginTop: 20, padding: '10px 22px', fontSize: 15, fontWeight: 700, color: 'var(--brand-text)', background: saving || (!newPw && !confirmPw) ? '#D1D5DB' : 'var(--brand-color)', border: 'none', borderRadius: 'var(--r-sm)', cursor: saving || (!newPw && !confirmPw) ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
       >
         {saving ? 'Updating…' : 'Update Password'}
       </button>
@@ -442,7 +442,7 @@ export default function ProfilePage() {
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 6 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(var(--brand-rgb),0.09)', border: '1px solid rgba(var(--brand-rgb),0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 'var(--r-md)', background: 'rgba(var(--brand-rgb),0.09)', border: '1px solid rgba(var(--brand-rgb),0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Icon name={ICONS.user} size={20} style={{ color: 'var(--brand-color)' }} />
             </div>
             <div>

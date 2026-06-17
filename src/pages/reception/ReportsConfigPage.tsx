@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import type { ReactNode } from 'react'
+import { Link, useOutletContext } from 'react-router-dom'
 import { usePageTitle } from '@/lib/usePageTitle'
 import { Icon, ICONS } from '@/lib/Icon'
+import { CustomSelect } from '@/components/ui/CustomSelect'
 import { fmtDate, fmtDateTime as _fmtDateTime, todaySydney, TZ } from '@/lib/time'
 import { supabase } from '@/lib/supabase'
 import { DEFAULT_TENANT_ID } from '@/lib/supabase'
@@ -40,11 +42,6 @@ const ALL_COLUMNS: { key: string; label: string }[] = [
 ]
 
 const DEFAULT_VISIBLE_KEYS = ['date', 'fullName', 'address', 'idType', 'idNumber', 'dob', 'idSignedBy', 'reason', 'personVisited']
-
-const FIELD: React.CSSProperties = {
-  fontSize: 15, border: '1px solid rgba(0,0,0,0.10)', borderRadius: 6,
-  padding: '8px 12px', height: 48, outline: 'none', boxSizing: 'border-box', background: '#fff', color: '#1C1917',
-}
 
 const fmtDateTime = (iso?: string) => iso ? _fmtDateTime(iso) : '—'
 const today = () => todaySydney()
@@ -190,12 +187,68 @@ export default function ReportsConfigPage() {
 
   const QUICK = [{ label: 'Today', from: today(), to: today() }, { label: '7 Days', from: daysAgo(7), to: today() }, { label: '15 Days', from: daysAgo(15), to: today() }]
 
+  const { setSidebarExtra } = useOutletContext<{ setSidebarExtra: (n: ReactNode) => void }>()
+  const hasFilters = !!(status || search || from !== daysAgo(7) || to !== today())
+  const clearAll = () => { setStatus(''); setSearch(''); setFrom(daysAgo(7)); setTo(today()) }
+
+  useEffect(() => {
+    setSidebarExtra(
+      <div style={{ width: 176 }}>
+        <div style={{ background: '#FFFFFF', borderRadius: 'var(--r-xl)', border: '1px solid rgba(0,0,0,0.08)', padding: 18, display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: 0 }}>Filters</p>
+            {hasFilters && (
+              <button onClick={clearAll} style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', transition: 'color 0.15s' }}
+                onMouseOver={e => (e.currentTarget.style.color = 'var(--brand-color)')}
+                onMouseOut={e  => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+              >Clear</button>
+            )}
+          </div>
+
+          <CustomSelect placeholder="All Statuses" value={status} onChange={setStatus}
+            options={[{ value: 'checked_in', label: 'Checked In' }, { value: 'completed', label: 'Completed' }, { value: 'scheduled', label: 'Scheduled' }]} />
+
+          {/* Range presets */}
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Range</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {QUICK.map(q => {
+                const active = from === q.from && to === q.to
+                return (
+                  <button key={q.label} type="button" onClick={() => { setFrom(q.from); setTo(q.to) }}
+                    style={{ height: 36, fontSize: 13, fontWeight: active ? 700 : 500, borderRadius: 'var(--r-sm)', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', fontFamily: 'inherit',
+                      background: active ? 'rgba(var(--brand-rgb),0.10)' : '#F7F6F5',
+                      border: `1px solid ${active ? 'rgba(var(--brand-rgb),0.28)' : 'rgba(0,0,0,0.06)'}`,
+                      color: active ? 'var(--brand-color)' : 'var(--text-secondary)' }}>
+                    {q.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Custom dates */}
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Custom Dates</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <input type="date" value={from} onChange={e => setFrom(e.target.value)}
+                style={{ width: '100%', height: 38, padding: '0 10px', fontSize: 13, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+              <input type="date" value={to} onChange={e => setTo(e.target.value)}
+                style={{ width: '100%', height: 38, padding: '0 10px', fontSize: 13, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+    return () => setSidebarExtra(null)
+  }, [status, search, from, to, hasFilters, setSidebarExtra])
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* ABF compliance header */}
-      <div style={{ background: '#1C1917', borderRadius: 12, padding: '16px 24px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(var(--brand-rgb),0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <div style={{ background: '#1C1917', borderRadius: 'var(--r-md)', padding: '16px 24px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 'var(--r-sm)', background: 'rgba(var(--brand-rgb),0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <Icon name={ICONS.reports} size={20} style={{ color: 'var(--brand-color)' }} />
         </div>
         <div>
@@ -215,55 +268,35 @@ export default function ReportsConfigPage() {
           { label: 'Currently On-Site', value: stats.onSite,    icon: ICONS.check,    color: 'var(--brand-color)' },
           { label: 'Completed Visits',  value: stats.completed, icon: ICONS.bookings, color: '#22C55E' },
         ].map(k => (
-          <div key={k.label} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div key={k.label} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-lg)', padding: '20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <p style={{ fontSize: 38, fontWeight: 800, color: '#1C1917', margin: 0, letterSpacing: '-0.03em', lineHeight: 1 }}>{k.value}</p>
               <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-muted)', margin: '2px 0 0' }}>{k.label}</p>
             </div>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.color }}>
+            <div style={{ width: 44, height: 44, borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: k.color }}>
               <Icon name={k.icon} size={22} />
             </div>
           </div>
         ))}
       </div>
 
-      {/* Filter bar */}
-      <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', background: '#F7F6F5', borderRadius: 8, padding: 3, border: '1px solid rgba(0,0,0,0.05)' }}>
-            {QUICK.map(q => {
-              const active = from === q.from && to === q.to
-              return (
-                <button key={q.label} onClick={() => { setFrom(q.from); setTo(q.to) }}
-                  style={{ padding: '8px 14px', fontSize: 15, fontWeight: 600, textDecoration: 'none', borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all 0.15s', background: active ? '#FFFFFF' : 'transparent', color: active ? 'var(--brand-color)' : '#4B5563', boxShadow: active ? '0 1px 2px rgba(0,0,0,0.08)' : 'none' }}>
-                  {q.label}
-                </button>
-              )
-            })}
-          </div>
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)} style={FIELD} />
-          <span style={{ fontSize: 14, color: 'var(--text-tertiary)', fontWeight: 700 }}>→</span>
-          <input type="date" value={to} onChange={e => setTo(e.target.value)} style={FIELD} />
-          <select value={status} onChange={e => setStatus(e.target.value)} style={{ ...FIELD, background: '#fff' }}>
-            <option value="">All Statuses</option>
-            <option value="checked_in">Checked In</option>
-            <option value="completed">Completed</option>
-            <option value="scheduled">Scheduled</option>
-          </select>
+      {/* Search + actions bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', pointerEvents: 'none' }}><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search visitor, ID, or person…" size={32}
+            style={{ height: 40, padding: '0 14px 0 38px', fontSize: 15, color: '#1C1917', background: '#fff', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <input type="text" placeholder="Search visitor, ID…" value={search} onChange={e => setSearch(e.target.value)} style={{ ...FIELD, width: 220 }} />
-          <button onClick={exportCsv} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '0 16px', height: 48, fontSize: 15, fontWeight: 600, color: '#1C1917', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'background 0.15s' }}
-            onMouseOver={e => (e.currentTarget.style.background = '#F7F6F5')}
-            onMouseOut={e  => (e.currentTarget.style.background = '#FFFFFF')}
-          >
-            <Icon name={ICONS.download} size={15} /> CSV
-          </button>
-        </div>
+        <button onClick={exportCsv} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 40, padding: '0 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', cursor: 'pointer', transition: 'background 0.12s', flexShrink: 0, fontFamily: 'inherit' }}
+          onMouseOver={e => (e.currentTarget.style.background = '#F7F6F5')}
+          onMouseOut={e  => (e.currentTarget.style.background = '#fff')}
+        >
+          <Icon name={ICONS.download} size={15} /> Export CSV
+        </button>
       </div>
 
       {/* Table */}
-      <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
+      <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-lg)', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
         {/* Table header row */}
         <div style={{ padding: '14px 24px', borderBottom: '1px solid rgba(0,0,0,0.07)', background: 'rgba(0,0,0,0.01)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <p style={{ fontSize: 15, fontWeight: 700, color: '#1C1917', margin: 0 }}>
@@ -273,7 +306,7 @@ export default function ReportsConfigPage() {
             {loading && <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>Loading…</span>}
             <button
               onClick={() => setConfigOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 8, border: '1.5px solid rgba(0,0,0,0.08)', background: '#fff', fontSize: 15, fontWeight: 600, color: '#1C1917', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 'var(--r-sm)', border: '1.5px solid rgba(0,0,0,0.08)', background: '#fff', fontSize: 15, fontWeight: 600, color: '#1C1917', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               <Icon name={ICONS.settings} size={15} />
               Configure Report
@@ -316,7 +349,7 @@ export default function ReportsConfigPage() {
                     {vis('idNumber')      && <td style={{ padding: '14px 20px', fontFamily: 'ui-monospace,monospace', color: 'var(--brand-color)', fontWeight: 700, position: 'sticky', left: 160, zIndex: 1, background: '#fff' }}>{r.licence_number || '—'}</td>}
                     {vis('dob')           && <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>{fmtDate(r.licence_dob)}</td>}
                     {vis('idSignedBy')    && <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>—</td>}
-                    {vis('reason')        && <td style={{ padding: '14px 20px' }}><span style={{ background: 'rgba(0,0,0,0.04)', padding: '4px 10px', borderRadius: 6, fontWeight: 600, color: '#374151' }}>{reason}</span></td>}
+                    {vis('reason')        && <td style={{ padding: '14px 20px' }}><span style={{ background: 'rgba(0,0,0,0.04)', padding: '4px 10px', borderRadius: 'var(--r-sm)', fontWeight: 600, color: '#374151' }}>{reason}</span></td>}
                     {vis('personVisited') && <td style={{ padding: '14px 20px', color: '#1C1917', fontWeight: 600 }}>{r.visit_person_name || '—'}</td>}
                     {vis('checkInTime')   && <td style={{ padding: '14px 20px', color: '#16A34A', fontWeight: 700 }}>{fmtDateTime(r.check_in_time)}</td>}
                     {vis('checkOutTime')  && <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>{b?.completed_at ? fmtDateTime(b.completed_at) : '—'}</td>}
@@ -356,7 +389,7 @@ export default function ReportsConfigPage() {
               {ALL_COLUMNS.map(col => {
                 const checked = visibleColumns.includes(col.key)
                 return (
-                  <label key={col.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, border: `1.5px solid ${checked ? 'rgba(var(--brand-rgb),0.25)' : 'rgba(0,0,0,0.08)'}`, cursor: 'pointer', background: checked ? 'rgba(var(--brand-rgb),0.03)' : '#fff', transition: 'all 0.15s' }}>
+                  <label key={col.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 'var(--r-sm)', border: `1.5px solid ${checked ? 'rgba(var(--brand-rgb),0.25)' : 'rgba(0,0,0,0.08)'}`, cursor: 'pointer', background: checked ? 'rgba(var(--brand-rgb),0.03)' : '#fff', transition: 'all 0.15s' }}>
                     <span style={{ fontSize: 15, fontWeight: 500, color: '#1C1917' }}>{col.label}</span>
                     <input type="checkbox" checked={checked} onChange={() => toggleColumn(col.key)}
                       style={{ width: 18, height: 18, accentColor: 'var(--brand-color, #FC6514)', cursor: 'pointer' }} />
@@ -373,7 +406,7 @@ export default function ReportsConfigPage() {
                 { key: 'includeDateRange',  label: 'Include date range in header' },
                 { key: 'includeTimestamp',  label: 'Include generated timestamp' },
               ] as const).map(opt => (
-                <label key={opt.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 10, border: '1.5px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}>
+                <label key={opt.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 'var(--r-sm)', border: '1.5px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}>
                   <span style={{ fontSize: 15, fontWeight: 500, color: '#1C1917' }}>{opt.label}</span>
                   <input type="checkbox" checked={exportConfig[opt.key]} onChange={() => toggleExport(opt.key)}
                     style={{ width: 18, height: 18, accentColor: 'var(--brand-color, #FC6514)', cursor: 'pointer' }} />
@@ -385,7 +418,7 @@ export default function ReportsConfigPage() {
             <button
               onClick={saveConfig}
               disabled={saving}
-              style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: saving ? '#D1D5DB' : 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
+              style={{ width: '100%', padding: '13px', borderRadius: 'var(--r-md)', border: 'none', background: saving ? '#D1D5DB' : 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
             >
               {saving ? 'Saving…' : 'Save as Default'}
             </button>

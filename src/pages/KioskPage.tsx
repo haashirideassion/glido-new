@@ -90,7 +90,7 @@ function DeviceSetupScreen({ onActivated }: { onActivated: () => void }) {
           </div>
 
           {/* Icon box */}
-          <div style={{ width: 64, height: 64, background: 'rgba(var(--brand-rgb),0.09)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+          <div style={{ width: 64, height: 64, background: 'rgba(var(--brand-rgb),0.09)', borderRadius: 'var(--r-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             <Icon name={ICONS.lock} size={36} style={{ color: 'var(--brand-color)' }} />
           </div>
 
@@ -126,7 +126,7 @@ function DeviceSetupScreen({ onActivated }: { onActivated: () => void }) {
               fontFamily: 'ui-monospace, monospace',
               letterSpacing: '0.04em',
               border: `2px solid ${error ? '#EF4444' : 'rgba(0,0,0,0.15)'}`,
-              borderRadius: 16,
+              borderRadius: 'var(--r-lg)',
               background: error ? '#FEF2F2' : '#F7F6F5',
               color: '#1C1917',
               outline: 'none',
@@ -149,7 +149,7 @@ function DeviceSetupScreen({ onActivated }: { onActivated: () => void }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               width: '100%',
               height: 64,
-              borderRadius: 16,
+              borderRadius: 'var(--r-lg)',
               border: 'none',
               background: !token.trim() || loading ? 'rgba(0,0,0,0.10)' : 'var(--brand-color)',
               color: !token.trim() || loading ? 'rgba(0,0,0,0.35)' : 'var(--brand-text)',

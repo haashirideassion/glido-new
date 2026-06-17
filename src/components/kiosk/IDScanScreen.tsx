@@ -11,7 +11,7 @@ export function IDScanScreen() {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', overflowY: 'auto' }}>
       <div style={{ width: '100%', maxWidth: 448, textAlign: 'center', marginTop: 200 }}>
-        <div style={{ width: 64, height: 64, background: 'rgba(var(--brand-rgb),0.09)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+        <div style={{ width: 64, height: 64, background: 'rgba(var(--brand-rgb),0.09)', borderRadius: 'var(--r-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
           <Icon name={ICONS.shield} size={36} style={{ color: 'var(--brand-color)' }} />
         </div>
         <h2 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: 8, color: '#1C1917' }}>Identity Verification</h2>
@@ -23,22 +23,22 @@ export function IDScanScreen() {
               { title: 'Option 1 — Card Reader', icon: ICONS.shield, desc: 'Insert driver\'s licence face down', sub: 'Thales double-sided card reader' },
               { title: 'Option 2 — Digital Licence', icon: ICONS.qrCode, desc: 'Show NSW Digital Licence QR code', sub: 'NSW Service App or Digital Wallet' },
             ].map(opt => (
-              <div key={opt.title} style={{ background: '#FFFFFF', border: '1.5px solid rgba(0,0,0,0.10)', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <div key={opt.title} style={{ background: '#FFFFFF', border: '1.5px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-lg)', padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                 <p style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: 12 }}>{opt.title}</p>
-                <div style={{ height: 112, background: '#F7F6F5', border: '1.5px dashed rgba(0,0,0,0.12)', borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                <div style={{ height: 112, background: '#F7F6F5', border: '1.5px dashed rgba(0,0,0,0.12)', borderRadius: 'var(--r-md)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
                   <Icon name={opt.icon} size={36} style={{ color: '#C7C1BB' }} />
                   <p style={{ fontSize: 15, color: 'var(--text-tertiary)', marginTop: 4 }}>{opt.desc}</p>
                 </div>
                 <p style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>{opt.sub}</p>
               </div>
             ))}
-            <button className="kiosk-btn" style={{ width: '100%', borderRadius: 16, background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.25)', color: 'var(--brand-color)', cursor: 'pointer' }} onClick={simulateScan}>
+            <button className="kiosk-btn" style={{ width: '100%', borderRadius: 'var(--r-lg)', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.25)', color: 'var(--brand-color)', cursor: 'pointer' }} onClick={simulateScan}>
               Simulate ID Scan (Demo)
             </button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, textAlign: 'left' }}>
-            <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-lg)', padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
                 <Icon name={ICONS.check} size={18} style={{ color: 'var(--brand-color)' }} />
                 <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--brand-color)' }}>Licence Scanned</p>
@@ -73,7 +73,7 @@ export function IDScanScreen() {
             )}
 
             {!state.licenceExpired && match !== 'mismatch' && (
-              <button className="kiosk-btn kiosk-btn-primary" style={{ width: '100%', borderRadius: 16 }} onClick={completeCheckIn}>
+              <button className="kiosk-btn kiosk-btn-primary" style={{ width: '100%', borderRadius: 'var(--r-lg)' }} onClick={completeCheckIn}>
                 <Icon name={ICONS.arrowRight} size={24} />
                 Proceed to Check-In
               </button>
@@ -81,7 +81,7 @@ export function IDScanScreen() {
             {(state.licenceExpired || match === 'mismatch') && (
               <p style={{ textAlign: 'center', fontSize: 15, color: 'var(--text-secondary)' }}>Please proceed to the reception desk for assistance.</p>
             )}
-            <button className="kiosk-btn kiosk-btn-secondary" style={{ width: '100%', borderRadius: 16, fontSize: 15 }}
+            <button className="kiosk-btn kiosk-btn-secondary" style={{ width: '100%', borderRadius: 'var(--r-lg)', fontSize: 15 }}
               onClick={() => dispatch({ type: 'SET_LICENCE', data: null, expired: false })}>
               Scan Again
             </button>
@@ -99,7 +99,7 @@ function Alert({ type, title, children }: { type: 'error' | 'warning' | 'success
     success: { bg: 'rgba(22,163,74,0.07)',  border: 'rgba(22,163,74,0.25)',  icon: ICONS.check,   iconC: '#16A34A', titleC: '#16A34A', bodyC: '#15803D' },
   }[type]
   return (
-    <div style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 12, padding: '14px 16px' }}>
+    <div style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 'var(--r-md)', padding: '14px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
         <Icon name={cfg.icon} size={18} style={{ color: cfg.iconC }} />
         <p style={{ fontWeight: 700, fontSize: 15, color: cfg.titleC }}>{title}</p>

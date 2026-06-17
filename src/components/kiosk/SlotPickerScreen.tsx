@@ -47,7 +47,7 @@ export function SlotPickerScreen() {
       <div style={{ width: '100%', maxWidth: 480, marginTop: 200 }}>
 
         {/* Header */}
-        <div style={{ width: 64, height: 64, background: 'rgba(var(--brand-rgb),0.09)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+        <div style={{ width: 64, height: 64, background: 'rgba(var(--brand-rgb),0.09)', borderRadius: 'var(--r-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--brand-color,#FC6514)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
           </svg>
@@ -60,7 +60,7 @@ export function SlotPickerScreen() {
         {/* Select All */}
         {slots.length > 1 && (
           <button type="button" onClick={selectAll}
-            style={{ width: '100%', marginBottom: 12, padding: '10px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color,#FC6514)', background: 'rgba(var(--brand-rgb),0.07)', border: '1.5px solid rgba(var(--brand-rgb),0.25)', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ width: '100%', marginBottom: 12, padding: '10px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color,#FC6514)', background: 'rgba(var(--brand-rgb),0.07)', border: '1.5px solid rgba(var(--brand-rgb),0.25)', borderRadius: 'var(--r-md)', cursor: 'pointer', fontFamily: 'inherit' }}>
             Select All {slots.length} Slots
           </button>
         )}
@@ -75,7 +75,7 @@ export function SlotPickerScreen() {
                 type="button"
                 onClick={() => toggle(slot.id)}
                 style={{
-                  width: '100%', textAlign: 'left', padding: '16px 18px', borderRadius: 16,
+                  width: '100%', textAlign: 'left', padding: '16px 18px', borderRadius: 'var(--r-lg)',
                   border: `2px solid ${sel ? 'var(--brand-color,#FC6514)' : '#C2C2C2'}`,
                   background: sel ? 'rgba(var(--brand-rgb),0.06)' : '#fff',
                   cursor: 'pointer', transition: 'all 0.15s', fontFamily: 'inherit',
@@ -98,7 +98,7 @@ export function SlotPickerScreen() {
                     )}
                   </div>
                   <div style={{
-                    width: 22, height: 22, borderRadius: 9999, flexShrink: 0,
+                    width: 22, height: 22, borderRadius: 'var(--r-full)', flexShrink: 0,
                     border: `2px solid ${sel ? 'var(--brand-color,#FC6514)' : '#C2C2C2'}`,
                     background: sel ? 'var(--brand-color,#FC6514)' : 'transparent',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -115,7 +115,7 @@ export function SlotPickerScreen() {
         {/* Proceed button */}
         <button
           className="kiosk-btn kiosk-btn-primary"
-          style={{ width: '100%', borderRadius: 16, opacity: selected.size > 0 ? 1 : 0.4, cursor: selected.size > 0 ? 'pointer' : 'not-allowed' }}
+          style={{ width: '100%', borderRadius: 'var(--r-lg)', opacity: selected.size > 0 ? 1 : 0.4, cursor: selected.size > 0 ? 'pointer' : 'not-allowed' }}
           onClick={proceed}
           disabled={selected.size === 0}
         >

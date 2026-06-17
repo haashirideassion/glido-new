@@ -26,7 +26,7 @@ const STATUS_BADGE: Record<string, React.CSSProperties> = {
 const STATUS_LABEL: Record<string, string> = { scheduled: 'Scheduled', checked_in: 'Checked In', completed: 'Completed', cancelled: 'Cancelled' }
 
 const SL: React.CSSProperties = { fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }
-const PANEL: React.CSSProperties = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 10, padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }
+const PANEL: React.CSSProperties = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-sm)', padding: '14px 16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }
 const RL: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: 'var(--text-secondary)' }
 const RV: React.CSSProperties = { fontSize: 14, fontWeight: 600, color: '#1C1917' }
 
@@ -70,7 +70,7 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
 
   const fieldStyle: React.CSSProperties = {
     width: '100%', padding: '10px 14px', fontSize: 15, color: '#1C1917',
-    background: '#EBEBEA', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10,
+    background: '#EBEBEA', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-sm)',
     outline: 'none', boxSizing: 'border-box',
   }
   const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => { e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)' }
@@ -100,11 +100,11 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
               {b.referenceNumber}
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.45 }}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             </span>
-            <span style={{ ...STATUS_BADGE[b.status] ?? STATUS_BADGE.scheduled, fontSize: 13, fontWeight: 600, padding: '3px 9px', borderRadius: 9999, whiteSpace: 'nowrap' }}>
+            <span style={{ ...STATUS_BADGE[b.status] ?? STATUS_BADGE.scheduled, fontSize: 13, fontWeight: 600, padding: '3px 9px', borderRadius: 'var(--r-full)', whiteSpace: 'nowrap' }}>
               {STATUS_LABEL[b.status] ?? b.status}
             </span>
           </div>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: 'rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s' }}
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 'var(--r-sm)', border: 'none', background: 'rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s' }}
             onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.10)')}
             onMouseOut={e  => (e.currentTarget.style.background = 'rgba(0,0,0,0.05)')}
           >
@@ -170,7 +170,7 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
 
           {/* CHEP warning */}
           {b.palletType === 'chep' && (
-            <div style={{ background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.20)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <div style={{ background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.20)', borderRadius: 'var(--r-sm)', padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <Icon name={ICONS.warning} size={16} style={{ color: '#FBBF24', flexShrink: 0, marginTop: 1 }} />
               <div>
                 <p style={{ fontSize: 15, fontWeight: 600, color: '#B45309', marginBottom: 2 }}>CHEP Pallet Exchange</p>
@@ -184,7 +184,7 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
             <section>
               <p style={SL}>ICS Status</p>
               <div style={{ ...PANEL, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '4px 10px', borderRadius: 9999, ...Object.fromEntries(icsStyle.split(';').filter(Boolean).map(s => { const [k, ...v] = s.split(':'); return [k.trim().replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase()), v.join(':').trim()] })) } as any}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '4px 10px', borderRadius: 'var(--r-full)', ...Object.fromEntries(icsStyle.split(';').filter(Boolean).map(s => { const [k, ...v] = s.split(':'); return [k.trim().replace(/-([a-z])/g, (_: string, c: string) => c.toUpperCase()), v.join(':').trim()] })) } as any}>
                   {ICS_LABEL[b.icsStatus] ?? b.icsStatus}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -344,7 +344,7 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
             {['Driver identity verified', 'Documents checked', 'Cargo released'].map(item => (
               <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: '#1C1917' }}>
-                <span style={{ width: 20, height: 20, borderRadius: 9999, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.22)' }}>
+                <span style={{ width: 20, height: 20, borderRadius: 'var(--r-full)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.22)' }}>
                   <Icon name={ICONS.check} size={11} style={{ color: '#22C55E' }} />
                 </span>
                 {item}
@@ -398,7 +398,7 @@ function Modal({ children, onClose }: { children: React.ReactNode; onClose: () =
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={onClose} />
-      <div style={{ position: 'relative', background: '#FFFFFF', borderRadius: 16, boxShadow: '0 24px 64px rgba(0,0,0,0.28)', maxWidth: 420, width: '100%', padding: 24 }}>
+      <div style={{ position: 'relative', background: '#FFFFFF', borderRadius: 'var(--r-lg)', boxShadow: '0 24px 64px rgba(0,0,0,0.28)', maxWidth: 420, width: '100%', padding: 24 }}>
         {children}
       </div>
     </div>
@@ -416,7 +416,7 @@ function ActionBtn({ color, onClick, loading, children }: { color: 'orange' | 'g
     <button
       onClick={onClick}
       disabled={loading}
-      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 15, fontWeight: 600, borderRadius: 10, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...styles[color] }}
+      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 15, fontWeight: 600, borderRadius: 'var(--r-sm)', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...styles[color] }}
     >
       {children}
     </button>

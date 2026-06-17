@@ -57,18 +57,18 @@ export function WelcomeScreen() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', maxWidth: 448 }}>
-        <button className="kiosk-btn kiosk-btn-primary" style={{ width: '100%', borderRadius: 16 }} onClick={startBookingLookup}>
+        <button className="kiosk-btn kiosk-btn-primary" style={{ width: '100%', borderRadius: 'var(--r-lg)' }} onClick={startBookingLookup}>
           <Icon name={ICONS.qrCode} size={28} />
           I have a booking — Pick Up or Drop Off
         </button>
-        <button className="kiosk-btn kiosk-btn-secondary" style={{ width: '100%', borderRadius: 16 }} onClick={startVisitingFlow}>
+        <button className="kiosk-btn kiosk-btn-secondary" style={{ width: '100%', borderRadius: 'var(--r-lg)' }} onClick={startVisitingFlow}>
           <Icon name={ICONS.walkIn} size={28} />
           I'm visiting someone
         </button>
       </div>
 
       {todayHours && (
-        <div style={{ marginTop: 40, borderRadius: 16, padding: '12px 24px', textAlign: 'center', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.07)' }}>
+        <div style={{ marginTop: 40, borderRadius: 'var(--r-lg)', padding: '12px 24px', textAlign: 'center', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.07)' }}>
           <p style={{ fontSize: 15, color: 'var(--text-secondary)', fontWeight: 600 }}>{todayHours}</p>
         </div>
       )}

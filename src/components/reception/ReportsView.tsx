@@ -215,7 +215,7 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
                 {['Reference', 'Date', 'Time', 'Driver', 'Service', 'HBL', 'Amount', 'Status'].map(h => (
                   <th
                     key={h}
-                    style="padding:16px 20px; text-align:left; font-size:14px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color:#374151; white-space:nowrap;"
+                    style="padding:12px 16px; text-align:left; font-size:14px; font-weight:500; letter-spacing:0; text-transform:none; color:var(--text-secondary); white-space:nowrap;"
                   >{h}</th>
                 ))}
               </tr>
@@ -224,25 +224,25 @@ export const ReportsView = ({ bookings, page = 1, from, to }: Props) => {
               {pageBookings.map((b, i) => (
                 <tr
                   key={b.id}
-                  style={`border-top:1px solid rgba(0,0,0,0.05); ${i % 2 !== 0 ? 'background:rgba(0,0,0,0.01);' : ''} cursor:pointer; transition:background 0.1s ease;`}
+                  style={`border-bottom:1px solid rgba(0,0,0,0.08); ${i % 2 !== 0 ? 'background:rgba(0,0,0,0.01);' : ''} cursor:pointer; transition:background 0.1s ease;`}
                   onmouseover="this.style.background='rgba(var(--brand-rgb),0.03)'"
                   onmouseout={`this.style.background='${i % 2 !== 0 ? 'rgba(0,0,0,0.01)' : 'transparent'}'`}
                   onclick={`window.location.href='/reception/bookings/${b.id}'`}
                 >
-                  <td style="padding:14px 20px; font-family:ui-monospace,monospace; font-size:16px; font-weight:700; color:var(--brand-color); white-space:nowrap;">{b.referenceNumber}</td>
-                  <td style="padding:14px 20px; font-size:15px; color:#4B5563; white-space:nowrap;">{b.slotDate}</td>
-                  <td style="padding:14px 20px; font-size:15px; color:#4B5563; white-space:nowrap;">{b.slotStartTime} – {b.slotEndTime}</td>
-                  <td style="padding:14px 20px; font-size:16px; font-weight:600; color:#1C1917; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{b.driverName}</td>
-                  <td style="padding:14px 20px; font-size:15px; color:#4B5563; white-space:nowrap;">
+                  <td style="padding:18px 16px; font-family:ui-monospace,monospace; font-size:16px; font-weight:700; color:#1C1917; white-space:nowrap;">{b.referenceNumber}</td>
+                  <td style="padding:18px 16px; font-size:15px; color:#4B5563; white-space:nowrap;">{b.slotDate}</td>
+                  <td style="padding:18px 16px; font-size:15px; color:#4B5563; white-space:nowrap;">{b.slotStartTime} – {b.slotEndTime}</td>
+                  <td style="padding:18px 16px; font-size:16px; font-weight:600; color:#1C1917; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{b.driverName}</td>
+                  <td style="padding:18px 16px; font-size:15px; color:#4B5563; white-space:nowrap;">
                     {SERVICE_LABEL[b.serviceType]} · {LOAD_LABEL[b.loadType]}
                   </td>
-                  <td style="padding:14px 20px; font-family:ui-monospace,monospace; font-size:14px; color:#4B5563; white-space:nowrap;">
+                  <td style="padding:18px 16px; font-family:ui-monospace,monospace; font-size:14px; color:#4B5563; white-space:nowrap;">
                     {b.houseBillNumber || b.containerNumber || '—'}
                   </td>
-                  <td style="padding:14px 20px; font-size:16px; font-weight:600; color:#1C1917; white-space:nowrap;">
+                  <td style="padding:18px 16px; font-size:16px; font-weight:600; color:#1C1917; white-space:nowrap;">
                     {b.totalAmount ? `$${b.totalAmount.toFixed(2)}` : '—'}
                   </td>
-                  <td style="padding:14px 20px;">
+                  <td style="padding:18px 16px;">
                     <span style={`display:inline-block; padding:4px 12px; border-radius:9999px; font-size:13px; font-weight:600; ${STATUS_STYLE[b.status] || STATUS_STYLE.scheduled}`}>
                       {STATUS_LABEL[b.status] || b.status}
                     </span>
@@ -369,8 +369,8 @@ window._gExportCsv = function() {
     var donut = echarts.init(document.getElementById('chart-status'), null, { renderer:'svg' });
     donut.setOption({
       tooltip: { trigger:'item', backgroundColor:TOOLTIP_BG, borderColor:TOOLTIP_BORDER, borderWidth:1, padding:[8,12], textStyle:{color:TOOLTIP_TEXT,fontFamily:FONT,fontSize:12}, formatter:'{b}: <b>{c}</b> ({d}%)' },
-      legend: { orient:'vertical', right:0, top:'center', itemWidth:8, itemHeight:8, borderRadius:4, textStyle:{color:'var(--text-secondary)',fontFamily:FONT,fontSize:11} },
-      series:[{ type:'pie', radius:['52%','78%'], center:['38%','50%'], avoidLabelOverlap:false, label:{show:false}, labelLine:{show:false}, emphasis:{scale:true,scaleSize:4,itemStyle:{shadowBlur:12,shadowColor:'rgba(var(--brand-rgb),0.25)'}}, data:statusNames.map(function(name,i){return{value:statusVals[i],name:name,itemStyle:{color:statusColors[i],borderRadius:3}};}) }]
+      legend: { orient:'vertical', right:0, top:'center', itemWidth:8, itemHeight:8, borderRadius: 'var(--r-xs)', textStyle:{color:'var(--text-secondary)',fontFamily:FONT,fontSize:11} },
+      series:[{ type:'pie', radius:['52%','78%'], center:['38%','50%'], avoidLabelOverlap:false, label:{show:false}, labelLine:{show:false}, emphasis:{scale:true,scaleSize:4,itemStyle:{shadowBlur:12,shadowColor:'rgba(var(--brand-rgb),0.25)'}}, data:statusNames.map(function(name,i){return{value:statusVals[i],name:name,itemStyle:{color:statusColors[i],borderRadius: 'var(--r-xs)'}};}) }]
     });
 
     /* Hourly area */

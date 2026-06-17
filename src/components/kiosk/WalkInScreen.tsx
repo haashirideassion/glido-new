@@ -144,7 +144,7 @@ export function WalkInScreen() {
                     style={{
                       width: '100%',
                       padding: '16px 20px',
-                      borderRadius: 12,
+                      borderRadius: 'var(--r-md)',
                       border: state.walkInReason === r ? '2px solid var(--brand-color)' : '2px solid rgba(0,0,0,0.10)',
                       background: state.walkInReason === r ? 'rgba(var(--brand-rgb),0.06)' : '#fff',
                       color: state.walkInReason === r ? 'var(--brand-color)' : '#1C1917',
@@ -166,7 +166,7 @@ export function WalkInScreen() {
 
           {/* Yard visit licence scan notice */}
           {isYard && (
-            <div style={{ background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.22)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <div style={{ background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.22)', borderRadius: 'var(--r-md)', padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <Icon name={ICONS.shield} size={16} style={{ color: 'var(--brand-color)', flexShrink: 0, marginTop: 1 }} />
               <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                 Yard access requires <strong style={{ color: '#1C1917' }}>ID verification</strong>. You will be asked to scan your driver's licence before entry.
@@ -176,7 +176,7 @@ export function WalkInScreen() {
 
           <button
             className="btn-primary"
-            style={{ width: '100%', padding: '18px 24px', fontSize: 16, fontWeight: 700, borderRadius: 14, justifyContent: 'center', opacity: canProceed(state.walkInName, state.walkInPhone, state.walkInReason, isOffice || isYard) ? 1 : 0.4, cursor: canProceed(state.walkInName, state.walkInPhone, state.walkInReason, isOffice || isYard) ? 'pointer' : 'not-allowed' }}
+            style={{ width: '100%', padding: '18px 24px', fontSize: 16, fontWeight: 700, borderRadius: 'var(--r-md)', justifyContent: 'center', opacity: canProceed(state.walkInName, state.walkInPhone, state.walkInReason, isOffice || isYard) ? 1 : 0.4, cursor: canProceed(state.walkInName, state.walkInPhone, state.walkInReason, isOffice || isYard) ? 'pointer' : 'not-allowed' }}
             disabled={!canProceed(state.walkInName, state.walkInPhone, state.walkInReason, isOffice || isYard)}
             onClick={handleSubmit}
           >

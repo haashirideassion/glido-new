@@ -72,11 +72,11 @@ export function DayChart({ bookings, loading, capacityByHour, defaultCapacity }:
         series: [
           {
             name: 'Scheduled', type: 'bar', stack: 'day', data: scheduled, barMaxWidth: 28,
-            itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(var(--brand-rgb),0.55)' }, { offset: 1, color: 'rgba(var(--brand-rgb),0.15)' }] }, borderRadius: [4, 4, 0, 0] },
+            itemStyle: { color: 'rgba(var(--brand-rgb),0.35)', borderRadius: [4, 4, 0, 0] },
           },
           {
             name: 'Visitor', type: 'bar', stack: 'day', data: checkedIn, barMaxWidth: 28,
-            itemStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'var(--brand-color)' }, { offset: 1, color: '#FC8A3C' }] }, borderRadius: [4, 4, 0, 0] },
+            itemStyle: { color: 'var(--brand-color)', borderRadius: [4, 4, 0, 0] },
           },
           {
             name: 'Capacity', type: 'line', data: capacity,
@@ -96,7 +96,7 @@ export function DayChart({ bookings, loading, capacityByHour, defaultCapacity }:
   }, [bookings, capacityByHour]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14, padding: '18px 20px', marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
+    <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-md)', padding: '18px 20px', marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
         <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', letterSpacing: '-0.01em' }}>Day at a Glance</h2>
         <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>Today · hourly schedule</span>

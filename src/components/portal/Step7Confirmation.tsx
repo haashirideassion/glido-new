@@ -225,7 +225,7 @@ export function Step7Confirmation() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
-        <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ width: 52, height: 52, borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <img src={timerImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
         </div>
         <div>
@@ -256,14 +256,14 @@ export function Step7Confirmation() {
             }
             const [bg, color, border] = m[sd.icsStatus ?? ''] ?? ['rgba(0,0,0,0.04)', '#78716C', 'rgba(0,0,0,0.10)']
             const label = { cleared: 'Cleared', held: 'Held', examination: 'On Hold', pending: 'Pending' }[sd.icsStatus ?? ''] ?? 'Unknown'
-            return <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '3px 10px', borderRadius: 9999, background: bg, color, border: `1px solid ${border}` }}>{label}</span>
+            return <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '3px 10px', borderRadius: 'var(--r-full)', background: bg, color, border: `1px solid ${border}` }}>{label}</span>
           })()}
         </div>
       )}
 
       {/* CHEP */}
       {showChep && (
-        <div style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.25)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <div style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.25)', borderRadius: 'var(--r-sm)', padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
           <Icon name={ICONS.warning} size={16} style={{ color: '#D97706', flexShrink: 0, marginTop: 1 }} />
           <p style={{ fontSize: 14, color: '#92400E', fontWeight: 500, lineHeight: 1.5 }}>Reminder: CHEP pallet exchange required at collection. Bring your CHEP pallets.</p>
         </div>
@@ -280,7 +280,7 @@ export function Step7Confirmation() {
           const sel = state.paymentMethod === opt.val
           return (
             <button key={opt.val} type="button" onClick={() => dispatch({ type: 'SET', field: 'paymentMethod', value: opt.val })}
-              style={{ textAlign: 'left', cursor: 'pointer', borderRadius: 16, padding: 16, transition: 'all 0.15s ease', background: sel ? 'rgba(var(--brand-rgb),0.03)' : '#fff', border: `1.5px solid ${sel ? 'var(--brand-color)' : 'rgba(0,0,0,0.08)'}` }}>
+              style={{ textAlign: 'left', cursor: 'pointer', borderRadius: 'var(--r-lg)', padding: 16, transition: 'all 0.15s ease', background: sel ? 'rgba(var(--brand-rgb),0.03)' : '#fff', border: `1.5px solid ${sel ? 'var(--brand-color)' : 'rgba(0,0,0,0.08)'}` }}>
               <Icon name={opt.icon} size={20} style={{ color: 'var(--brand-color)', marginBottom: 8, display: 'block' }} />
               <div style={{ fontWeight: 600, fontSize: 15, color: '#1C1917' }}>{opt.title}</div>
               <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 2 }}>{opt.sub}</div>
@@ -296,7 +296,7 @@ export function Step7Confirmation() {
 
       {/* EFT panel */}
       {state.paymentMethod === 'eft' && (
-        <div style={{ background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+        <div style={{ background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 'var(--r-lg)', padding: 20, marginBottom: 20 }}>
           <p style={{ fontWeight: 600, color: '#1C1917', fontSize: 15, marginBottom: 14 }}>Bank Transfer Details</p>
           {[
             ['Bank',         tenant?.eftBankName      || '—'],
@@ -327,7 +327,7 @@ export function Step7Confirmation() {
           ? `https://compay.1-stop.biz/AdhocCCWebPages/Payment.aspx?CN=${encodeURIComponent(clientNum)}&PayType=STORAGE&REF1=${encodeURIComponent(ref)}&AMT=${encodeURIComponent(amt)}`
           : null
         return (
-          <div style={{ background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+          <div style={{ background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 'var(--r-lg)', padding: 20, marginBottom: 20 }}>
             <p style={{ fontWeight: 600, color: '#1C1917', fontSize: 15, marginBottom: 8 }}>ComPay — Port Community Payments</p>
             <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 14, lineHeight: 1.5 }}>
               Pay your freight and storage charges through the ComPay port community payment system.
@@ -337,7 +337,7 @@ export function Step7Confirmation() {
                 href={compayUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: 'var(--brand-color)', color: 'var(--brand-text)', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: 'var(--brand-color)', color: 'var(--brand-text)', border: 'none', borderRadius: 'var(--r-sm)', fontSize: 15, fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }}
               >
                 <Icon name={ICONS.bookings} size={16} />
                 Pay via ComPay →
@@ -346,7 +346,7 @@ export function Step7Confirmation() {
               <button
                 type="button"
                 onClick={() => toast('ComPay online payments — coming soon. Please pay at reception.', 'info')}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: 'var(--brand-color)', color: 'var(--brand-text)', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: 'var(--brand-color)', color: 'var(--brand-text)', border: 'none', borderRadius: 'var(--r-sm)', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 <Icon name={ICONS.bookings} size={16} />
                 Pay via ComPay →
@@ -375,7 +375,7 @@ export function Step7Confirmation() {
 
       {/* Error */}
       {state.submitError && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 15, color: '#DC2626', fontWeight: 500 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 'var(--r-sm)', padding: '12px 16px', marginBottom: 16, fontSize: 15, color: '#DC2626', fontWeight: 500 }}>
           {state.submitError}
         </div>
       )}
@@ -386,7 +386,7 @@ export function Step7Confirmation() {
         className="btn-primary"
         onClick={submit}
         disabled={!canSubmit}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 15, fontWeight: 600, padding: '14px 24px', border: 'none', cursor: canSubmit ? 'pointer' : 'not-allowed', opacity: canSubmit ? 1 : 0.50, borderRadius: 12, pointerEvents: canSubmit ? 'auto' : 'none' }}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 15, fontWeight: 600, padding: '14px 24px', border: 'none', cursor: canSubmit ? 'pointer' : 'not-allowed', opacity: canSubmit ? 1 : 0.50, borderRadius: 'var(--r-md)', pointerEvents: canSubmit ? 'auto' : 'none' }}
       >
         {state.submitting
           ? <><Spinner /> Submitting…</>
@@ -423,7 +423,7 @@ function BookingSummaryAccordion({ state, charges, user }: { state: ReturnType<t
   const multi = state.slotCount > 1
 
   return (
-    <div style={{ border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, overflow: 'hidden', marginBottom: 20, background: '#fff' }}>
+    <div style={{ border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 'var(--r-lg)', overflow: 'hidden', marginBottom: 20, background: '#fff' }}>
       {/* Header label */}
       <div style={{ padding: '14px 20px 10px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
         <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Booking Summary</p>
@@ -656,7 +656,7 @@ function CardPaymentPanel() {
   })
 
   return (
-    <div style={{ background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+    <div style={{ background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 'var(--r-lg)', padding: 20, marginBottom: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <Icon name={ICONS.shield} size={15} style={{ color: '#22C55E' }} />
         <p style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>Secure card payment powered by Stripe</p>
@@ -683,7 +683,7 @@ function CardPaymentPanel() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
           <label style={{ ...LBL, marginBottom: 0 }}>Card Number</label>
           {cardType && CARD_LOGOS[cardType] && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', height: 20, padding: '0 6px', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 4, background: '#fff' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', height: 20, padding: '0 6px', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-xs)', background: '#fff' }}>
               {CARD_LOGOS[cardType]}
             </span>
           )}

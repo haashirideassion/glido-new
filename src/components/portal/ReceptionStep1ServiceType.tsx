@@ -36,7 +36,7 @@ export function ReceptionStep1ServiceType() {
       </div>
 
       {/* Slot counter */}
-      <div style={{ border: '1.5px solid #e5e7eb', borderRadius: 14, padding: '28px 24px', marginBottom: 28, background: '#fff' }}>
+      <div style={{ border: '1.5px solid #e5e7eb', borderRadius: 'var(--r-md)', padding: '28px 24px', marginBottom: 28, background: '#fff' }}>
         {/* Big counter display */}
         <div style={{ textAlign: 'center', paddingBottom: 24 }}>
           <p style={{ fontSize: 15, color: '#9CA3AF', marginBottom: 16, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase' }}>How many slots?</p>
@@ -45,7 +45,7 @@ export function ReceptionStep1ServiceType() {
               type="button"
               onClick={() => dispatch({ type: 'SET', field: 'slotCount', value: Math.max(1, state.slotCount - 1) })}
               disabled={state.slotCount <= 1}
-              style={{ width: 48, height: 48, borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.10)', background: '#fff', fontSize: 24, cursor: state.slotCount <= 1 ? 'not-allowed' : 'pointer', opacity: state.slotCount <= 1 ? 0.35 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', transition: 'opacity 0.15s' }}
+              style={{ width: 48, height: 48, borderRadius: 'var(--r-md)', border: '1.5px solid rgba(0,0,0,0.10)', background: '#fff', fontSize: 24, cursor: state.slotCount <= 1 ? 'not-allowed' : 'pointer', opacity: state.slotCount <= 1 ? 0.35 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', transition: 'opacity 0.15s' }}
             >−</button>
 
             {editing ? (
@@ -61,7 +61,7 @@ export function ReceptionStep1ServiceType() {
                 style={{
                   fontSize: 64, fontWeight: 800, color: 'var(--brand-color)', lineHeight: 1,
                   width: 96, textAlign: 'center', border: '2px solid rgba(var(--brand-rgb),0.40)',
-                  borderRadius: 10, outline: 'none', background: 'rgba(var(--brand-rgb),0.04)',
+                  borderRadius: 'var(--r-sm)', outline: 'none', background: 'rgba(var(--brand-rgb),0.04)',
                   fontFamily: 'inherit', padding: '0 8px', boxSizing: 'border-box',
                 }}
               />
@@ -79,7 +79,7 @@ export function ReceptionStep1ServiceType() {
               type="button"
               onClick={() => dispatch({ type: 'SET', field: 'slotCount', value: Math.min(10, state.slotCount + 1) })}
               disabled={state.slotCount >= 10}
-              style={{ width: 48, height: 48, borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.10)', background: '#fff', fontSize: 24, cursor: state.slotCount >= 10 ? 'not-allowed' : 'pointer', opacity: state.slotCount >= 10 ? 0.35 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', transition: 'opacity 0.15s' }}
+              style={{ width: 48, height: 48, borderRadius: 'var(--r-md)', border: '1.5px solid rgba(0,0,0,0.10)', background: '#fff', fontSize: 24, cursor: state.slotCount >= 10 ? 'not-allowed' : 'pointer', opacity: state.slotCount >= 10 ? 0.35 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', transition: 'opacity 0.15s' }}
             >+</button>
           </div>
           <p style={{ fontSize: 15, color: '#9CA3AF', marginTop: 8 }}>slot{state.slotCount !== 1 ? 's' : ''}</p>
@@ -93,7 +93,7 @@ export function ReceptionStep1ServiceType() {
               type="button"
               onClick={() => dispatch({ type: 'SET', field: 'slotCount', value: n })}
               style={{
-                padding: '8px 20px', fontSize: 15, fontWeight: 600, borderRadius: 9999,
+                padding: '8px 20px', fontSize: 15, fontWeight: 600, borderRadius: 'var(--r-full)',
                 border: state.slotCount === n ? '1.5px solid var(--brand-color, #FC6514)' : '1.5px solid rgba(0,0,0,0.10)',
                 background: state.slotCount === n ? 'rgba(var(--brand-rgb),0.08)' : '#fff',
                 color: state.slotCount === n ? 'var(--brand-color, #FC6514)' : '#6B7280',
@@ -107,7 +107,7 @@ export function ReceptionStep1ServiceType() {
       </div>
 
       {/* Booking For — always visible, staff enters visitor/driver details */}
-      <div style={{ border: '1.5px solid #e5e7eb', borderRadius: 14, padding: '20px 24px', background: '#fff' }}>
+      <div style={{ border: '1.5px solid #e5e7eb', borderRadius: 'var(--r-md)', padding: '20px 24px', background: '#fff' }}>
         <label style={{ fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 16, display: 'block', letterSpacing: '-0.01em' }}>
           Booking on Behalf of
         </label>

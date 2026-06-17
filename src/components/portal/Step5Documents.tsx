@@ -112,7 +112,7 @@ export function Step5Documents() {
     return (
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
-          <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <img src={rollImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
           </div>
           <div>
@@ -157,7 +157,7 @@ export function Step5Documents() {
         <style>{`@keyframes slideInFromRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}`}</style>
         {activeCfg5 && (
           <div key={activeSlot5} style={{ animation: 'slideInFromRight 0.22s ease forwards' }}>
-          <div style={{ padding: 20, background: '#F9F9F8', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 16, marginBottom: 24 }}>
+          <div style={{ padding: 20, background: '#F9F9F8', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 'var(--r-lg)', marginBottom: 24 }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 16 }}>
               Slot {activeCfg5.index} — {activeCfg5.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {(activeCfg5.loadType ?? '').toUpperCase()}
               {activeCfg5.selectedSlotLabel && <span style={{ fontWeight: 400, marginLeft: 8, textTransform: 'none', letterSpacing: 0 }}>{activeCfg5.selectedDate} {activeCfg5.selectedSlotLabel}</span>}
@@ -186,7 +186,7 @@ export function Step5Documents() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
-        <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ width: 52, height: 52, borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <img src={rollImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
         </div>
         <div>
@@ -417,13 +417,13 @@ function ICSLookupBlock({ sd, icsBadge, fetched, error, showHeld = false, showCh
       {sd && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)' }}>ICS Status:</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '3px 10px', borderRadius: 9999, border: `1px solid ${icsBadge.border}`, background: icsBadge.bg, color: icsBadge.color }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '3px 10px', borderRadius: 'var(--r-full)', border: `1px solid ${icsBadge.border}`, background: icsBadge.bg, color: icsBadge.color }}>
             {icsBadge.label}
           </span>
         </div>
       )}
       {showHeld && (
-        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
+        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 'var(--r-sm)', padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
           <Icon name={ICONS.warning} size={18} style={{ color: '#EF4444', flexShrink: 0, marginTop: 1 }} />
           <div>
             <p style={{ fontWeight: 600, color: '#EF4444', fontSize: 15, margin: '0 0 4px' }}>ICS Hold Detected</p>
@@ -432,7 +432,7 @@ function ICSLookupBlock({ sd, icsBadge, fetched, error, showHeld = false, showCh
         </div>
       )}
       {showChep && (
-        <div style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.25)', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
+        <div style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.25)', borderRadius: 'var(--r-sm)', padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
           <Icon name={ICONS.warning} size={18} style={{ color: '#D97706', flexShrink: 0, marginTop: 1 }} />
           <div>
             <p style={{ fontWeight: 600, color: '#B45309', fontSize: 15, margin: '0 0 4px' }}>CHEP Pallet Exchange Required</p>
@@ -441,17 +441,17 @@ function ICSLookupBlock({ sd, icsBadge, fetched, error, showHeld = false, showCh
         </div>
       )}
       {error && (
-        <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 14, color: '#B45309', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 'var(--r-sm)', padding: '10px 14px', marginBottom: 16, fontSize: 14, color: '#B45309', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Icon name={ICONS.info} size={14} style={{ color: '#B45309', flexShrink: 0 }} />
           {error}
         </div>
       )}
       {sd && (sd.weightKg || sd.volumeCbm) && (
-        <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20 }}>
+        <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 'var(--r-md)', padding: 20 }}>
           <p style={{ ...FL, marginBottom: 16 }}>Container details</p>
           <div style={ROW}>
             {[['Gross Weight', sd.weightKg ? `${sd.weightKg} kg` : '—'], ['Volume', sd.volumeCbm ? `${sd.volumeCbm} CBM` : '—']].map(([l, v]) => (
-              <div key={l} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '12px 14px' }}>
+              <div key={l} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 'var(--r-sm)', padding: '12px 14px' }}>
                 <p style={{ fontSize: 10, color: 'var(--text-secondary)', margin: '0 0 4px' }}>{l}</p>
                 <p style={{ fontWeight: 600, color: '#1C1917', fontSize: 15, margin: 0 }}>{v}</p>
               </div>
@@ -538,10 +538,10 @@ function ShipmentCard({ sd, icsBadge, showHeld, showChep }: any) {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
         <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)' }}>ICS Status:</span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '3px 10px', borderRadius: 9999, border: `1px solid ${icsBadge.border}`, background: icsBadge.bg, color: icsBadge.color }}>{icsBadge.label}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '3px 10px', borderRadius: 'var(--r-full)', border: `1px solid ${icsBadge.border}`, background: icsBadge.bg, color: icsBadge.color }}>{icsBadge.label}</span>
       </div>
       {showHeld && (
-        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 8, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 24 }}>
+        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 'var(--r-sm)', padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 24 }}>
           <Icon name={ICONS.warning} size={18} style={{ color: '#EF4444', flexShrink: 0, marginTop: 1 }} />
           <div>
             <p style={{ fontWeight: 600, color: '#EF4444', fontSize: 15, margin: '0 0 4px' }}>ICS Hold Detected</p>
@@ -550,7 +550,7 @@ function ShipmentCard({ sd, icsBadge, showHeld, showChep }: any) {
         </div>
       )}
       {showChep && (
-        <div style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.25)', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 24 }}>
+        <div style={{ background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.25)', borderRadius: 'var(--r-sm)', padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 24 }}>
           <Icon name={ICONS.warning} size={18} style={{ color: '#D97706', flexShrink: 0, marginTop: 1 }} />
           <div>
             <p style={{ fontWeight: 600, color: '#B45309', fontSize: 15, margin: '0 0 4px' }}>CHEP Pallet Exchange Required</p>
@@ -558,11 +558,11 @@ function ShipmentCard({ sd, icsBadge, showHeld, showChep }: any) {
           </div>
         </div>
       )}
-      <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 24 }}>
+      <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 'var(--r-md)', padding: 20, marginBottom: 24 }}>
         <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.09em', textTransform: 'uppercase', margin: '0 0 16px' }}>Auto-populated from CFS records</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
           {[['Weight', sd.weightKg ? sd.weightKg + ' kg' : '—'], ['Volume', sd.volumeCbm ? sd.volumeCbm + ' CBM' : '—'], ['Packages', sd.packageCount || '—'], ['Pallets', sd.palletCount ? `${sd.palletCount} × ${sd.palletType}` : '—'], ['Storage from', sd.storageStartDate || '—'], ['Days in store', '—']].map(([l, v]) => (
-            <div key={l} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, padding: '12px 14px' }}>
+            <div key={l} style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 'var(--r-sm)', padding: '12px 14px' }}>
               <p style={{ fontSize: 10, color: 'var(--text-secondary)', margin: '0 0 4px' }}>{l}</p>
               <p style={{ fontWeight: 600, color: '#1C1917', fontSize: 15, margin: 0 }}>{String(v)}</p>
             </div>
@@ -570,7 +570,7 @@ function ShipmentCard({ sd, icsBadge, showHeld, showChep }: any) {
         </div>
       </div>
       {charges && charges.total > 5.5 && (
-        <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, marginBottom: 32 }}>
+        <div style={{ background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 'var(--r-md)', padding: 20, marginBottom: 32 }}>
           <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', margin: '0 0 16px' }}>Estimated Charges</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 15 }}>
             {charges.storageCharge > 0 && <ChargeRow label="Storage" val={`$${charges.storageCharge.toFixed(2)}`} />}
@@ -599,7 +599,7 @@ function ChargeRow({ label, val, bold, small }: { label: string; val: string; bo
 }
 
 function Spinner() {
-  return <span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.25)', borderTopColor: '#fff', borderRadius: 9999, animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
+  return <span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.25)', borderTopColor: '#fff', borderRadius: 'var(--r-full)', animation: 'spin 0.7s linear infinite', display: 'inline-block' }} />
 }
 
 // ─── Per-slot detail fields for multi-slot mode ───────────────────────────────

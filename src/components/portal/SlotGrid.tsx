@@ -37,7 +37,7 @@ export function SlotGrid({ slots, selectedSlotId, onSelect }: Props) {
                     disabled={full}
                     onClick={() => !full && onSelect(slot)}
                     style={{
-                      padding: '12px 10px', borderRadius: 12, textAlign: 'left',
+                      padding: '12px 10px', borderRadius: 'var(--r-md)', textAlign: 'left',
                       border: `2px solid ${selected ? 'var(--brand-color)' : full ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.09)'}`,
                       background: selected ? 'rgba(var(--brand-rgb),0.06)' : full ? '#F7F6F5' : '#fff',
                       cursor: full ? 'not-allowed' : 'pointer',
@@ -51,13 +51,13 @@ export function SlotGrid({ slots, selectedSlotId, onSelect }: Props) {
                       <span style={{ fontSize: 15, fontWeight: 700, color: selected ? 'var(--brand-color)' : '#1C1917', fontVariantNumeric: 'tabular-nums' }}>
                         {slot.startTime}
                       </span>
-                      {selected && <div style={{ width: 7, height: 7, borderRadius: 9999, background: 'var(--brand-color)' }} />}
+                      {selected && <div style={{ width: 7, height: 7, borderRadius: 'var(--r-full)', background: 'var(--brand-color)' }} />}
                     </div>
                     <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginBottom: 8 }}>{slot.startTime}–{slot.endTime}</div>
 
                     {/* Fill bar */}
-                    <div style={{ height: 3, borderRadius: 9999, background: 'rgba(0,0,0,0.08)', overflow: 'hidden', marginBottom: 6 }}>
-                      <div style={{ height: '100%', width: `${fill}%`, background: fillColor, borderRadius: 9999, transition: 'width 0.3s ease' }} />
+                    <div style={{ height: 3, borderRadius: 'var(--r-full)', background: 'rgba(0,0,0,0.08)', overflow: 'hidden', marginBottom: 6 }}>
+                      <div style={{ height: '100%', width: `${fill}%`, background: fillColor, borderRadius: 'var(--r-full)', transition: 'width 0.3s ease' }} />
                     </div>
 
                     <span style={{ fontSize: 13, fontWeight: 600, color: full ? '#EF4444' : fill >= 75 ? '#D97706' : '#16A34A' }}>
@@ -74,7 +74,7 @@ export function SlotGrid({ slots, selectedSlotId, onSelect }: Props) {
       <div style={{ display: 'flex', gap: 16, paddingTop: 4 }}>
         {[['#22C55E', 'Open'], ['#F59E0B', 'Filling up'], ['#EF4444', 'Full']].map(([c, l]) => (
           <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <div style={{ width: 8, height: 8, borderRadius: 9999, background: c }} />
+            <div style={{ width: 8, height: 8, borderRadius: 'var(--r-full)', background: c }} />
             <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{l}</span>
           </div>
         ))}

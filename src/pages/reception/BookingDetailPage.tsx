@@ -13,7 +13,7 @@ import {
 } from '@/lib/db/bookings'
 import type { Booking } from '@/data/types'
 
-const CARD: React.CSSProperties  = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 16 }
+const CARD: React.CSSProperties  = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-lg)', padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 16 }
 
 /** Format a document_type value into a human-readable label.
  *  Handles: snake_case strings, numeric legacy values, nulls. */
@@ -49,7 +49,7 @@ const STATUS_BADGE: Record<string, React.CSSProperties> = {
 }
 const STATUS_LABEL: Record<string, string> = { scheduled: 'Scheduled', checked_in: 'Checked In', completed: 'Completed', cancelled: 'Cancelled' }
 
-const FIELD: React.CSSProperties = { width: '100%', padding: '10px 14px', fontSize: 15, color: '#1C1917', background: '#EBEBEA', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10, outline: 'none', boxSizing: 'border-box' }
+const FIELD: React.CSSProperties = { width: '100%', padding: '10px 14px', fontSize: 15, color: '#1C1917', background: '#EBEBEA', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box' }
 
 const SOURCE_BADGE: Record<string, { label: string; bg: string; color: string; border: string }> = {
   self_booking:      { label: 'Self Booking',      bg: 'rgba(37,99,235,0.08)', color: '#2563EB', border: '1px solid #BFDBFE' },
@@ -61,7 +61,7 @@ function SourceBadge({ source }: { source?: string | null }) {
   if (!source) return null
   const s = SOURCE_BADGE[source] ?? SOURCE_BADGE.guest
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 14, fontWeight: 600, padding: '4px 10px', borderRadius: 9999, background: s.bg, color: s.color, border: s.border, whiteSpace: 'nowrap' }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 14, fontWeight: 600, padding: '4px 10px', borderRadius: 'var(--r-full)', background: s.bg, color: s.color, border: s.border, whiteSpace: 'nowrap' }}>
       {s.label}
     </span>
   )
@@ -196,12 +196,12 @@ export default function BookingDetailPage() {
     <div>
       {/* ── Checked-in redirect banner ── */}
       {b.status === 'checked_in' && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.22)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.22)', borderRadius: 'var(--r-md)', padding: '12px 16px', marginBottom: 20, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Icon name={ICONS.check} size={16} style={{ color: '#16A34A', flexShrink: 0 }} />
             <p style={{ fontSize: 15, fontWeight: 500, color: '#15803D' }}>This booking has been checked in and is now managed in the Visitors module.</p>
           </div>
-          <Link to="/reception/visitors" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 15, fontWeight: 600, color: '#16A34A', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid rgba(34,197,94,0.35)', borderRadius: 8, padding: '6px 12px', background: '#fff' }}>
+          <Link to="/reception/visitors" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 15, fontWeight: 600, color: '#16A34A', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid rgba(34,197,94,0.35)', borderRadius: 'var(--r-sm)', padding: '6px 12px', background: '#fff' }}>
             View in Visitors →
           </Link>
         </div>
@@ -235,12 +235,12 @@ export default function BookingDetailPage() {
               <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
             </svg>
           </span>
-          <span style={{ ...statusStyle, fontSize: 14, fontWeight: 600, padding: '4px 10px', borderRadius: 9999, whiteSpace: 'nowrap' }}>
+          <span style={{ ...statusStyle, fontSize: 14, fontWeight: 600, padding: '4px 10px', borderRadius: 'var(--r-full)', whiteSpace: 'nowrap' }}>
             {STATUS_LABEL[b.status] ?? b.status}
           </span>
           <SourceBadge source={b.bookingSource} />
           {groupSlots.length > 1 && (
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#2563EB', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 9999, padding: '4px 10px', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#2563EB', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 'var(--r-full)', padding: '4px 10px', whiteSpace: 'nowrap' }}>
               {groupSlots.length} slots
             </span>
           )}
@@ -284,7 +284,7 @@ export default function BookingDetailPage() {
           {groupSlots.length > 1 ? (
             <div style={{ marginBottom: 16 }}>
               <p style={SL}>SLOTS ({groupSlots.length})</p>
-              <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
+              <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-lg)', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)' }}>
                 {groupSlots.map((slot, i) => {
                   const slotStatusStyle = STATUS_BADGE[slot.status] ?? STATUS_BADGE.scheduled
                   const serviceLabel = `${slot.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · ${slot.loadType?.toUpperCase()}`
@@ -355,8 +355,8 @@ export default function BookingDetailPage() {
                         <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--brand-color, #FC6514)', fontFamily: 'ui-monospace,monospace', marginRight: 8 }}>{slot.referenceNumber}</span>
                         <span style={{ fontSize: 15, color: 'var(--text-mid)' }}>{slot.slotDate} · {slot.slotStartTime}–{slot.slotEndTime}</span>
                         <div style={{ flex: 1 }} />
-                        <span style={{ fontSize: 14, padding: '3px 10px', borderRadius: 9999, background: 'rgba(var(--brand-rgb),0.10)', color: 'var(--brand-color, #FC6514)', fontWeight: 600, marginRight: 8 }}>{serviceLabel}</span>
-                        <span style={{ ...slotStatusStyle, fontSize: 14, fontWeight: 600, padding: '3px 10px', borderRadius: 9999 }}>{STATUS_LABEL[slot.status] ?? slot.status}</span>
+                        <span style={{ fontSize: 14, padding: '3px 10px', borderRadius: 'var(--r-full)', background: 'rgba(var(--brand-rgb),0.10)', color: 'var(--brand-color, #FC6514)', fontWeight: 600, marginRight: 8 }}>{serviceLabel}</span>
+                        <span style={{ ...slotStatusStyle, fontSize: 14, fontWeight: 600, padding: '3px 10px', borderRadius: 'var(--r-full)' }}>{STATUS_LABEL[slot.status] ?? slot.status}</span>
                       </div>
 
                       {/* Expanded panel */}
@@ -379,13 +379,13 @@ export default function BookingDetailPage() {
                               <button type="button"
                                 disabled={acting === slot.id + '-checkin'}
                                 onClick={async () => { setActing(slot.id + '-checkin'); try { await checkInBooking(slot.id); setGroupSlots(prev => { const next = prev.map(s => s.id === slot.id ? { ...s, status: 'checked_in' as any } : s); const allChecked = next.every(s => s.status === 'checked_in' || s.status === 'completed' || s.status === 'cancelled'); if (allChecked) setB(p => p ? { ...p, status: 'checked_in' as any } : p); return next }); toast('Checked in', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
-                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(34,197,94,0.10)', color: '#16A34A', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(34,197,94,0.10)', color: '#16A34A', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}>
                                 {acting === slot.id + '-checkin' ? '…' : 'Check In'}
                               </button>
                               <button type="button"
                                 disabled={acting === slot.id + '-cancel'}
                                 onClick={async () => { setActing(slot.id + '-cancel'); try { await cancelBooking(slot.id); setGroupSlots(prev => prev.map(s => s.id === slot.id ? { ...s, status: 'cancelled' as any } : s)); if (slot.id === b?.id) setB(prev => prev ? { ...prev, status: 'cancelled' as any } : prev); toast('Cancelled', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
-                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.20)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.20)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}>
                                 {acting === slot.id + '-cancel' ? '…' : 'Cancel Slot'}
                               </button>
                             </>)}
@@ -393,19 +393,19 @@ export default function BookingDetailPage() {
                               <button type="button"
                                 disabled={acting === slot.id + '-complete'}
                                 onClick={async () => { setActing(slot.id + '-complete'); try { await completeBooking(slot.id); setGroupSlots(prev => prev.map(s => s.id === slot.id ? { ...s, status: 'completed' as any } : s)); if (slot.id === b?.id) setB(prev => prev ? { ...prev, status: 'completed' as any } : prev); toast('Completed', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
-                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(107,114,128,0.10)', color: '#374151', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
+                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(107,114,128,0.10)', color: '#374151', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}>
                                 {acting === slot.id + '-complete' ? '…' : 'Mark as Complete'}
                               </button>
                             )}
                             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
                               <button type="button" onClick={downloadSlotQr}
-                                style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 14, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}
+                                style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 14, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}
                                 onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.28)' }}
                                 onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.14)' }}>
                                 <Icon name={ICONS.download} size={17}/> QR
                               </button>
                               <button type="button" onClick={exportSlotPdf}
-                                style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 14, fontWeight: 600, color: '#fff', background: 'var(--brand-color, #FC6514)', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}
+                                style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 14, fontWeight: 600, color: '#fff', background: 'var(--brand-color, #FC6514)', border: 'none', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}
                                 onMouseOver={e => { e.currentTarget.style.opacity = '0.88' }}
                                 onMouseOut={e  => { e.currentTarget.style.opacity = '1' }}>
                                 <Icon name={ICONS.document} size={17}/> PDF
@@ -440,7 +440,7 @@ export default function BookingDetailPage() {
                 {(b.palletCount ?? 0) > 0 && <FieldBlock label="Pallets"  value={`${b.palletCount} × ${b.palletType}`} />}
               </div>
               {b.palletType === 'chep' && (
-                <div style={{ marginTop: 14, background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.20)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <div style={{ marginTop: 14, background: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.20)', borderRadius: 'var(--r-sm)', padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <Icon name={ICONS.warning} size={18} style={{ color: '#FBBF24', flexShrink: 0, marginTop: 1 }} />
                   <div>
                     <p style={{ fontSize: 15, fontWeight: 600, color: '#B45309', marginBottom: 2 }}>CHEP Pallet Exchange</p>
@@ -461,7 +461,7 @@ export default function BookingDetailPage() {
                 {bookingDocs.map((doc: any) => {
                   const { data: { publicUrl } } = supabase.storage.from('booking-documents').getPublicUrl(doc.storage_path)
                   return (
-                    <div key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#F7F6F5', borderRadius: 10, padding: '10px 14px' }}>
+                    <div key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#F7F6F5', borderRadius: 'var(--r-sm)', padding: '10px 14px' }}>
                       {/* Left: type label + filename */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                         <Icon name={ICONS.document} size={19} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
@@ -504,7 +504,7 @@ export default function BookingDetailPage() {
                   </a>
                 </div>
               </div>
-              <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 15, fontWeight: 600, padding: '5px 12px', borderRadius: 9999, ...cssToObj(icsStyle) } as any}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 15, fontWeight: 600, padding: '5px 12px', borderRadius: 'var(--r-full)', ...cssToObj(icsStyle) } as any}>
                 {ICS_LABEL[b.icsStatus] ?? b.icsStatus}
               </span>
               {b.icsLastCheckedAt && (
@@ -522,7 +522,7 @@ export default function BookingDetailPage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 14, fontWeight: 600, padding: '5px 12px', borderRadius: 9999, background: idBadge.bg, color: idBadge.color, border: `1px solid ${idBadge.border}` }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 14, fontWeight: 600, padding: '5px 12px', borderRadius: 'var(--r-full)', background: idBadge.bg, color: idBadge.color, border: `1px solid ${idBadge.border}` }}>
                       <Icon name={ICONS.check} size={17}/>{idBadge.label}
                     </span>
                     {checkinRecord.name_match_score != null && (
@@ -581,7 +581,7 @@ export default function BookingDetailPage() {
               {b.checkedInAt && <TRow icon={ICONS.completed}  iconColor="#FBBF24" label="Checked In" value={fmtDateTime(b.checkedInAt)} />}
               {b.completedAt && <TRow icon={ICONS.checkSquare} iconColor="#22C55E" label="Completed" value={fmtDateTime(b.completedAt)} />}
               {b.completionNotes && (
-                <div style={{ marginTop: 4, padding: '10px 12px', background: '#F7F6F5', borderRadius: 10, borderLeft: '3px solid #22C55E' }}>
+                <div style={{ marginTop: 4, padding: '10px 12px', background: '#F7F6F5', borderRadius: 'var(--r-sm)', borderLeft: '3px solid #22C55E' }}>
                   <p style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Completion Notes</p>
                   <p style={{ fontSize: 15, color: '#1C1917', lineHeight: 1.5, margin: 0 }}>{b.completionNotes}</p>
                 </div>
@@ -608,7 +608,7 @@ export default function BookingDetailPage() {
                   {hasCheckedIn && allDone && (
                     <button
                       onClick={() => openAction('checkin')}
-                      style={{ width: '100%', padding: '11px 16px', borderRadius: 10, border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', color: '#1C1917', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                      style={{ width: '100%', padding: '11px 16px', borderRadius: 'var(--r-sm)', border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', color: '#1C1917', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
                     >
                       Slot Actions
                     </button>
@@ -660,7 +660,7 @@ export default function BookingDetailPage() {
                     width: '100%', textAlign: 'left', padding: '14px 16px',
                     background: actionable ? '#FAFAF9' : 'rgba(0,0,0,0.025)',
                     border: `1.5px solid ${actionable ? 'rgba(0,0,0,0.09)' : 'rgba(0,0,0,0.06)'}`,
-                    borderRadius: 12, cursor: actionable ? 'pointer' : 'not-allowed',
+                    borderRadius: 'var(--r-md)', cursor: actionable ? 'pointer' : 'not-allowed',
                     opacity: actionable ? 1 : 0.5,
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
                     transition: 'border-color 0.14s, background 0.14s',
@@ -676,10 +676,10 @@ export default function BookingDetailPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 15, color: '#1C1917', fontWeight: 500 }}>{slot.slotDate} · {slot.slotStartTime}–{slot.slotEndTime}</span>
-                      <span style={{ background: 'rgba(var(--brand-rgb),0.09)', color: 'var(--brand-color)', fontWeight: 600, fontSize: 13, padding: '2px 8px', borderRadius: 9999 }}>
+                      <span style={{ background: 'rgba(var(--brand-rgb),0.09)', color: 'var(--brand-color)', fontWeight: 600, fontSize: 13, padding: '2px 8px', borderRadius: 'var(--r-full)' }}>
                         {comboLabel}
                       </span>
-                      <span style={{ ...slotSt, fontSize: 13, fontWeight: 600, padding: '2px 8px', borderRadius: 9999 }}>
+                      <span style={{ ...slotSt, fontSize: 13, fontWeight: 600, padding: '2px 8px', borderRadius: 'var(--r-full)' }}>
                         {STATUS_LABEL[slot.status] ?? slot.status}
                       </span>
                     </div>
@@ -722,7 +722,7 @@ export default function BookingDetailPage() {
             </h2>
 
             {/* Slot card */}
-            <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 12, padding: '14px 16px', marginBottom: 20 }}>
+            <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 'var(--r-md)', padding: '14px 16px', marginBottom: 20 }}>
               <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--brand-color, #FC6514)', fontFamily: 'ui-monospace,monospace', letterSpacing: '0.01em', margin: '0 0 4px' }}>
                 {sl.referenceNumber}
               </p>
@@ -730,10 +730,10 @@ export default function BookingDetailPage() {
                 {sl.slotDate} &nbsp;·&nbsp; {sl.slotStartTime} – {sl.slotEndTime}
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                <span style={{ background: 'rgba(var(--brand-rgb),0.09)', color: 'var(--brand-color)', fontWeight: 600, fontSize: 13, padding: '2px 8px', borderRadius: 9999 }}>
+                <span style={{ background: 'rgba(var(--brand-rgb),0.09)', color: 'var(--brand-color)', fontWeight: 600, fontSize: 13, padding: '2px 8px', borderRadius: 'var(--r-full)' }}>
                   {comboLabel}
                 </span>
-                <span style={{ ...slotSt, fontSize: 13, fontWeight: 600, padding: '2px 8px', borderRadius: 9999 }}>
+                <span style={{ ...slotSt, fontSize: 13, fontWeight: 600, padding: '2px 8px', borderRadius: 'var(--r-full)' }}>
                   {STATUS_LABEL[sl.status] ?? sl.status}
                 </span>
               </div>
@@ -768,13 +768,13 @@ export default function BookingDetailPage() {
                         setActing('')
                       }
                     }}
-                    style={{ width: '100%', padding: '14px', borderRadius: 12, border: 'none', background: 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: acting === 'checkin-' + sl.id ? 'not-allowed' : 'pointer', opacity: acting === 'checkin-' + sl.id ? 0.6 : 1, fontFamily: 'inherit', transition: 'opacity 0.15s' }}
+                    style={{ width: '100%', padding: '14px', borderRadius: 'var(--r-md)', border: 'none', background: 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: acting === 'checkin-' + sl.id ? 'not-allowed' : 'pointer', opacity: acting === 'checkin-' + sl.id ? 0.6 : 1, fontFamily: 'inherit', transition: 'opacity 0.15s' }}
                   >
                     {acting === 'checkin-' + sl.id ? 'Checking in…' : 'Confirm Check In'}
                   </button>
                   <button
                     onClick={closeActionModal}
-                    style={{ width: '100%', padding: '14px', borderRadius: 12, border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', color: '#1C1917', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                    style={{ width: '100%', padding: '14px', borderRadius: 'var(--r-md)', border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', color: '#1C1917', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
                   >
                     Cancel
                   </button>
@@ -921,7 +921,7 @@ function ModalWrap({ children, onClose }: { children: React.ReactNode; onClose: 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.60)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
-      <div style={{ position: 'relative', background: '#FFFFFF', borderRadius: 20, boxShadow: '0 24px 64px rgba(0,0,0,0.28)', maxWidth: 520, width: '100%', padding: 28 }}>
+      <div style={{ position: 'relative', background: '#FFFFFF', borderRadius: 'var(--r-xl)', boxShadow: '0 24px 64px rgba(0,0,0,0.28)', maxWidth: 520, width: '100%', padding: 28 }}>
         {children}
       </div>
     </div>
@@ -936,7 +936,7 @@ function Btn({ color, onClick, loading, children }: { color: 'brand' | 'green' |
     danger: { background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.25)' },
   }
   return (
-    <button onClick={onClick} disabled={loading} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 15, fontWeight: 600, borderRadius: 10, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...s[color] }}>
+    <button onClick={onClick} disabled={loading} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 15, fontWeight: 600, borderRadius: 'var(--r-sm)', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...s[color] }}>
       {children}
     </button>
   )

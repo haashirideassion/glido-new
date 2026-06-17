@@ -19,6 +19,14 @@
   --text-tertiary:  #6B6763;   /* 7.2:1  — replaces #A8A29E fine print */
   --text-muted:     #374151;   /* 10.2:1 — replaces #4B5563 table/meta text */
   --text-mid:       #44403C;   /* 8.1:1  — replaces #6B7280 form hints */
+
+  /* ── Corner radius scale ── */
+  --r-xs:   4px;
+  --r-sm:   8px;
+  --r-md:   12px;
+  --r-lg:   16px;
+  --r-xl:   20px;
+  --r-full: 9999px;
 }
 
 @layer base {

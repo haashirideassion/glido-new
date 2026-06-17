@@ -12,7 +12,9 @@
             document.documentElement.style.setProperty('--brand-color', c);
             document.documentElement.style.setProperty('--brand-rgb', r+','+g+','+b);
             var lum = (0.2126*Math.pow(r/255,2.2) + 0.7152*Math.pow(g/255,2.2) + 0.0722*Math.pow(b/255,2.2));
-            document.documentElement.style.setProperty('--brand-text', lum > 0.18 ? '#000000' : '#ffffff');
+            var cBlack = (lum + 0.05) / 0.05;
+            var cWhite = 1.05 / (lum + 0.05);
+            document.documentElement.style.setProperty('--brand-text', cBlack >= cWhite ? '#000000' : '#ffffff');
           }
         } catch(e) {}
       })();

@@ -8,11 +8,11 @@ import { supabase, DEFAULT_TENANT_ID } from '@/lib/supabase'
 import { completeBooking } from '@/lib/db/bookings'
 
 // ── Shared style constants (mirrors BookingDetailPage) ────────────────────────
-const CARD: React.CSSProperties  = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 16 }
+const CARD: React.CSSProperties  = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-lg)', padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 16 }
 const SL: React.CSSProperties   = { fontSize: 15, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 12 }
 const RL: React.CSSProperties   = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 15, color: 'var(--text-muted)' }
 const RV: React.CSSProperties   = { fontSize: 16, fontWeight: 600, color: '#1C1917' }
-const FIELD: React.CSSProperties = { width: '100%', padding: '10px 14px', fontSize: 15, color: '#1C1917', background: '#EBEBEA', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 10, outline: 'none', boxSizing: 'border-box' }
+const FIELD: React.CSSProperties = { width: '100%', padding: '10px 14px', fontSize: 15, color: '#1C1917', background: '#EBEBEA', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box' }
 
 const SOURCE_BADGE: Record<string, { label: string; bg: string; color: string }> = {
   self_booking:      { label: 'Self Booking',      bg: 'rgba(37,99,235,0.08)', color: '#2563EB' },
@@ -24,7 +24,7 @@ function SourceBadge({ source }: { source?: string | null }) {
   if (!source) return null
   const s = SOURCE_BADGE[source] ?? SOURCE_BADGE.guest
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '3px 8px', borderRadius: 9999, background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 13, fontWeight: 600, padding: '3px 8px', borderRadius: 'var(--r-full)', background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>
       {s.label}
     </span>
   )
@@ -190,7 +190,7 @@ export default function VisitorDetailPage() {
           </Link>
           <span style={{ color: 'rgba(0,0,0,0.15)', fontSize: 15 }}>/</span>
           <span style={{ fontSize: 16, fontWeight: 700, color: '#1C1917' }}>{name}</span>
-          <span style={{ ...statusStyle, fontSize: 14, fontWeight: 600, padding: '4px 10px', borderRadius: 9999, whiteSpace: 'nowrap' }}>
+          <span style={{ ...statusStyle, fontSize: 14, fontWeight: 600, padding: '4px 10px', borderRadius: 'var(--r-full)', whiteSpace: 'nowrap' }}>
             {statusLabel}
           </span>
           {isBooking && <SourceBadge source={booking.booking_source} />}
@@ -273,7 +273,7 @@ export default function VisitorDetailPage() {
                 {documents.map((doc: any) => {
                   const { data: { publicUrl } } = supabase.storage.from('booking-documents').getPublicUrl(doc.storage_path)
                   return (
-                    <div key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#F7F6F5', borderRadius: 10, padding: '10px 14px' }}>
+                    <div key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#F7F6F5', borderRadius: 'var(--r-sm)', padding: '10px 14px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                         <Icon name={ICONS.document} size={19} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
                         <div style={{ minWidth: 0 }}>
@@ -323,7 +323,7 @@ export default function VisitorDetailPage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={RL}>Name Match</span>
                     <span style={{
-                      display: 'inline-flex', alignItems: 'center', fontSize: 14, fontWeight: 600, padding: '3px 10px', borderRadius: 9999,
+                      display: 'inline-flex', alignItems: 'center', fontSize: 14, fontWeight: 600, padding: '3px 10px', borderRadius: 'var(--r-full)',
                       background: cr.name_match_result === 'match' ? 'rgba(34,197,94,0.10)' : cr.name_match_result === 'mismatch' ? 'rgba(239,68,68,0.10)' : 'rgba(0,0,0,0.05)',
                       color:      cr.name_match_result === 'match' ? '#16A34A'               : cr.name_match_result === 'mismatch' ? '#DC2626'               : '#78716C',
                     }}>
@@ -354,7 +354,7 @@ export default function VisitorDetailPage() {
                 <TRow icon={ICONS.check}       iconColor="#22C55E" label="Dismissed"  value={fmtTime(cr.dismissed_at)} />
               )}
               {isBooking && booking.completion_notes && (
-                <div style={{ marginTop: 4, padding: '10px 12px', background: '#F7F6F5', borderRadius: 10, borderLeft: '3px solid #22C55E' }}>
+                <div style={{ marginTop: 4, padding: '10px 12px', background: '#F7F6F5', borderRadius: 'var(--r-sm)', borderLeft: '3px solid #22C55E' }}>
                   <p style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Completion Notes</p>
                   <p style={{ fontSize: 15, color: '#1C1917', lineHeight: 1.5, margin: 0 }}>{booking.completion_notes}</p>
                 </div>
@@ -372,7 +372,7 @@ export default function VisitorDetailPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <button
                   onClick={() => setConfirmModal(true)}
-                  style={{ width: '100%', padding: '11px 16px', borderRadius: 10, border: 'none', background: 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit', transition: 'opacity 0.15s' }}
+                  style={{ width: '100%', padding: '11px 16px', borderRadius: 'var(--r-sm)', border: 'none', background: 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit', transition: 'opacity 0.15s' }}
                   onMouseOver={e => { e.currentTarget.style.opacity = '0.88' }}
                   onMouseOut={e  => { e.currentTarget.style.opacity = '1' }}
                 >
@@ -395,7 +395,7 @@ export default function VisitorDetailPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
             {['Driver identity verified', 'Documents checked', 'Cargo released'].map(item => (
               <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, color: '#1C1917' }}>
-                <span style={{ width: 20, height: 20, borderRadius: 9999, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.22)' }}>
+                <span style={{ width: 20, height: 20, borderRadius: 'var(--r-full)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.22)' }}>
                   <Icon name={ICONS.check} size={19} style={{ color: '#22C55E' }} />
                 </span>
                 {item}
@@ -478,7 +478,7 @@ function ModalWrap({ children, onClose }: { children: React.ReactNode; onClose: 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.60)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
-      <div style={{ position: 'relative', background: '#FFFFFF', borderRadius: 20, boxShadow: '0 24px 64px rgba(0,0,0,0.28)', maxWidth: 520, width: '100%', padding: 28 }}>
+      <div style={{ position: 'relative', background: '#FFFFFF', borderRadius: 'var(--r-xl)', boxShadow: '0 24px 64px rgba(0,0,0,0.28)', maxWidth: 520, width: '100%', padding: 28 }}>
         {children}
       </div>
     </div>
@@ -494,7 +494,7 @@ function Btn({ color, onClick, loading, children }: { color: 'brand' | 'ghost'; 
     <button
       onClick={onClick}
       disabled={loading}
-      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 15, fontWeight: 600, borderRadius: 10, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...s[color] }}
+      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 15, fontWeight: 600, borderRadius: 'var(--r-sm)', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...s[color] }}
     >
       {children}
     </button>

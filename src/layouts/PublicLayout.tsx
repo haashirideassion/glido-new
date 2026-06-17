@@ -60,7 +60,9 @@ export default function PublicLayout() {
     document.documentElement.style.setProperty('--brand-color', color)
     document.documentElement.style.setProperty('--brand-rgb', `${r},${g},${b}`)
     const luminance = (0.2126 * (r/255)**2.2 + 0.7152 * (g/255)**2.2 + 0.0722 * (b/255)**2.2)
-    const brandText = luminance > 0.18 ? '#000000' : '#ffffff'
+    const contrastWithBlack = (luminance + 0.05) / 0.05
+    const contrastWithWhite = 1.05 / (luminance + 0.05)
+    const brandText = contrastWithBlack >= contrastWithWhite ? '#000000' : '#ffffff'
     document.documentElement.style.setProperty('--brand-text', brandText)
     try { localStorage.setItem('glido_brand_color', color) } catch(e) {}
   }, [tenant?.primaryColor])
@@ -156,12 +158,12 @@ export default function PublicLayout() {
 
             <nav
               ref={wrapRef}
-              style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 2, padding: 4, background: 'rgba(0,0,0,0.045)', borderRadius: 9999 }}
+              style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 2, padding: 4, background: 'rgba(0,0,0,0.045)', borderRadius: 'var(--r-full)' }}
             >
               <div
                 ref={hlRef}
                 style={{
-                  position: 'absolute', borderRadius: 9999, background: '#fff',
+                  position: 'absolute', borderRadius: 'var(--r-full)', background: '#fff',
                   boxShadow: '0 1px 3px rgba(0,0,0,0.10),0 0 0 1px rgba(0,0,0,0.06)',
                   opacity: 0, pointerEvents: 'none', zIndex: 0,
                   transition: 'opacity 0.2s ease,width 0.25s cubic-bezier(0.16,1,0.3,1),height 0.25s cubic-bezier(0.16,1,0.3,1),left 0.25s cubic-bezier(0.16,1,0.3,1),top 0.25s cubic-bezier(0.16,1,0.3,1)',
@@ -175,7 +177,7 @@ export default function PublicLayout() {
                   style={{
                     position: 'relative', zIndex: 1,
                     display: 'inline-flex', alignItems: 'center', gap: 5,
-                    padding: '7px 13px', borderRadius: 9999,
+                    padding: '7px 13px', borderRadius: 'var(--r-full)',
                     fontSize: 15, fontWeight: (pathname === l.to || (l.to === '/book' && pathname === '/visitor-login')) ? 700 : 500,
                     color: (pathname === l.to || (l.to === '/book' && pathname === '/visitor-login')) ? 'var(--brand-color)' : '#78716C',
                     textDecoration: 'none',
@@ -193,7 +195,7 @@ export default function PublicLayout() {
               // Reception staff landed on a public page — point them back
               <Link
                 to="/reception"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.22)', borderRadius: 9999, textDecoration: 'none', flexShrink: 0, transition: 'all 0.14s ease' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.22)', borderRadius: 'var(--r-full)', textDecoration: 'none', flexShrink: 0, transition: 'all 0.14s ease' }}
                 onMouseOver={e => { e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.13)'; e.currentTarget.style.borderColor = 'rgba(var(--brand-rgb),0.38)' }}
                 onMouseOut={e  => { e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.07)'; e.currentTarget.style.borderColor = 'rgba(var(--brand-rgb),0.22)' }}
               >
@@ -205,7 +207,7 @@ export default function PublicLayout() {
                 <button
                   type="button"
                   onClick={() => setVisitorMenuOpen(v => !v)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 15, fontWeight: 600, color: '#1C1917', background: 'linear-gradient(160deg,#F9F8F7 0%,#EEEDEC 100%)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 9999, cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.85)', fontFamily: 'inherit' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 15, fontWeight: 600, color: '#1C1917', background: 'linear-gradient(160deg,#F9F8F7 0%,#EEEDEC 100%)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-full)', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.85)', fontFamily: 'inherit' }}
                 >
                   <Icon name={ICONS.user} size={16} style={{ opacity: 0.7 }} />
                   {user.firstName ?? 'My Account'}
@@ -215,11 +217,11 @@ export default function PublicLayout() {
                 </button>
 
                 {visitorMenuOpen && (
-                  <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 200, minWidth: 160, background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 12, boxShadow: '0 8px 28px rgba(0,0,0,0.11),0 2px 6px rgba(0,0,0,0.06)', padding: 5 }}>
+                  <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 200, minWidth: 160, background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 'var(--r-md)', boxShadow: '0 8px 28px rgba(0,0,0,0.11),0 2px 6px rgba(0,0,0,0.06)', padding: 5 }}>
                     <Link
                       to="/profile"
                       onClick={() => setVisitorMenuOpen(false)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', borderRadius: 8, fontSize: 15, fontWeight: 500, color: '#1C1917', textDecoration: 'none', transition: 'background 0.12s ease' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', borderRadius: 'var(--r-sm)', fontSize: 15, fontWeight: 500, color: '#1C1917', textDecoration: 'none', transition: 'background 0.12s ease' }}
                       onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.04)')}
                       onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
                     >
@@ -229,7 +231,7 @@ export default function PublicLayout() {
                     <Link
                       to="/bookings"
                       onClick={() => setVisitorMenuOpen(false)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', borderRadius: 8, fontSize: 15, fontWeight: 500, color: '#1C1917', textDecoration: 'none', transition: 'background 0.12s ease' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 10px', borderRadius: 'var(--r-sm)', fontSize: 15, fontWeight: 500, color: '#1C1917', textDecoration: 'none', transition: 'background 0.12s ease' }}
                       onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.04)')}
                       onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
                     >
@@ -239,7 +241,7 @@ export default function PublicLayout() {
                     <button
                       type="button"
                       onClick={handleSignOut}
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 10px', borderRadius: 8, fontSize: 15, fontWeight: 500, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', transition: 'background 0.12s ease' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 10px', borderRadius: 'var(--r-sm)', fontSize: 15, fontWeight: 500, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', transition: 'background 0.12s ease' }}
                       onMouseOver={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.07)')}
                       onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
                     >
@@ -254,7 +256,7 @@ export default function PublicLayout() {
               <Link
                 ref={loginRef}
                 to="/visitor-login"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 15, fontWeight: 600, color: '#1C1917', background: 'linear-gradient(160deg,#F9F8F7 0%,#EEEDEC 100%)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 9999, textDecoration: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.85)', flexShrink: 0, overflow: 'hidden', position: 'relative' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px', fontSize: 15, fontWeight: 600, color: '#1C1917', background: 'linear-gradient(160deg,#F9F8F7 0%,#EEEDEC 100%)', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-full)', textDecoration: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.85)', flexShrink: 0, overflow: 'hidden', position: 'relative' }}
               >
                 <Icon name={ICONS.users} size={13} style={{ opacity: 0.55 }} />
                 Login
@@ -286,7 +288,7 @@ export default function PublicLayout() {
                   <a
                     key={icon}
                     href="#"
-                    style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s ease' }}
+                    style={{ width: 32, height: 32, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.15s ease' }}
                     onMouseOver={e => (e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.12)')}
                     onMouseOut={e  => (e.currentTarget.style.background = 'rgba(0,0,0,0.05)')}
                   >

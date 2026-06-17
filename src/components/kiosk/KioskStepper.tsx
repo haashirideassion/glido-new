@@ -9,7 +9,7 @@ const BASE = 'width:56px;height:56px;border-radius:9999px;display:flex;align-ite
 const c = (active: boolean, done: boolean) => BASE + (active || done ? 'border:2.5px solid var(--brand-color);color:var(--brand-color);' : 'border:2.5px solid #C2C2C2;color:#C2C2C2;')
 const lb = (active: boolean, done: boolean): React.CSSProperties => ({ fontSize: 15, textAlign: 'center', whiteSpace: 'nowrap', fontWeight: active || done ? 700 : 400, color: active || done ? '#101010' : '#605F5F', transition: 'all 0.25s ease' })
 const line = (done: boolean, afterActive = false): React.CSSProperties => ({
-  height: 3, flex: 1, borderRadius: 2, marginTop: 27, minWidth: 8, transition: 'background 0.3s ease',
+  height: 3, flex: 1, borderRadius: 'var(--r-xs)', marginTop: 27, minWidth: 8, transition: 'background 0.3s ease',
   background: done
     ? 'var(--brand-color)'
     : afterActive
@@ -80,7 +80,7 @@ export function KioskStepper() {
 
       {/* Back button */}
       <div style={{ position: 'absolute', top: 24, left: 24, zIndex: 2 }}>
-        <button onClick={back} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px 9px 14px', fontSize: 15, fontWeight: 600, color: '#374151', border: '1.5px solid #e5e7eb', borderRadius: 9999, background: '#fff', cursor: 'pointer', transition: 'all 0.15s ease' }}
+        <button onClick={back} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 20px 9px 14px', fontSize: 15, fontWeight: 600, color: '#374151', border: '1.5px solid #e5e7eb', borderRadius: 'var(--r-full)', background: '#fff', cursor: 'pointer', transition: 'all 0.15s ease' }}
           onMouseOver={e => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.background = '#f9fafb' }}
           onMouseOut={e  => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.background = '#fff' }}
         >

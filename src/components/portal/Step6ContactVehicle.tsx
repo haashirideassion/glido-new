@@ -133,7 +133,7 @@ export function Step6ContactVehicle() {
     return (
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-          <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <img src={documentsImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
           </div>
           <div>
@@ -178,7 +178,7 @@ export function Step6ContactVehicle() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-        <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ width: 52, height: 52, borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <img src={documentsImg} alt="" style={{ width: 36, height: 36, objectFit: 'contain' }} />
         </div>
         <div>
@@ -197,16 +197,16 @@ export function Step6ContactVehicle() {
           const isUploaded  = uploaded.length > 0
 
           return (
-            <div key={slot.docType} style={{ background: '#fff', border: `1.5px solid ${isMissing ? '#EF4444' : isUploaded ? 'rgba(34,197,94,0.35)' : 'rgba(0,0,0,0.08)'}`, borderRadius: 16, padding: '14px 16px', transition: 'border-color 0.15s ease' }}>
+            <div key={slot.docType} style={{ background: '#fff', border: `1.5px solid ${isMissing ? '#EF4444' : isUploaded ? 'rgba(34,197,94,0.35)' : 'rgba(0,0,0,0.08)'}`, borderRadius: 'var(--r-lg)', padding: '14px 16px', transition: 'border-color 0.15s ease' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ width: 20, height: 20, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: isUploaded ? 'rgba(34,197,94,0.14)' : 'rgba(0,0,0,0.05)', color: isUploaded ? '#22C55E' : '#A8A29E', transition: 'all 0.15s' }}>
+                    <span style={{ width: 20, height: 20, borderRadius: 'var(--r-full)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: isUploaded ? 'rgba(34,197,94,0.14)' : 'rgba(0,0,0,0.05)', color: isUploaded ? '#22C55E' : '#A8A29E', transition: 'all 0.15s' }}>
                       <Icon name={ICONS.check} size={12} />
                     </span>
                     <span style={{ fontSize: 15, fontWeight: 600, color: '#1C1917' }}>{slot.label}</span>
                     {slot.required
-                      ? <span style={{ fontSize: 13, fontWeight: 600, color: isMissing ? '#EF4444' : '#78716C', background: isMissing ? 'rgba(239,68,68,0.08)' : 'transparent', padding: isMissing ? '2px 6px' : 0, borderRadius: 4 }}>Required</span>
+                      ? <span style={{ fontSize: 13, fontWeight: 600, color: isMissing ? '#EF4444' : '#78716C', background: isMissing ? 'rgba(239,68,68,0.08)' : 'transparent', padding: isMissing ? '2px 6px' : 0, borderRadius: 'var(--r-xs)' }}>Required</span>
                       : <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>Optional</span>
                     }
                   </div>
@@ -214,7 +214,7 @@ export function Step6ContactVehicle() {
                     {slot.helpText ?? 'PDF, JPG, PNG · Max 10 MB'}
                   </p>
                 </div>
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 8, flexShrink: 0, transition: 'all 0.12s ease', cursor: uploading[slot.docType] ? 'not-allowed' : 'pointer', opacity: uploading[slot.docType] ? 0.6 : 1 }}
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-sm)', flexShrink: 0, transition: 'all 0.12s ease', cursor: uploading[slot.docType] ? 'not-allowed' : 'pointer', opacity: uploading[slot.docType] ? 0.6 : 1 }}
                   onClick={uploading[slot.docType] ? e => e.preventDefault() : undefined}
                   onMouseOver={e => { if (!uploading[slot.docType]) { e.currentTarget.style.background = '#EBEBEA'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.18)' } }}
                   onMouseOut={e  => { e.currentTarget.style.background = '#F7F6F5'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.10)' }}>
@@ -228,14 +228,14 @@ export function Step6ContactVehicle() {
               {uploaded.length > 0 && (
                 <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {uploaded.map((doc, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 8, padding: '7px 10px' }}>
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 'var(--r-sm)', padding: '7px 10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                         <Icon name={ICONS.document} size={14} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
                         <span style={{ fontSize: 14, fontWeight: 500, color: '#1C1917', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
                         {doc.size > 0 && <span style={{ fontSize: 13, color: 'var(--text-tertiary)', flexShrink: 0 }}>{(doc.size / 1024).toFixed(0)} KB</span>}
                       </div>
                       <button type="button" onClick={() => dispatch({ type: 'REMOVE_DOCUMENT', name: doc.name })}
-                        style={{ marginLeft: 8, flexShrink: 0, color: '#EF4444', background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4 }}
+                        style={{ marginLeft: 8, flexShrink: 0, color: '#EF4444', background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 'var(--r-xs)' }}
                         onMouseOver={e => (e.currentTarget.style.color = '#DC2626')} onMouseOut={e => (e.currentTarget.style.color = '#EF4444')}>
                         <Icon name={ICONS.trash} size={14} />
                       </button>
@@ -250,11 +250,11 @@ export function Step6ContactVehicle() {
       </div>
 
       {/* ── General drag-and-drop zone ── */}
-      <div style={{ border: `2px dashed ${dragging ? 'var(--brand-color)' : '#e5e7eb'}`, borderRadius: 12, background: dragging ? 'rgba(var(--brand-rgb),0.03)' : '#fafafa', padding: '32px 24px', textAlign: 'center', transition: 'border-color 0.15s ease,background 0.15s ease', cursor: 'pointer' }}
+      <div style={{ border: `2px dashed ${dragging ? 'var(--brand-color)' : '#e5e7eb'}`, borderRadius: 'var(--r-md)', background: dragging ? 'rgba(var(--brand-rgb),0.03)' : '#fafafa', padding: '32px 24px', textAlign: 'center', transition: 'border-color 0.15s ease,background 0.15s ease', cursor: 'pointer' }}
         onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={() => setDragging(false)}
         onDrop={e => { e.preventDefault(); setDragging(false); Array.from(e.dataTransfer.files).forEach(f => uploadFileSingle(f, 'general')) }}
         onClick={() => generalInputRef.current?.click()}>
-        <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
           <Icon name={ICONS.upload} size={22} style={{ color: 'var(--text-secondary)' }} />
         </div>
         <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', marginBottom: 3 }}>Add additional documents</p>
@@ -269,7 +269,7 @@ export function Step6ContactVehicle() {
         <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: 4 }}>Additional uploaded files</p>
           {state.documentFiles.filter(d => !d.docType).map((doc, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 10, padding: '10px 14px' }}>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 'var(--r-sm)', padding: '10px 14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                 <Icon name={ICONS.document} size={18} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
                 <div style={{ minWidth: 0 }}>
@@ -278,7 +278,7 @@ export function Step6ContactVehicle() {
                 </div>
               </div>
               <button type="button" onClick={() => dispatch({ type: 'REMOVE_DOCUMENT', name: doc.name })}
-                style={{ marginLeft: 12, flexShrink: 0, color: '#EF4444', background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4 }}
+                style={{ marginLeft: 12, flexShrink: 0, color: '#EF4444', background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 'var(--r-xs)' }}
                 onMouseOver={e => (e.currentTarget.style.color = '#DC2626')} onMouseOut={e => (e.currentTarget.style.color = '#EF4444')}>
                 <Icon name={ICONS.trash} size={16} />
               </button>
@@ -288,7 +288,7 @@ export function Step6ContactVehicle() {
       )}
 
       {false && missingRequired.length > 0 && (
-        <div style={{ marginTop: 16, background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 8, padding: '12px 16px', fontSize: 14, color: '#DC2626' }}>
+        <div style={{ marginTop: 16, background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 'var(--r-sm)', padding: '12px 16px', fontSize: 14, color: '#DC2626' }}>
           Please upload the following required documents before continuing: {missingRequired.map(d => d.label).join(', ')}.
         </div>
       )}
@@ -331,11 +331,11 @@ function SlotDocSection({ slotIndex, docFiles, docSlots, onAdd, onRemove }: {
           const isMissing  = slot.required && uploaded.length === 0
           const isUploaded = uploaded.length > 0
           return (
-            <div key={slot.docType} style={{ background: '#fff', border: `1.5px solid ${isMissing ? '#EF4444' : isUploaded ? 'rgba(34,197,94,0.35)' : 'rgba(0,0,0,0.08)'}`, borderRadius: 16, padding: '12px 14px' }}>
+            <div key={slot.docType} style={{ background: '#fff', border: `1.5px solid ${isMissing ? '#EF4444' : isUploaded ? 'rgba(34,197,94,0.35)' : 'rgba(0,0,0,0.08)'}`, borderRadius: 'var(--r-lg)', padding: '12px 14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 18, height: 18, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: isUploaded ? 'rgba(34,197,94,0.14)' : 'rgba(0,0,0,0.05)', color: isUploaded ? '#22C55E' : '#A8A29E' }}>
+                    <span style={{ width: 18, height: 18, borderRadius: 'var(--r-full)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: isUploaded ? 'rgba(34,197,94,0.14)' : 'rgba(0,0,0,0.05)', color: isUploaded ? '#22C55E' : '#A8A29E' }}>
                       <Icon name={ICONS.check} size={11} />
                     </span>
                     <span style={{ fontSize: 15, fontWeight: 600, color: '#1C1917' }}>{slot.label}</span>
@@ -345,7 +345,7 @@ function SlotDocSection({ slotIndex, docFiles, docSlots, onAdd, onRemove }: {
                     {slot.helpText ?? 'PDF, JPG, PNG · Max 10 MB'}
                   </p>
                 </div>
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 8, cursor: uploading[slot.docType] ? 'not-allowed' : 'pointer', opacity: uploading[slot.docType] ? 0.6 : 1 }}>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-sm)', cursor: uploading[slot.docType] ? 'not-allowed' : 'pointer', opacity: uploading[slot.docType] ? 0.6 : 1 }}>
                   <Icon name={ICONS.upload} size={12} />
                   {uploading[slot.docType] ? 'Uploading…' : isUploaded ? 'Replace' : 'Upload'}
                   <input type="file" multiple accept={slot.acceptAttr ?? '.pdf,.jpg,.jpeg,.png'} style={{ display: 'none' }} disabled={uploading[slot.docType]}
@@ -355,14 +355,14 @@ function SlotDocSection({ slotIndex, docFiles, docSlots, onAdd, onRemove }: {
               {uploaded.length > 0 && (
                 <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 5 }}>
                   {uploaded.map((doc, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 7, padding: '6px 10px' }}>
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 'var(--r-sm)', padding: '6px 10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
                         <Icon name={ICONS.document} size={13} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
                         <span style={{ fontSize: 14, fontWeight: 500, color: '#1C1917', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</span>
                         {doc.size > 0 && <span style={{ fontSize: 13, color: 'var(--text-tertiary)', flexShrink: 0 }}>{(doc.size / 1024).toFixed(0)} KB</span>}
                       </div>
                       <button type="button" onClick={() => onRemove(doc.name)}
-                        style={{ marginLeft: 8, flexShrink: 0, color: '#EF4444', background: 'transparent', border: 'none', cursor: 'pointer', padding: 3, borderRadius: 4 }}>
+                        style={{ marginLeft: 8, flexShrink: 0, color: '#EF4444', background: 'transparent', border: 'none', cursor: 'pointer', padding: 3, borderRadius: 'var(--r-xs)' }}>
                         <Icon name={ICONS.trash} size={13} />
                       </button>
                     </div>
@@ -375,7 +375,7 @@ function SlotDocSection({ slotIndex, docFiles, docSlots, onAdd, onRemove }: {
         })}
       </div>
       {false && missingRequired.length > 0 && (
-        <div style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 8, padding: '10px 14px', fontSize: 14, color: '#DC2626' }}>
+        <div style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.22)', borderRadius: 'var(--r-sm)', padding: '10px 14px', fontSize: 14, color: '#DC2626' }}>
           Missing: {missingRequired.map(d => d.label).join(', ')}.
         </div>
       )}

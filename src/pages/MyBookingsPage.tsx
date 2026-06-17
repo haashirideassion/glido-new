@@ -12,7 +12,7 @@ const PAGE_SIZE = 10
 
 const FIELD: React.CSSProperties = {
   flex: 1, padding: '10px 14px', fontSize: 15.5,
-  border: '1px solid rgba(0,0,0,0.12)', borderRadius: 10, outline: 'none',
+  border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', outline: 'none',
   boxSizing: 'border-box', background: '#fff', color: '#1C1917',
   transition: 'border-color 0.15s ease',
 }
@@ -67,7 +67,7 @@ export default function MyBookingsPage() {
     return (
       <div style={{ minHeight: 'calc(100vh - 120px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
         <div style={{ maxWidth: 440, width: '100%', textAlign: 'center' }}>
-          <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(var(--brand-rgb),0.08)', border: '1px solid rgba(var(--brand-rgb),0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+          <div style={{ width: 52, height: 52, borderRadius: 'var(--r-md)', background: 'rgba(var(--brand-rgb),0.08)', border: '1px solid rgba(var(--brand-rgb),0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             <Icon name={ICONS.bookings} size={24} style={{ color: 'var(--brand-color)' }} />
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.03em', marginBottom: 8 }}>
@@ -78,10 +78,10 @@ export default function MyBookingsPage() {
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
-            <Link to="/visitor-login" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 24px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', borderRadius: 9999, textDecoration: 'none', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)' }}>
+            <Link to="/visitor-login" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 24px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', borderRadius: 'var(--r-full)', textDecoration: 'none', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.35)' }}>
               <Icon name={ICONS.user} size={15} /> Sign In <Icon name={ICONS.arrowRight} size={14} />
             </Link>
-            <Link to="/book" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 24px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 9999, textDecoration: 'none' }}>
+            <Link to="/book" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 24px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', textDecoration: 'none' }}>
               <Icon name={ICONS.calendar} size={14} /> Book a New Visit
             </Link>
           </div>
@@ -96,7 +96,7 @@ export default function MyBookingsPage() {
                 onFocus={e => (e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)')}
                 onBlur={e  => (e.target.style.borderColor = 'rgba(0,0,0,0.12)')}
               />
-              <button type="submit" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              <button type="submit" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 18px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 'var(--r-full)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                 <Icon name={ICONS.search} size={14} /> Search
               </button>
             </form>
@@ -125,11 +125,11 @@ export default function MyBookingsPage() {
             onFocus={e => (e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)')}
             onBlur={e  => (e.target.style.borderColor = 'rgba(0,0,0,0.12)')}
           />
-          <button type="submit" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          <button type="submit" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', fontSize: 15, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 'var(--r-full)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
             Search
           </button>
           {ref && (
-            <button type="button" onClick={() => { setSearch(''); setParams({}) }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            <button type="button" onClick={() => { setSearch(''); setParams({}) }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
               Clear
             </button>
           )}
@@ -192,7 +192,7 @@ export default function MyBookingsPage() {
                       type="button"
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page === 1}
-                      style={{ padding: '7px 14px', fontSize: 15, fontWeight: 600, color: page === 1 ? '#A8A29E' : '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, cursor: page === 1 ? 'default' : 'pointer', opacity: page === 1 ? 0.5 : 1 }}
+                      style={{ padding: '7px 14px', fontSize: 15, fontWeight: 600, color: page === 1 ? '#A8A29E' : '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', cursor: page === 1 ? 'default' : 'pointer', opacity: page === 1 ? 0.5 : 1 }}
                     >← Prev</button>
                     <span style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', minWidth: 64, textAlign: 'center' }}>
                       Page {page} of {totalPages}
@@ -201,7 +201,7 @@ export default function MyBookingsPage() {
                       type="button"
                       onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
-                      style={{ padding: '7px 14px', fontSize: 15, fontWeight: 600, color: page === totalPages ? '#A8A29E' : '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, cursor: page === totalPages ? 'default' : 'pointer', opacity: page === totalPages ? 0.5 : 1 }}
+                      style={{ padding: '7px 14px', fontSize: 15, fontWeight: 600, color: page === totalPages ? '#A8A29E' : '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', cursor: page === totalPages ? 'default' : 'pointer', opacity: page === totalPages ? 0.5 : 1 }}
                     >Next →</button>
                   </div>
                 </div>

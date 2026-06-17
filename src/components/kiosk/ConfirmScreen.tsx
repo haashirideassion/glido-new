@@ -12,7 +12,7 @@ export function ConfirmScreen() {
         <h2 style={{ fontSize: '1.875rem', fontWeight: 700, marginBottom: 4, color: '#1C1917' }}>Booking Found</h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: 32 }}>Please confirm this is your booking</p>
 
-        <div style={{ textAlign: 'left', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)', marginBottom: 24 }}>
+        <div style={{ textAlign: 'left', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-lg)', padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.04),0 4px 20px rgba(0,0,0,0.07)', marginBottom: 24 }}>
           {[
             { label: 'Reference', val: r.ref,     mono: true },
             { label: 'Name',      val: r.name,    mono: false },
@@ -26,11 +26,11 @@ export function ConfirmScreen() {
           ))}
         </div>
 
-        <button className="kiosk-btn kiosk-btn-primary" style={{ width: '100%', borderRadius: 16, marginBottom: 12 }} onClick={confirmBooking}>
+        <button className="kiosk-btn kiosk-btn-primary" style={{ width: '100%', borderRadius: 'var(--r-lg)', marginBottom: 12 }} onClick={confirmBooking}>
           <Icon name={ICONS.check} size={26} />
           Yes, This Is My Booking
         </button>
-        <button className="kiosk-btn kiosk-btn-secondary" style={{ width: '100%', borderRadius: 16 }} onClick={() => goTo('lookup')}>
+        <button className="kiosk-btn kiosk-btn-secondary" style={{ width: '100%', borderRadius: 'var(--r-lg)' }} onClick={() => goTo('lookup')}>
           This is not my booking
         </button>
       </div>

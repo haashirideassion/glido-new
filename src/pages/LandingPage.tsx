@@ -177,7 +177,7 @@ export default function LandingPage() {
         }
         .warp-beam { position:absolute; top:0; width:2px; border-radius:9999px; pointer-events:none; animation:warp-beam-fly linear infinite; }
         @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        .btn-primary { display:inline-flex; align-items:center; gap:8px; padding:12px 24px; font-size:14px; font-weight:600; color:#fff; background:var(--brand-color); border-radius:9999px; text-decoration:none; box-shadow:0 2px 8px rgba(var(--brand-rgb),0.35); transition:all 0.18s ease; }
+        .btn-primary { display:inline-flex; align-items:center; gap:8px; padding:12px 24px; font-size:14px; font-weight:600; color:var(--brand-text); background:var(--brand-color); border-radius:9999px; text-decoration:none; box-shadow:0 2px 8px rgba(var(--brand-rgb),0.35); transition:all 0.18s ease; }
         .btn-primary:hover { transform:translateY(-2px); box-shadow:0 6px 18px rgba(var(--brand-rgb),0.42); }
         .btn-primary:active { transform:translateY(0) scale(0.97); }
         .btn-ghost { display:inline-flex; align-items:center; gap:8px; padding:12px 24px; font-size:14px; font-weight:600; color:#78716C; background:rgba(0,0,0,0.04); border:1px solid rgba(0,0,0,0.10); border-radius:9999px; text-decoration:none; transition:all 0.18s ease; }
@@ -206,14 +206,14 @@ export default function LandingPage() {
         {/* Hero card */}
         <div
           ref={heroCardRef}
-          style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 1, borderRadius: 24, overflow: 'hidden', minHeight: 520, display: 'flex', alignItems: 'center', willChange: 'transform', transformOrigin: 'center center' }}
+          style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 1, borderRadius: 'var(--r-xl)', overflow: 'hidden', minHeight: 520, display: 'flex', alignItems: 'center', willChange: 'transform', transformOrigin: 'center center' }}
         >
           <div
             ref={heroBgRef}
             style={{ position: 'absolute', inset: '-8%', backgroundImage: "url('https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/bf7f2d26-7889-4678-868d-8cde754846e9_3840w.jpg')", backgroundSize: 'cover', backgroundPosition: 'center', willChange: 'transform' }}
           />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg,rgba(8,10,14,0.88) 0%,rgba(8,10,14,0.75) 45%,rgba(8,10,14,0.45) 70%,rgba(8,10,14,0.25) 100%)', zIndex: 1 }} />
-          <div ref={heroSpecRef} style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none', borderRadius: 24, transition: 'background 0.1s ease' }} />
+          <div ref={heroSpecRef} style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none', borderRadius: 'var(--r-xl)', transition: 'background 0.1s ease' }} />
 
           <div
             ref={heroContentRef}
@@ -233,9 +233,9 @@ export default function LandingPage() {
                 Book a Visit
                 <Icon name={ICONS.arrowRight} size={14} />
               </Link>
-              <Link to="/bookings" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 24px', fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.80)', border: '1.5px solid rgba(255,255,255,0.22)', borderRadius: 9999, textDecoration: 'none', transition: 'all 0.15s ease' }}
-                onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.50)'; e.currentTarget.style.color = '#fff' }}
-                onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'; e.currentTarget.style.color = 'rgba(255,255,255,0.80)' }}
+              <Link to="/bookings" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 24px', fontSize: 15, fontWeight: 600, color: '#1C1917', background: 'rgba(255,255,255,0.90)', border: '1.5px solid rgba(255,255,255,0.30)', borderRadius: 'var(--r-full)', textDecoration: 'none', transition: 'all 0.15s ease' }}
+                onMouseOver={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#fff' }}
+                onMouseOut={e  => { e.currentTarget.style.background = 'rgba(255,255,255,0.90)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.30)' }}
               >
                 <Icon name={ICONS.search} size={15} />
                 Look Up Booking
@@ -256,16 +256,16 @@ export default function LandingPage() {
             <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.75, maxWidth: 400 }}>No spreadsheets. No radio calls. The whole process is online.</p>
           </div>
 
-          <div className="steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 2, background: 'rgba(0,0,0,0.06)', borderRadius: 20, overflow: 'hidden' }}>
+          <div className="steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 2, background: 'rgba(0,0,0,0.06)', borderRadius: 'var(--r-xl)', overflow: 'hidden' }}>
             {HOW_STEPS.map((step, i) => (
               <div key={step.num} className="reveal" data-reveal-delay={String(i * 80)}
                 style={{ background: '#FFFFFF', padding: '32px 26px', transition: 'background 0.15s ease' }}
-                onMouseOver={e => (e.currentTarget.style.background = '#FFFAF7')}
+                onMouseOver={e => (e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.04)')}
                 onMouseOut={e  => (e.currentTarget.style.background = '#FFFFFF')}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                   <span style={{ fontSize: 14, fontWeight: 800, color: '#1C1917', letterSpacing: '0.04em' }}>{step.num}</span>
-                  <div style={{ width: 40, height: 40, borderRadius: 11, background: '#FFF3EC', border: '1px solid rgba(var(--brand-rgb),0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 'var(--r-sm)', background: 'rgba(var(--brand-rgb),0.08)', border: '1px solid rgba(var(--brand-rgb),0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Icon name={step.icon} size={18} style={{ color: 'var(--brand-color)' }} />
                   </div>
                 </div>
@@ -292,7 +292,7 @@ export default function LandingPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
                 {OPS_FEATURES.map(item => (
                   <div key={item.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 9, background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.09)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 'var(--r-sm)', background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.09)', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
                       <Icon name={item.icon} size={15} style={{ color: 'var(--brand-color)' }} />
                     </div>
                     <div>
@@ -311,22 +311,22 @@ export default function LandingPage() {
             </div>
 
             {/* Dashboard mockup */}
-            <div className="reveal-right" style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06),0 16px 48px rgba(0,0,0,0.10)', border: '1px solid rgba(0,0,0,0.08)' }}>
+            <div className="reveal-right" style={{ borderRadius: 'var(--r-lg)', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.06),0 16px 48px rgba(0,0,0,0.10)', border: '1px solid rgba(0,0,0,0.08)' }}>
               <div style={{ background: '#FFFFFF', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <div style={{ display: 'flex', gap: 5 }}>
-                    {[0.08, 0.06, 0.04].map((o, i) => <div key={i} style={{ width: 10, height: 10, borderRadius: 9999, background: `rgba(0,0,0,${o})` }} />)}
+                    {[0.08, 0.06, 0.04].map((o, i) => <div key={i} style={{ width: 10, height: 10, borderRadius: 'var(--r-full)', background: `rgba(0,0,0,${o})` }} />)}
                   </div>
                   <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-tertiary)', marginLeft: 4 }}>Reception · Dashboard</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <span style={{ width: 5, height: 5, borderRadius: 9999, background: '#22C55E', animation: 'pulse-dot 2s ease-in-out infinite', display: 'inline-block' }} />
+                  <span style={{ width: 5, height: 5, borderRadius: 'var(--r-full)', background: '#22C55E', animation: 'pulse-dot 2s ease-in-out infinite', display: 'inline-block' }} />
                   <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 500 }}>Live</span>
                 </div>
               </div>
               <div style={{ background: '#F7F6F5', padding: 10, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
                 {KPI_TILES.map(k => (
-                  <div key={k.label} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 10, padding: '10px 12px' }}>
+                  <div key={k.label} style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-sm)', padding: '10px 12px' }}>
                     <p style={{ fontSize: 22, fontWeight: 800, color: k.c, letterSpacing: '-0.04em', lineHeight: 1, marginBottom: 2 }}>{k.val}</p>
                     <p style={{ fontSize: 10, color: 'var(--text-tertiary)', fontWeight: 500 }}>{k.label}</p>
                   </div>
@@ -346,7 +346,7 @@ export default function LandingPage() {
                     </div>
                     <span style={{ fontSize: 13, color: 'var(--text-secondary)', alignSelf: 'center', fontVariantNumeric: 'tabular-nums' }}>{row.time}</span>
                     <div style={{ alignSelf: 'center' }}>
-                      <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 9999, background: row.sc, color: row.tc }}>{row.status}</span>
+                      <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 'var(--r-full)', background: row.sc, color: row.tc }}>{row.status}</span>
                     </div>
                     <div style={{ alignSelf: 'center', display: 'flex', justifyContent: 'flex-end' }}>
                       <Icon name={ICONS.arrowRight} size={11} style={{ color: 'rgba(0,0,0,0.25)' }} />
@@ -374,8 +374,8 @@ export default function LandingPage() {
 
           <div className="persona-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }} data-stagger data-stagger-ms="90">
             {PERSONAS.map(p => (
-              <div key={p.title} className="tilt-card" style={{ background: p.bg, borderRadius: 22, padding: '34px 30px', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 22 }}>
+              <div key={p.title} className="tilt-card" style={{ background: p.bg, borderRadius: 'var(--r-xl)', padding: '34px 30px', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ width: 44, height: 44, borderRadius: 'var(--r-md)', background: 'rgba(255,255,255,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 22 }}>
                   <Icon name={p.icon} size={22} style={{ color: '#fff' }} />
                 </div>
                 <p style={{ fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: '-0.03em', marginBottom: 10 }}>{p.title}</p>
@@ -383,7 +383,7 @@ export default function LandingPage() {
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
                   {p.bullets.map((b, bi) => (
                     <li key={b} style={{ display: 'flex', alignItems: 'center', gap: 11, fontSize: 14, color: 'rgba(255,255,255,0.70)' }}>
-                      <span style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 5, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', fontVariantNumeric: 'tabular-nums', fontFamily: 'ui-monospace,monospace' }}>
+                      <span style={{ flexShrink: 0, width: 18, height: 18, borderRadius: 'var(--r-sm)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', fontVariantNumeric: 'tabular-nums', fontFamily: 'ui-monospace,monospace' }}>
                         {String(bi + 1).padStart(2, '0')}
                       </span>
                       {b}
@@ -408,9 +408,9 @@ export default function LandingPage() {
           </div>
 
           {/* ICS bento hero */}
-          <div className="reveal bento-hero" style={{ background: '#FFFFFF', border: '1px solid rgba(var(--brand-rgb),0.20)', borderRadius: 20, padding: '40px 44px', marginBottom: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04),0 8px 32px rgba(0,0,0,0.06),0 0 0 1px rgba(var(--brand-rgb),0.06)' }}>
+          <div className="reveal bento-hero" style={{ background: '#FFFFFF', border: '1px solid rgba(var(--brand-rgb),0.20)', borderRadius: 'var(--r-xl)', padding: '40px 44px', marginBottom: 10, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04),0 8px 32px rgba(0,0,0,0.06),0 0 0 1px rgba(var(--brand-rgb),0.06)' }}>
             <div>
-              <div style={{ width: 50, height: 50, borderRadius: 13, background: '#FFF3EC', border: '1px solid rgba(var(--brand-rgb),0.20)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 22 }}>
+              <div style={{ width: 50, height: 50, borderRadius: 'var(--r-md)', background: 'rgba(var(--brand-rgb),0.08)', border: '1px solid rgba(var(--brand-rgb),0.20)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 22 }}>
                 <Icon name={ICONS.shield} size={24} style={{ color: 'var(--brand-color)' }} />
               </div>
               <p style={{ fontSize: 18, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.025em', marginBottom: 10, lineHeight: 1.25 }}>Automatic ICS clearance check</p>
@@ -418,11 +418,11 @@ export default function LandingPage() {
                 Customs status is fetched the moment you enter your shipment number — holds flagged before they reach the gate.
               </p>
             </div>
-            <div style={{ background: '#F7F6F5', borderRadius: 14, padding: '20px 24px', border: '1px solid rgba(0,0,0,0.07)' }}>
+            <div style={{ background: '#F7F6F5', borderRadius: 'var(--r-md)', padding: '20px 24px', border: '1px solid rgba(0,0,0,0.07)' }}>
               {ICS_ROWS.map((row, ri) => (
                 <div key={ri} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: ri < 2 ? '1px solid rgba(0,0,0,0.06)' : undefined }}>
                   <span style={{ fontSize: 14, fontFamily: 'ui-monospace,monospace', fontWeight: 600, color: '#57534E' }}>{row.ref}</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, padding: '3px 10px', borderRadius: 9999, background: row.sc, color: row.tc }}>{row.status}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, padding: '3px 10px', borderRadius: 'var(--r-full)', background: row.sc, color: row.tc }}>{row.status}</span>
                 </div>
               ))}
             </div>
@@ -432,11 +432,11 @@ export default function LandingPage() {
           <div className="bento-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }} data-stagger data-stagger-ms="80">
             {BENTO_2.map(feat => (
               <div key={feat.title}
-                style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: 30, transition: 'border-color 0.15s ease,box-shadow 0.15s ease,transform 0.2s cubic-bezier(0.16,1,0.3,1)' }}
+                style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 'var(--r-lg)', padding: 30, transition: 'border-color 0.15s ease,box-shadow 0.15s ease,transform 0.2s cubic-bezier(0.16,1,0.3,1)' }}
                 onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(var(--brand-rgb),0.25)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.07)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
                 onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = '' }}
               >
-                <div style={{ width: 42, height: 42, borderRadius: 11, background: '#FFF3EC', border: '1px solid rgba(var(--brand-rgb),0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 'var(--r-sm)', background: 'rgba(var(--brand-rgb),0.08)', border: '1px solid rgba(var(--brand-rgb),0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
                   <Icon name={feat.icon} size={19} style={{ color: 'var(--brand-color)' }} />
                 </div>
                 <p style={{ fontSize: 15, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.02em', marginBottom: 7 }}>{feat.title}</p>
@@ -449,11 +449,11 @@ export default function LandingPage() {
           <div className="bento-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }} data-stagger data-stagger-ms="70">
             {BENTO_3.map(feat => (
               <div key={feat.title}
-                style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: 28, transition: 'border-color 0.15s ease,box-shadow 0.15s ease,transform 0.2s cubic-bezier(0.16,1,0.3,1)' }}
+                style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 'var(--r-lg)', padding: 28, transition: 'border-color 0.15s ease,box-shadow 0.15s ease,transform 0.2s cubic-bezier(0.16,1,0.3,1)' }}
                 onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(var(--brand-rgb),0.25)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.07)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
                 onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = '' }}
               >
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: '#FFF3EC', border: '1px solid rgba(var(--brand-rgb),0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 'var(--r-sm)', background: 'rgba(var(--brand-rgb),0.08)', border: '1px solid rgba(var(--brand-rgb),0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
                   <Icon name={feat.icon} size={18} style={{ color: 'var(--brand-color)' }} />
                 </div>
                 <p style={{ fontSize: 15, fontWeight: 700, color: '#1C1917', letterSpacing: '-0.02em', marginBottom: 6 }}>{feat.title}</p>
@@ -465,13 +465,13 @@ export default function LandingPage() {
       </section>
 
       {/* §8 CTA */}
-      <section style={{ padding: '100px 24px', background: 'linear-gradient(180deg,#FFF8F4 0%,#FFF3EC 100%)', borderTop: '1px solid rgba(var(--brand-rgb),0.12)', position: 'relative', overflow: 'hidden' }}>
+      <section style={{ padding: '100px 24px', background: 'linear-gradient(180deg, color-mix(in srgb, var(--brand-color) 4%, #ffffff) 0%, color-mix(in srgb, var(--brand-color) 7%, #ffffff) 100%)', borderTop: '1px solid rgba(var(--brand-rgb),0.12)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(var(--brand-rgb),0.07) 1px,transparent 1px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 600, height: 300, background: 'radial-gradient(ellipse,rgba(var(--brand-rgb),0.08) 0%,transparent 68%)', pointerEvents: 'none' }} />
 
         <div className="max-w-2xl mx-auto" style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-          <div className="reveal" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 14px', borderRadius: 9999, background: 'rgba(34,197,94,0.09)', border: '1px solid rgba(34,197,94,0.22)', marginBottom: 28 }}>
-            <span style={{ width: 6, height: 6, borderRadius: 9999, background: '#22C55E', animation: 'pulse-dot 2s ease-in-out infinite', display: 'inline-block' }} />
+          <div className="reveal" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '5px 14px', borderRadius: 'var(--r-full)', background: 'rgba(34,197,94,0.09)', border: '1px solid rgba(34,197,94,0.22)', marginBottom: 28 }}>
+            <span style={{ width: 6, height: 6, borderRadius: 'var(--r-full)', background: '#22C55E', animation: 'pulse-dot 2s ease-in-out infinite', display: 'inline-block' }} />
             <span style={{ fontSize: 13, fontWeight: 600, color: '#16A34A' }}>Accepting bookings now</span>
           </div>
 
@@ -484,10 +484,10 @@ export default function LandingPage() {
           </p>
 
           <div className="reveal" data-reveal-delay="180" style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/book" className="btn-primary" style={{ padding: '14px 32px', fontSize: 15 }}>
-              <Icon name={ICONS.calendar} size={15} />
+            <Link to="/book" className="btn-primary" style={{ padding: '14px 32px', fontSize: 15, color: 'var(--brand-text)' }}>
+              <Icon name={ICONS.calendar} size={15} style={{ color: 'var(--brand-text)' }} />
               Book a Visit
-              <Icon name={ICONS.arrowRight} size={14} />
+              <Icon name={ICONS.arrowRight} size={14} style={{ color: 'var(--brand-text)' }} />
             </Link>
             <Link to="/bookings" className="btn-ghost" style={{ padding: '14px 26px', fontSize: 15 }}>
               <Icon name={ICONS.search} size={15} />

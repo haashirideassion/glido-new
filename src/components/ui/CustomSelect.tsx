@@ -39,7 +39,7 @@ export function CustomSelect({ placeholder, options, value, onChange, width = '1
         onClick={() => setOpen(v => !v)}
         style={{
           width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-          fontSize: 15, padding: '11px 14px', height: 44, borderRadius: 10,
+          fontSize: 15, padding: '11px 14px', height: 44, borderRadius: 'var(--r-sm)',
           cursor: 'pointer', outline: 'none', transition: 'all 0.12s ease', boxSizing: 'border-box',
           background: (active && !neutral) ? 'rgba(var(--brand-rgb),0.05)' : '#F7F6F5',
           border: `1px solid ${(active && !neutral) ? 'rgba(var(--brand-rgb),0.40)' : 'rgba(0,0,0,0.10)'}`,
@@ -62,7 +62,7 @@ export function CustomSelect({ placeholder, options, value, onChange, width = '1
         <div style={{
           position: 'absolute', top: 'calc(100% + 5px)', left: 0, zIndex: 9999,
           width: '100%', minWidth: 200, background: '#FFFFFF',
-          border: '1px solid rgba(0,0,0,0.09)', borderRadius: 12,
+          border: '1px solid rgba(0,0,0,0.09)', borderRadius: 'var(--r-md)',
           boxShadow: '0 8px 28px rgba(0,0,0,0.11),0 2px 6px rgba(0,0,0,0.06)',
           padding: 5,
           maxHeight: 200, overflowY: 'auto',
@@ -76,7 +76,7 @@ export function CustomSelect({ placeholder, options, value, onChange, width = '1
                 onClick={() => { onChange(opt.value); setOpen(false); onBlur?.() }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  width: '100%', padding: '9px 10px', borderRadius: 8,
+                  width: '100%', padding: '9px 10px', borderRadius: 'var(--r-sm)',
                   border: 'none', cursor: 'pointer', textAlign: 'left',
                   fontSize: 15, fontFamily: 'inherit',
                   background: selected ? 'rgba(var(--brand-rgb),0.08)' : 'transparent',
