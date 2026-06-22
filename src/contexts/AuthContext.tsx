@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { apiClient, setToken } from '@/lib/api-client'
 import { clearAllClientState } from '@/lib/state-cleanup'
+import { supabase } from '@/lib/supabase'
 
 /**
  * AuthContext — Glido
@@ -101,6 +102,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchUser()
   }, [fetchUser])
+
+  // Sync visitor (Supabase) sessions into AuthContext so PublicLayout sees them
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const hasCustomToken = !!localStorage.getItem('glido_auth_token')
+      if (hasCustomToken) return // reception staff — handled by fetchUser above
+      if (session?.user) {
+        const u = session.user
+        setUser({
+          id:    u.id,
+          email: u.email ?? '',
+          name:  u.user_metadata?.first_name ?? u.email ?? '',
+          role:  (u.user_metadata?.role as UserRole) ?? 'visitor_registered',
+        })
+      } else {
+        setUser(null)
+      }
+      setIsLoading(false)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   const login = async (
     email: string,
