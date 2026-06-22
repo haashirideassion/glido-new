@@ -11,6 +11,7 @@ export interface TenantInfo {
   logoUrl:            string | null
   primaryColor:       string | null
   compayClientNumber: string | null
+  slotHoldDurationMin: number
 }
 
 const FALLBACK: TenantInfo = {
@@ -22,6 +23,7 @@ const FALLBACK: TenantInfo = {
   logoUrl:            null,
   primaryColor:       null,
   compayClientNumber: null,
+  slotHoldDurationMin: 10,
 }
 
 /**
@@ -41,9 +43,10 @@ export function useTenantInfo(): TenantInfo | null {
           eftAccountName:   t.eft_account_name   ?? '',
           eftBsb:           t.eft_bsb            ?? '',
           eftAccountNumber: t.eft_account_number ?? '',
-          logoUrl:            t.logo_url                        ?? null,
-          primaryColor:       t.primary_color                   ?? null,
-          compayClientNumber: (t as any).compay_client_number   ?? null,
+          logoUrl:             t.logo_url                        ?? null,
+          primaryColor:        t.primary_color                   ?? null,
+          compayClientNumber:  (t as any).compay_client_number  ?? null,
+          slotHoldDurationMin: t.slot_hold_duration_min         ?? 10,
         })
       })
       .catch(() => setInfo(FALLBACK))

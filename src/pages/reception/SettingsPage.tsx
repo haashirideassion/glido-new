@@ -158,8 +158,8 @@ const DEFAULT_DOC_REQUIREMENTS: DocRequirement[] = COMBO_DEFAULTS
 
 const GROUPS = [
   { id: 'General',      label: 'General',      sections: ['General', 'Working Hours'] },
-  { id: 'Bookings',     label: 'Bookings',     sections: ['Slot Config', 'Pricing', 'Payment'] },
-  { id: 'Integrations', label: 'Integrations', sections: ['Integrations', 'Document Requirements'] },
+  { id: 'Bookings',     label: 'Bookings',     sections: ['Slot Config', 'Pricing', 'Payment', 'Document Requirements'] },
+  { id: 'Integrations', label: 'Integrations', sections: ['Integrations'] },
   { id: 'Team',         label: 'Team',         sections: ['User Management'] },
 ] as const
 type GroupId = typeof GROUPS[number]['id']
@@ -295,7 +295,7 @@ export default function SettingsPage() {
   const HASH_TO_GROUP: Record<string, GroupId> = {
     '#general': 'General', '#working-hours': 'General',
     '#slot-config': 'Bookings', '#pricing': 'Bookings', '#payment': 'Bookings',
-    '#integrations': 'Integrations', '#doc-requirements': 'Integrations',
+    '#integrations': 'Integrations', '#doc-requirements': 'Bookings',
     '#user-management': 'Team',
   }
   const GROUP_TO_HASH: Record<GroupId, string> = {
@@ -954,21 +954,21 @@ export default function SettingsPage() {
       if (eftDirty) await saveEft()
       if (stripeDirty) await saveStripe()
       if (compayDirty) await saveCompay()
+      if (docDirty) await saveDocRequirements()
     } else if (tab === 'Integrations') {
       if (cargowiseDirty) await saveCargowise()
       if (smtpDirty) await saveSmtp()
-      if (docDirty) await saveDocRequirements()
     }
   }
   const tabDirty = (
     (tab === 'General'      && (generalDirty || whDirty)) ||
-    (tab === 'Bookings'     && (slotConfigDirty || pricingDirty || eftDirty || stripeDirty || compayDirty)) ||
-    (tab === 'Integrations' && (cargowiseDirty || smtpDirty || docDirty))
+    (tab === 'Bookings'     && (slotConfigDirty || pricingDirty || eftDirty || stripeDirty || compayDirty || docDirty)) ||
+    (tab === 'Integrations' && (cargowiseDirty || smtpDirty))
   )
   const tabSaving = (
     (tab === 'General'      && (generalSaving || whSaving)) ||
-    (tab === 'Bookings'     && (slotConfigSaving || pricingSaving || eftSaving || stripeSaving || compaySaving)) ||
-    (tab === 'Integrations' && (cargowiseSaving || smtpSaving || docSaving))
+    (tab === 'Bookings'     && (slotConfigSaving || pricingSaving || eftSaving || stripeSaving || compaySaving || docSaving)) ||
+    (tab === 'Integrations' && (cargowiseSaving || smtpSaving))
   )
 
   return (
@@ -1662,8 +1662,8 @@ export default function SettingsPage() {
           )}
 
           {/* Document Requirements */}
-          {tab === 'Integrations' && <GroupLabel>Document Requirements</GroupLabel>}
-          {tab === 'Integrations' && (
+          {tab === 'Bookings' && <GroupLabel>Document Requirements</GroupLabel>}
+          {tab === 'Bookings' && (
             <div style={CARD}>
               <SectionHead title="Document Requirements" desc="Configure which documents are required per service + cargo type combination." />
               {docLoading ? (

@@ -442,10 +442,10 @@ function BookingSummaryAccordion({ state, charges, user }: { state: ReturnType<t
       {/* Guest / driver — always visible */}
       <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {[
-          [user ? 'Name' : 'Guest Name', state.guestName !== state.guestEmail ? state.guestName : ''],
-          ['Email',         state.guestEmail],
-          ['Guest Phone',   state.guestPhone],
-          ['Company',       state.companyName],
+          ['Name',          user ? (user.name || user.email) : state.guestName],
+          ['Email',         user ? user.email : state.guestEmail],
+          ['Phone',         user ? '' : state.guestPhone],
+          ['Company',       user ? '' : state.companyName],
           ['Driver Name',   state.driverName],
           ['Driver Phone',  state.driverPhone],
           ['Vehicle Rego',  state.vehicleRegistration],

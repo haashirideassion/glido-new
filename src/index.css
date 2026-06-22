@@ -36,6 +36,9 @@
   }
 }
 
+/* Always show placeholders in lowercase even when the input has text-transform: uppercase */
+input::placeholder { text-transform: none; }
+
 /* Hide browser-native password reveal icon (Edge/Chrome) */
 input[type='password']::-ms-reveal,
 input[type='password']::-ms-clear { display: none; }

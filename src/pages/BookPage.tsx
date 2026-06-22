@@ -21,19 +21,6 @@ function ConfirmedScreen() {
         ? [{ ref: state.confirmationRef, slotLabel: state.selectedSlotLabel, date: state.selectedDate }]
         : [])
 
-  // Group by date + slotLabel — slots at the same time share one QR card
-  type RefGroup = { key: string; slotLabel: string; date: string; refs: string[] }
-  const groups: RefGroup[] = []
-  const _groupMap = new Map<string, RefGroup>()
-  for (const r of rawRefs) {
-    const key = `${r.date}__${r.slotLabel}`
-    if (!_groupMap.has(key)) {
-      const g: RefGroup = { key, slotLabel: r.slotLabel, date: r.date, refs: [] }
-      _groupMap.set(key, g); groups.push(g)
-    }
-    _groupMap.get(key)!.refs.push(r.ref)
-  }
-
   const ref     = rawRefs[0]?.ref ?? ''
   // Flat array of reference-number strings — used by multi-slot QR card loop
   const refs    = rawRefs.map(r => typeof r === 'string' ? r : r.ref)
@@ -43,11 +30,10 @@ function ConfirmedScreen() {
   const multi   = rawRefs.length > 1
   const [qrUrls, setQrUrls] = useState<Record<string, string>>({})
 
-  // One QR per unique time group, keyed by the group's first ref
-  const _qrRefKeys = groups.map(g => g.refs[0]).join(',')
+  // One QR per booking reference — each slot card renders its own, so every ref needs a code
+  const _qrRefKeys = refs.join(',')
   useEffect(() => {
-    groups.forEach(g => {
-      const qrRef = g.refs[0]
+    refs.forEach(qrRef => {
       if (!qrRef) return
       QRCode.toDataURL(qrRef, { width: 220, margin: 1, color: { dark: '#1C1917', light: '#ffffff' } })
         .then(url => setQrUrls(prev => ({ ...prev, [qrRef]: url })))

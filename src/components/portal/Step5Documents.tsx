@@ -134,6 +134,25 @@ export function Step5Documents() {
 
     const activeCfg5 = state.slotConfigs[activeSlot5]
 
+    const advanceToNextIncomplete = () => {
+      const nextIncomplete = state.slotConfigs.findIndex((c, i) => i > activeSlot5 && !isSlotDetailDone(c))
+      if (nextIncomplete !== -1) setActiveSlot5(nextIncomplete)
+    }
+
+    const handleSlotBlur = () => {
+      if (!activeCfg5) return
+      if (!isSlotDetailDone(activeCfg5)) return
+      advanceToNextIncomplete()
+    }
+
+    // Driver picked from the saved-drivers dropdown — dispatched state is stale this tick,
+    // so check completeness against the merged values before advancing.
+    const handleDriverSelected = (d: SavedDriver) => {
+      if (!activeCfg5) return
+      const merged = { ...activeCfg5, driverName: d.name, driverPhone: d.phone, vehicleRegistration: d.vehicle_registration }
+      if (isSlotDetailDone(merged)) advanceToNextIncomplete()
+    }
+
     return (
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
@@ -181,7 +200,14 @@ export function Step5Documents() {
         {/* Active slot panel */}
         <style>{`@keyframes slideInFromRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}`}</style>
         {activeCfg5 && (
-          <div key={activeSlot5} style={{ animation: 'slideInFromRight 0.22s ease forwards' }}>
+          <div key={activeSlot5} style={{ animation: 'slideInFromRight 0.22s ease forwards' }} onBlur={e => {
+            // Ignore blurs with no destination (e.g. a dropdown option unmounting after selection) —
+            // these shouldn't trigger an auto-advance.
+            if (!e.relatedTarget) return
+            // Don't advance if focus stayed inside this panel (moving between fields or into the dropdown).
+            if (e.currentTarget.contains(e.relatedTarget as Node)) return
+            handleSlotBlur()
+          }}>
           <div style={{ padding: 20, background: '#F9F9F8', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 'var(--r-lg)', marginBottom: 24 }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 16 }}>
               Slot {activeCfg5.index} — {activeCfg5.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {(activeCfg5.loadType ?? '').toUpperCase()}
@@ -197,7 +223,7 @@ export function Step5Documents() {
             />
             <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.07em', textTransform: 'uppercase', margin: 0 }}>Driver / Vehicle</p>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.07em', textTransform: 'uppercase', margin: 0 }}>Driver</p>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
                   <button
                     type="button"
@@ -239,6 +265,7 @@ export function Step5Documents() {
                 set={setSlot(activeCfg5.index)}
                 touch={(f: string) => touch(`s${activeSlot5}_${f}`)}
                 touched={touched}
+                onDriverSelected={handleDriverSelected}
               />
             </div>
           </div>
@@ -544,11 +571,16 @@ function FField({ label, required, error, children }: { label: string; required?
 
 // ─── Driver fields ────────────────────────────────────────────────────────────
 
-function DriverFields({ state, set, touch, touched }: { state: any; set: (f: any, v: string) => void; touch: (f: string) => void; touched: Record<string, boolean> }) {
-  const [driverNameErr,  setDriverNameErr]  = useState('')
-  const [driverPhoneErr, setDriverPhoneErr] = useState('')
-  const [savedDrivers,   setSavedDrivers]   = useState<SavedDriver[]>([])
+function DriverFields({ state, set, touch, touched, onDriverSelected }: { state: any; set: (f: any, v: string) => void; touch: (f: string) => void; touched: Record<string, boolean>; onDriverSelected?: (d: SavedDriver) => void }) {
+  const [driverNameErr,    setDriverNameErr]    = useState('')
+  const [driverPhoneErr,   setDriverPhoneErr]   = useState('')
+  const [savedDrivers, setSavedDrivers] = useState<SavedDriver[]>([])
   useEffect(() => { fetchSavedDrivers().then(setSavedDrivers) }, [])
+
+  // Derive selected driver from current field values rather than local state
+  const selectedDriverId = savedDrivers.find(d =>
+    d.name === state.driverName && d.vehicle_registration === state.vehicleRegistration
+  )?.id ?? ''
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 8 }}>
@@ -557,13 +589,14 @@ function DriverFields({ state, set, touch, touched }: { state: any; set: (f: any
           <FField label="Saved Drivers">
             <CustomSelect
               placeholder="Select a saved driver…"
-              value=""
+              value={selectedDriverId}
               onChange={id => {
                 const d = savedDrivers.find(s => s.id === id)
                 if (!d) return
                 set('driverName', d.name)
                 set('driverPhone', d.phone)
                 set('vehicleRegistration', d.vehicle_registration)
+                onDriverSelected?.(d)
               }}
               options={savedDrivers.map(d => ({ value: d.id, label: `${d.name} — ${d.vehicle_registration}` }))}
             />
