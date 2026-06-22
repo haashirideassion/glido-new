@@ -36,6 +36,10 @@ export interface SlotConfig {
   bookingReference: string
   // Per-slot documents (multi-slot mode)
   documentFiles:    DocumentFile[]
+  // Per-slot driver (multi-slot mode)
+  driverName:          string
+  driverPhone:         string
+  vehicleRegistration: string
 }
 
 function getDefaultDateEarly(): string {
@@ -49,6 +53,7 @@ function makeSlotConfig(index: number): SlotConfig {
     hbl: '', containerNumber: '', containerSize: '',
     entryNumber: '', purpose: '', consolidator: '', bookingReference: '',
     documentFiles: [],
+    driverName: '', driverPhone: '', vehicleRegistration: '',
   }
 }
 
@@ -297,6 +302,11 @@ function load(): WizardState {
     const raw = sessionStorage.getItem(STORAGE_KEY)
     if (!raw) return INITIAL_STATE
     const saved = JSON.parse(raw) as Partial<WizardState>
+    // Never restore a confirmed state across sessions — always start fresh
+    if (saved.step === 8 || saved.bookingConfirmed) {
+      sessionStorage.removeItem(STORAGE_KEY)
+      return INITIAL_STATE
+    }
     return { ...INITIAL_STATE, ...saved, holdSeconds: saved.holdSeconds ?? 0, submitting: false }
   } catch {
     return INITIAL_STATE
@@ -362,10 +372,10 @@ function deriveCanProceed(s: WizardState): boolean {
       if (s.slotCount === 1) return !!s.selectedSlotId
       return s.slotConfigs.every(c => !!(c.selectedSlotId ?? null))
     case 5: {
-      const driver = !!s.driverName.trim()
-      const rego   = !!s.vehicleRegistration.trim()
-      if (!driver || !rego) return false
       if (s.slotCount === 1) {
+        const driver = !!s.driverName.trim()
+        const rego   = !!s.vehicleRegistration.trim()
+        if (!driver || !rego) return false
         if (s.serviceType === 'pickup'  && s.loadType === 'lcl')
           return !!s.containerNumber.trim() && !!s.hbl.trim()
         if (s.serviceType === 'pickup'  && s.loadType === 'fcl')
@@ -376,9 +386,9 @@ function deriveCanProceed(s: WizardState): boolean {
           return !!s.containerNumber.trim() && !!s.containerSize.trim() && !!s.entryNumber.trim() && !!s.purpose.trim()
         return true
       }
-      // Multi-slot: each slot must have its combo fields filled
-      // Fix 3: optional chaining on all cfg string fields in case restored from old sessionStorage
+      // Multi-slot: each slot must have its own driver + combo fields
       return s.slotConfigs.every(cfg => {
+        if (!(cfg.driverName?.trim()) || !(cfg.vehicleRegistration?.trim())) return false
         const svc = cfg.serviceType; const lt = cfg.loadType
         if (svc === 'pickup'  && lt === 'lcl') return !!(cfg.containerNumber?.trim()) && !!(cfg.hbl?.trim())
         if (svc === 'pickup'  && lt === 'fcl') return !!(cfg.containerNumber?.trim()) && !!(cfg.containerSize?.trim())

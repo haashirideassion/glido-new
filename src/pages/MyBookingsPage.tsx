@@ -151,7 +151,6 @@ export default function MyBookingsPage() {
             ]}
           />
           <CustomSelect
-            placeholder="Newest First"
             value={sortBy}
             onChange={setSortBy}
             width={160}

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 export interface SelectOption { value: string; label: string }
 
 interface Props {
-  placeholder: string
+  placeholder?: string
   options: SelectOption[]
   value: string
   onChange: (v: string) => void
@@ -16,8 +16,8 @@ interface Props {
 export function CustomSelect({ placeholder, options, value, onChange, width = '100%', onBlur, neutral }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const allOpts = [{ value: '', label: placeholder }, ...options]
-  const label  = allOpts.find(o => o.value === value)?.label ?? placeholder
+  const allOpts = placeholder ? [{ value: '', label: placeholder }, ...options] : options
+  const label  = allOpts.find(o => o.value === value)?.label ?? placeholder ?? ''
   const active = value !== ''
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export function CustomSelect({ placeholder, options, value, onChange, width = '1
         onClick={() => setOpen(v => !v)}
         style={{
           width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-          fontSize: 15, padding: '11px 14px', height: 44, borderRadius: 'var(--r-sm)',
+          fontSize: 15, padding: '11px 14px', height: 44, borderRadius: 'var(--r-full)',
           cursor: 'pointer', outline: 'none', transition: 'all 0.12s ease', boxSizing: 'border-box',
           background: (active && !neutral) ? 'rgba(var(--brand-rgb),0.05)' : '#F7F6F5',
           border: `1px solid ${(active && !neutral) ? 'rgba(var(--brand-rgb),0.40)' : 'rgba(0,0,0,0.10)'}`,
@@ -76,7 +76,7 @@ export function CustomSelect({ placeholder, options, value, onChange, width = '1
                 onClick={() => { onChange(opt.value); setOpen(false); onBlur?.() }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  width: '100%', padding: '9px 10px', borderRadius: 'var(--r-sm)',
+                  width: '100%', padding: '9px 10px', borderRadius: 'var(--r-full)',
                   border: 'none', cursor: 'pointer', textAlign: 'left',
                   fontSize: 15, fontFamily: 'inherit',
                   background: selected ? 'rgba(var(--brand-rgb),0.08)' : 'transparent',

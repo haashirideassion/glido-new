@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { fetchSavedDrivers } from '@/lib/useSavedDrivers'
+import type { SavedDriver } from '@/lib/useSavedDrivers'
 import { useWizard } from '@/contexts/WizardContext'
 import rollImg from '@/assets/roll.png'
 import type { SlotConfig } from '@/contexts/WizardContext'
@@ -28,6 +30,7 @@ const PURPOSES = [
 
 // ─── Per-slot "done" check ────────────────────────────────────────────────────
 function isSlotDetailDone(cfg: any): boolean {
+  if (!(cfg.driverName ?? '').trim() || !(cfg.vehicleRegistration ?? '').trim()) return false
   const svc = cfg.serviceType; const lt = cfg.loadType
   const cn = (cfg.containerNumber ?? '').trim()
   const hbl = (cfg.hbl ?? '').trim()
@@ -102,10 +105,32 @@ export function Step5Documents() {
   const showChep  = sd?.palletType === 'chep'
   const showHeld  = sd?.icsStatus === 'held'
 
-  // Multi-slot: tab switcher + shared driver fields
+  // Multi-slot: tab switcher + per-slot driver fields
   if (multi) {
-    const setSlot = (slotIndex: number) => (f: string, v: string) =>
-      dispatch({ type: 'SET_SLOT_DETAIL', slotIndex, field: f, value: v })
+    const [sameDriver, setSameDriver] = useState(false)
+
+    const setSlot = (slotIndex: number) => (f: string, v: string) => {
+      const driverFields = ['driverName', 'driverPhone', 'vehicleRegistration']
+      if (sameDriver && driverFields.includes(f)) {
+        for (const cfg of state.slotConfigs) {
+          dispatch({ type: 'SET_SLOT_DETAIL', slotIndex: cfg.index, field: f, value: v })
+        }
+      } else {
+        dispatch({ type: 'SET_SLOT_DETAIL', slotIndex, field: f, value: v })
+      }
+    }
+
+    const toggleSameDriver = (on: boolean) => {
+      setSameDriver(on)
+      if (on && activeCfg5) {
+        const { driverName, driverPhone, vehicleRegistration } = activeCfg5
+        for (const cfg of state.slotConfigs) {
+          dispatch({ type: 'SET_SLOT_DETAIL', slotIndex: cfg.index, field: 'driverName',          value: driverName          ?? '' })
+          dispatch({ type: 'SET_SLOT_DETAIL', slotIndex: cfg.index, field: 'driverPhone',         value: driverPhone         ?? '' })
+          dispatch({ type: 'SET_SLOT_DETAIL', slotIndex: cfg.index, field: 'vehicleRegistration', value: vehicleRegistration ?? '' })
+        }
+      }
+    }
 
     const activeCfg5 = state.slotConfigs[activeSlot5]
 
@@ -170,15 +195,55 @@ export function Step5Documents() {
               touchPrefix={`s${activeSlot5}_`}
               slotIndex={activeCfg5.index}
             />
+            <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.07em', textTransform: 'uppercase', margin: 0 }}>Driver / Vehicle</p>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                  <button
+                    type="button"
+                    onClick={() => toggleSameDriver(!sameDriver)}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 7,
+                      padding: 0, background: 'none', border: 'none',
+                      cursor: 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    <span style={{
+                      position: 'relative', width: 28, height: 16, borderRadius: 'var(--r-full)',
+                      background: sameDriver ? 'var(--brand-color, #FC6514)' : '#D1D5DB',
+                      display: 'inline-block', flexShrink: 0, transition: 'background 0.15s',
+                    }}>
+                      <span style={{
+                        position: 'absolute', top: 2, left: sameDriver ? 14 : 2,
+                        width: 12, height: 12, borderRadius: 'var(--r-full)',
+                        background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,0.18)', transition: 'left 0.15s',
+                      }} />
+                    </span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: sameDriver ? 'var(--brand-color, #FC6514)' : '#6B7280', whiteSpace: 'nowrap' }}>
+                      Apply to all slots
+                    </span>
+                  </button>
+                  <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
+                    {sameDriver
+                      ? `Same driver for all ${state.slotCount} slots`
+                      : `Use the same driver for all ${state.slotCount} slots`}
+                  </span>
+                </div>
+              </div>
+              <DriverFields
+                state={{
+                  driverName:          activeCfg5.driverName ?? '',
+                  driverPhone:         activeCfg5.driverPhone ?? '',
+                  vehicleRegistration: activeCfg5.vehicleRegistration ?? '',
+                }}
+                set={setSlot(activeCfg5.index)}
+                touch={(f: string) => touch(`s${activeSlot5}_${f}`)}
+                touched={touched}
+              />
+            </div>
           </div>
           </div>
         )}
-
-        {/* Shared driver fields */}
-        <div style={{ marginTop: 8 }}>
-          <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 12 }}>Driver / Visitor Details</p>
-          <DriverFields state={state} set={set} touch={touch} touched={touched} />
-        </div>
       </div>
     )
   }
@@ -229,7 +294,7 @@ export function Step5Documents() {
             </FField>
           </div>
           <div style={{ marginBottom: 32 }}>
-            <button type="button" className="btn-dark" onClick={fetchLcl} disabled={state.hbl.trim().length < 4 || state.shipmentLoading}>
+            <button type="button" className="btn-primary" onClick={fetchLcl} disabled={state.hbl.trim().length < 4 || state.shipmentLoading}>
               {state.shipmentLoading ? <Spinner /> : <Icon name={ICONS.search} size={16} />}
               {state.shipmentLoading ? 'Looking up...' : 'Look Up Shipment'}
             </button>
@@ -279,7 +344,7 @@ export function Step5Documents() {
                   placeholder="e.g. CE2026100142"
                   style={{ flex: 1, textTransform: 'uppercase', letterSpacing: '0.04em' }}
                 />
-                <button type="button" className="btn-dark" onClick={fetchByEntry} disabled={state.entryNumber.trim().length < 4 || state.shipmentLoading} style={{ flexShrink: 0 }}>
+                <button type="button" className="btn-primary" onClick={fetchByEntry} disabled={state.entryNumber.trim().length < 4 || state.shipmentLoading} style={{ flexShrink: 0 }}>
                   {state.shipmentLoading ? <Spinner /> : null}
                   Look Up
                 </button>
@@ -317,7 +382,7 @@ export function Step5Documents() {
                   placeholder="e.g. MSCU1234567"
                   style={{ flex: 1, textTransform: 'uppercase', letterSpacing: '0.04em' }}
                 />
-                <button type="button" className="btn-dark" onClick={fetchFcl} disabled={state.containerNumber.trim().length < 4 || state.shipmentLoading} style={{ flexShrink: 0 }}>
+                <button type="button" className="btn-primary" onClick={fetchFcl} disabled={state.containerNumber.trim().length < 4 || state.shipmentLoading} style={{ flexShrink: 0 }}>
                   {state.shipmentLoading ? <Spinner /> : null}
                   Look Up
                 </button>
@@ -356,7 +421,7 @@ export function Step5Documents() {
                   placeholder="e.g. MSCU1234567"
                   style={{ flex: 1, textTransform: 'uppercase', letterSpacing: '0.04em' }}
                 />
-                <button type="button" className="btn-dark" onClick={fetchFcl} disabled={state.containerNumber.trim().length < 4 || state.shipmentLoading} style={{ flexShrink: 0 }}>
+                <button type="button" className="btn-primary" onClick={fetchFcl} disabled={state.containerNumber.trim().length < 4 || state.shipmentLoading} style={{ flexShrink: 0 }}>
                   {state.shipmentLoading ? <Spinner /> : null}
                   Look Up
                 </button>
@@ -482,8 +547,29 @@ function FField({ label, required, error, children }: { label: string; required?
 function DriverFields({ state, set, touch, touched }: { state: any; set: (f: any, v: string) => void; touch: (f: string) => void; touched: Record<string, boolean> }) {
   const [driverNameErr,  setDriverNameErr]  = useState('')
   const [driverPhoneErr, setDriverPhoneErr] = useState('')
+  const [savedDrivers,   setSavedDrivers]   = useState<SavedDriver[]>([])
+  useEffect(() => { fetchSavedDrivers().then(setSavedDrivers) }, [])
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 8 }}>
+      {savedDrivers.length > 0 && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <FField label="Saved Drivers">
+            <CustomSelect
+              placeholder="Select a saved driver…"
+              value=""
+              onChange={id => {
+                const d = savedDrivers.find(s => s.id === id)
+                if (!d) return
+                set('driverName', d.name)
+                set('driverPhone', d.phone)
+                set('vehicleRegistration', d.vehicle_registration)
+              }}
+              options={savedDrivers.map(d => ({ value: d.id, label: `${d.name} — ${d.vehicle_registration}` }))}
+            />
+          </FField>
+        </div>
+      )}
       <div>
         <FField label="Driver Name" required error={touched.driverName && !state.driverName.trim()}>
           <input
@@ -699,7 +785,7 @@ function SlotDetailFields({ cfg, set, touched, touch, touchPrefix, slotIndex }: 
         </FField>
       </div>
       <div style={{ marginBottom: 16 }}>
-        <button type="button" className="btn-dark" onClick={fetchSlotLcl}
+        <button type="button" className="btn-primary" onClick={fetchSlotLcl}
           disabled={hbl.trim().length < 4 || slotShipmentLoading}>
           {slotShipmentLoading ? <Spinner /> : <Icon name={ICONS.search} size={16} />}
           {slotShipmentLoading ? 'Looking up...' : 'Look Up Shipment'}
@@ -718,7 +804,7 @@ function SlotDetailFields({ cfg, set, touched, touch, touchPrefix, slotIndex }: 
               onChange={e => set('containerNumber', e.target.value.toUpperCase())}
               onBlur={() => touch(p+'cn')} placeholder="e.g. MSCU1234567"
               style={{ flex: 1, textTransform: 'uppercase', letterSpacing: '0.04em' }} />
-            <button type="button" className="btn-dark" onClick={fetchSlotFcl}
+            <button type="button" className="btn-primary" onClick={fetchSlotFcl}
               disabled={cn.trim().length < 4 || slotShipmentLoading} style={{ flexShrink: 0 }}>
               {slotShipmentLoading ? <Spinner /> : null}
               Look Up
@@ -754,7 +840,7 @@ function SlotDetailFields({ cfg, set, touched, touch, touchPrefix, slotIndex }: 
               onChange={e => set('entryNumber', e.target.value.toUpperCase())}
               onBlur={() => touch(p+'en')} placeholder="e.g. CE2026100142"
               style={{ flex: 1, textTransform: 'uppercase', letterSpacing: '0.04em' }} />
-            <button type="button" className="btn-dark" onClick={fetchSlotEntry}
+            <button type="button" className="btn-primary" onClick={fetchSlotEntry}
               disabled={en.trim().length < 4 || slotShipmentLoading} style={{ flexShrink: 0 }}>
               {slotShipmentLoading ? <Spinner /> : null}
               Look Up
@@ -780,7 +866,7 @@ function SlotDetailFields({ cfg, set, touched, touch, touchPrefix, slotIndex }: 
               onChange={e => set('containerNumber', e.target.value.toUpperCase())}
               onBlur={() => touch(p+'cn')} placeholder="e.g. MSCU1234567"
               style={{ flex: 1, textTransform: 'uppercase', letterSpacing: '0.04em' }} />
-            <button type="button" className="btn-dark" onClick={fetchSlotFcl}
+            <button type="button" className="btn-primary" onClick={fetchSlotFcl}
               disabled={cn.trim().length < 4 || slotShipmentLoading} style={{ flexShrink: 0 }}>
               {slotShipmentLoading ? <Spinner /> : null}
               Look Up

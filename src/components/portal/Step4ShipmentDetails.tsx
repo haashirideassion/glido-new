@@ -199,9 +199,11 @@ export function Step4ShipmentDetails() {
       if (!cancelled) dispatch({ type: 'SET_SLOTS', slots: [], loading: false })
       return
     }
-    const durationMin    = tenant?.slot_duration_min     ?? 60
-    const capacity       = tenant?.max_bookings_per_slot ?? 10
-    const capacityByHour = (tenant as any)?.slot_capacity_by_hour as Record<string, number> | undefined
+    const durationMin      = tenant?.slot_duration_min     ?? 60
+    const capacityByHour   = (tenant as any)?.slot_capacity_by_hour as Record<string, number> | undefined
+    const capacityByCombo  = (tenant as any)?.slot_capacity_by_combo as Record<string, number> | undefined
+    const comboKey         = `${state.serviceType ?? 'pickup'}-${state.loadType ?? 'lcl'}`
+    const capacity         = capacityByCombo?.[comboKey] ?? tenant?.max_bookings_per_slot ?? 10
     getSlotsByDate(state.selectedDate)
       .then(dbSlots => {
         if (cancelled) return
@@ -457,9 +459,11 @@ function SlotPickerForSlot({ slotIndex, tenant, tenantLoading, dates, wh, cutoff
     setSlots([])
     const dayKey = getDayKey(cfg.selectedDate)
     const dayCfg = wh?.[dayKey]
-    const durationMin    = tenant?.slot_duration_min     ?? 60
-    const capacity       = tenant?.max_bookings_per_slot ?? 10
-    const capacityByHour = (tenant as any)?.slot_capacity_by_hour as Record<string, number> | undefined
+    const durationMin      = tenant?.slot_duration_min     ?? 60
+    const capacityByHour   = (tenant as any)?.slot_capacity_by_hour as Record<string, number> | undefined
+    const capacityByCombo  = (tenant as any)?.slot_capacity_by_combo as Record<string, number> | undefined
+    const comboKey         = `${cfg.serviceType ?? 'pickup'}-${cfg.loadType ?? 'lcl'}`
+    const capacity         = capacityByCombo?.[comboKey] ?? tenant?.max_bookings_per_slot ?? 10
     if (dayCfg && !dayCfg.enabled) { setLoading(false); return }
     getSlotsByDate(cfg.selectedDate)
       .then(dbSlots => {

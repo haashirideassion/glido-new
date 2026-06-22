@@ -104,7 +104,7 @@ export function BookingSlideOver({ booking: initial, onClose, onUpdated }: Props
               {STATUS_LABEL[b.status] ?? b.status}
             </span>
           </div>
-          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 'var(--r-sm)', border: 'none', background: 'rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s' }}
+          <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 'var(--r-full)', border: 'none', background: 'rgba(0,0,0,0.05)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s' }}
             onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.10)')}
             onMouseOut={e  => (e.currentTarget.style.background = 'rgba(0,0,0,0.05)')}
           >
@@ -416,7 +416,7 @@ function ActionBtn({ color, onClick, loading, children }: { color: 'orange' | 'g
     <button
       onClick={onClick}
       disabled={loading}
-      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 15, fontWeight: 600, borderRadius: 'var(--r-sm)', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...styles[color] }}
+      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 15, fontWeight: 600, borderRadius: 'var(--r-full)', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...styles[color] }}
     >
       {children}
     </button>

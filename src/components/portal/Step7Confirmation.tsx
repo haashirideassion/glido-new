@@ -7,6 +7,7 @@ import { supabase, DEFAULT_TENANT_ID } from '@/lib/supabase'
 import { useTenantInfo } from '@/lib/useTenantInfo'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from '@/lib/toast'
+import { upsertSavedDriver } from '@/lib/useSavedDrivers'
 
 // EFT details are fetched live from tenant — see useTenantInfo() call inside the component
 
@@ -104,8 +105,8 @@ export function Step7Confirmation() {
           group_reference:   groupRef,
           serviceType: cfg.serviceType!, loadType: cfg.loadType!,
           slotDate, slotStartTime, slotEndTime,
-          driverName: state.driverName || state.guestName,
-          driverPhone: state.driverPhone || state.guestPhone || undefined,
+          driverName: (multi ? cfg.driverName : state.driverName) || state.guestName,
+          driverPhone: (multi ? cfg.driverPhone : state.driverPhone) || state.guestPhone || undefined,
           guestName: state.guestName || undefined,
           // Only save guestEmail for unauthenticated bookings
           ...(!user && state.guestEmail ? { guestEmail: state.guestEmail } : {}),
@@ -138,7 +139,7 @@ export function Step7Confirmation() {
           purpose:              purpose             || undefined,
           consolidator:         consolidator        || undefined,
           booking_reference:    bookingReference    || undefined,
-          vehicle_registration: state.vehicleRegistration || undefined,
+          vehicle_registration: (multi ? cfg.vehicleRegistration : state.vehicleRegistration) || undefined,
           booking_group_id:     bookingGroupId,
           slot_index:           cfg.index,
         }
@@ -161,7 +162,8 @@ export function Step7Confirmation() {
 
         console.log('[Submit Debug] booking result:', booking)
         console.log('[Submit Debug] booking.referenceNumber:', booking?.referenceNumber)
-        refs.push({ ref: booking.referenceNumber, slotLabel, date: slotDate })
+        const resolvedRef = booking?.referenceNumber || slotRef
+        refs.push({ ref: resolvedRef, slotLabel, date: slotDate })
         console.log('[Submit Debug] refs so far:', refs)
 
         // Upsert time_slots row and increment confirmed count — best-effort
@@ -206,9 +208,17 @@ export function Step7Confirmation() {
         }
       }
 
+      // Save drivers for future autofill — best-effort, non-blocking
+      for (const cfg of state.slotConfigs) {
+        const name    = (cfg.driverName?.trim() || state.driverName?.trim()) ?? ''
+        const phone   = cfg.driverPhone?.trim() || state.driverPhone?.trim() || ''
+        const vehicle = cfg.vehicleRegistration?.trim() || state.vehicleRegistration?.trim() || ''
+        if (name && vehicle) await upsertSavedDriver({ name, phone, vehicle_registration: vehicle })
+      }
+
       // Deduplicate by ref string, preserving object shape
       const _seenRefs = new Set<string>()
-      const uniqueRefs = refs.filter(r => { if (_seenRefs.has(r.ref)) return false; _seenRefs.add(r.ref); return true })
+      const uniqueRefs = refs.filter(r => !!r.ref).filter(r => { if (_seenRefs.has(r.ref)) return false; _seenRefs.add(r.ref); return true })
       console.log('[Submit Debug] final refs:', uniqueRefs)
       dispatch({ type: 'SET', field: 'confirmationRef',  value: uniqueRefs[0]?.ref ?? null })
       dispatch({ type: 'SET', field: 'confirmationRefs', value: uniqueRefs })
@@ -432,7 +442,7 @@ function BookingSummaryAccordion({ state, charges, user }: { state: ReturnType<t
       {/* Guest / driver — always visible */}
       <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 8 }}>
         {[
-          [user ? 'Name' : 'Guest Name', state.guestName],
+          [user ? 'Name' : 'Guest Name', state.guestName !== state.guestEmail ? state.guestName : ''],
           ['Email',         state.guestEmail],
           ['Guest Phone',   state.guestPhone],
           ['Company',       state.companyName],
@@ -491,6 +501,9 @@ function BookingSummaryAccordion({ state, charges, user }: { state: ReturnType<t
                   {isDropoff          && <SummaryRow label="Purpose"           value={cfg.purpose        || '—'} />}
                   {isDropoff && isLCL && <SummaryRow label="Booking Reference" value={cfg.bookingReference || '—'} />}
                   {isDropoff && isLCL && <SummaryRow label="Consolidator"      value={cfg.consolidator   || '—'} />}
+                  {cfg.driverName          && <SummaryRow label="Driver Name"   value={cfg.driverName} />}
+                  {cfg.driverPhone         && <SummaryRow label="Driver Phone"  value={cfg.driverPhone} />}
+                  {cfg.vehicleRegistration && <SummaryRow label="Vehicle Rego"  value={cfg.vehicleRegistration} mono />}
                 </div>
                 {/* Per-slot fee */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 14, paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.06)', fontSize: 15, color: 'var(--text-mid)' }}>

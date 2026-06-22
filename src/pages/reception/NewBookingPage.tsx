@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { loadLogoDataUrl, glidoLogoPng } from '@/lib/pdfBranding'
 import { usePageTitle } from '@/lib/usePageTitle'
 import QRCode from 'qrcode'
 import { Link } from 'react-router-dom'
@@ -60,15 +61,6 @@ function ConfirmedScreen() {
     navigator.clipboard.writeText(ref).catch(() => {})
   }
 
-  // ── Download QR as PNG ───────────────────────────────────────────────────────
-  const downloadQr = () => {
-    if (!qrUrl) return
-    const a = document.createElement('a')
-    a.href = qrUrl
-    a.download = `booking-${ref}.png`
-    a.click()
-  }
-
   // ── Export full booking summary as PDF ───────────────────────────────────────
   const exportPdf = async () => {
     const { jsPDF } = await import('jspdf')
@@ -80,11 +72,24 @@ function ConfirmedScreen() {
     const tenantName = tenant?.name || 'Container Freight Station'
 
     // ── Header ────────────────────────────────────────────────────────────────
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(120, 113, 108)
-    doc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' })
-    y += 8
+    const logoSrc = tenant?.logoUrl
+    if (logoSrc) {
+      const logo = await loadLogoDataUrl(logoSrc)
+      if (logo) {
+        const maxW = 40, maxH = 16
+        const ratio = Math.min(maxW / logo.w, maxH / logo.h)
+        const lw = logo.w * ratio, lh = logo.h * ratio
+        const fmt = logo.dataUrl.includes('image/png') ? 'PNG' : 'JPEG'
+        doc.addImage(logo.dataUrl, fmt, (pw - lw) / 2, y, lw, lh)
+        y += lh + 6
+      } else {
+        doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 113, 108)
+        doc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' }); y += 8
+      }
+    } else {
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 113, 108)
+      doc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' }); y += 8
+    }
 
     doc.setFontSize(20)
     doc.setFont('helvetica', 'bold')
@@ -174,6 +179,11 @@ function ConfirmedScreen() {
     }
 
     // ── Footer ────────────────────────────────────────────────────────────────
+    const glidoPng = await glidoLogoPng()
+    if (glidoPng) {
+      const gw = 22, gh = gw * (62 / 320)
+      doc.addImage(glidoPng, 'PNG', (pw - gw) / 2, ph - 26, gw, gh)
+    }
     doc.setFontSize(8)
     doc.setFont('helvetica', 'italic')
     doc.setTextColor(156, 163, 175)
@@ -211,14 +221,6 @@ function ConfirmedScreen() {
               const url = qrUrls[r] ?? ''
               const cfg = state.slotConfigs[i]
 
-              const downloadSlotQr = () => {
-                if (!url) return
-                const a = document.createElement('a')
-                a.href = url
-                a.download = `booking-${r}.png`
-                a.click()
-              }
-
               const exportSlotPdf = async () => {
                 const { jsPDF } = await import('jspdf')
                 const pdoc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
@@ -227,8 +229,24 @@ function ConfirmedScreen() {
                 let y = 18
                 const tenantName = tenant?.name || 'Container Freight Station'
 
-                pdoc.setFontSize(9); pdoc.setFont('helvetica', 'normal'); pdoc.setTextColor(120, 113, 108)
-                pdoc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' }); y += 8
+                const logoSrc = tenant?.logoUrl
+                if (logoSrc) {
+                  const logo = await loadLogoDataUrl(logoSrc)
+                  if (logo) {
+                    const maxW = 40, maxH = 16
+                    const ratio = Math.min(maxW / logo.w, maxH / logo.h)
+                    const lw = logo.w * ratio, lh = logo.h * ratio
+                    const fmt = logo.dataUrl.includes('image/png') ? 'PNG' : 'JPEG'
+                    pdoc.addImage(logo.dataUrl, fmt, (pw - lw) / 2, y, lw, lh)
+                    y += lh + 6
+                  } else {
+                    pdoc.setFontSize(9); pdoc.setFont('helvetica', 'normal'); pdoc.setTextColor(120, 113, 108)
+                    pdoc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' }); y += 8
+                  }
+                } else {
+                  pdoc.setFontSize(9); pdoc.setFont('helvetica', 'normal'); pdoc.setTextColor(120, 113, 108)
+                  pdoc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' }); y += 8
+                }
 
                 pdoc.setFontSize(14); pdoc.setFont('helvetica', 'bold'); pdoc.setTextColor(28, 25, 23)
                 pdoc.text(`Booking Confirmation — Slot ${i + 1} of ${refs.length}`, pw / 2, y, { align: 'center' }); y += 9
@@ -283,6 +301,11 @@ function ConfirmedScreen() {
                   }
                 }
 
+                const glidoPng = await glidoLogoPng()
+                if (glidoPng) {
+                  const gw = 22, gh = gw * (62 / 320)
+                  pdoc.addImage(glidoPng, 'PNG', (pw - gw) / 2, ph - 26, gw, gh)
+                }
                 pdoc.setFontSize(8); pdoc.setFont('helvetica', 'italic'); pdoc.setTextColor(156, 163, 175)
                 pdoc.text('Present this QR code at the CFS gate for check-in', pw / 2, ph - 14, { align: 'center' })
                 pdoc.text(`Generated ${new Date().toLocaleDateString('en-AU')}`, pw / 2, ph - 9, { align: 'center' })
@@ -314,17 +337,7 @@ function ConfirmedScreen() {
                   </p>
 
                   {/* Per-slot download actions */}
-                  <div style={{ display: 'flex', flexDirection: 'row', gap: 8, width: '100%', marginTop: 14 }}>
-                    <button
-                      onClick={downloadSlotQr}
-                      disabled={!url}
-                      style={{ flex: 1, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '0 10px', fontSize: 13, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 'var(--r-sm)', cursor: url ? 'pointer' : 'not-allowed', opacity: url ? 1 : 0.45, whiteSpace: 'nowrap', transition: 'all 0.13s' }}
-                      onMouseOver={e => { if (url) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.28)' }}
-                      onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.14)' }}
-                    >
-                      <Icon name={ICONS.download} size={12} />
-                      Download QR
-                    </button>
+                  <div style={{ display: 'flex', width: '100%', marginTop: 14 }}>
                     <button
                       onClick={exportSlotPdf}
                       style={{ flex: 1, height: 44, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '0 10px', fontSize: 13, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 'var(--r-sm)', cursor: 'pointer', boxShadow: '0 2px 6px rgba(var(--brand-rgb),0.30)', whiteSpace: 'nowrap', transition: 'all 0.13s' }}
@@ -367,17 +380,7 @@ function ConfirmedScreen() {
             <p style={{ fontSize: 14, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: '#1C1917', marginTop: 4 }}>{ref}</p>
 
             {/* Download actions */}
-            <div style={{ display: 'flex', flexDirection: 'row', gap: 12, width: '100%', marginTop: 18 }}>
-              <button
-                onClick={downloadQr}
-                disabled={!qrUrl}
-                style={{ flex: 1, height: 48, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '0 14px', fontSize: 14, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 'var(--r-sm)', cursor: qrUrl ? 'pointer' : 'not-allowed', opacity: qrUrl ? 1 : 0.45, whiteSpace: 'nowrap', transition: 'all 0.13s' }}
-                onMouseOver={e => { if (qrUrl) e.currentTarget.style.borderColor = 'rgba(0,0,0,0.28)' }}
-                onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.14)' }}
-              >
-                <Icon name={ICONS.download} size={13} />
-                Download QR
-              </button>
+            <div style={{ display: 'flex', width: '100%', marginTop: 18 }}>
               <button
                 onClick={exportPdf}
                 style={{ flex: 1, height: 48, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '0 14px', fontSize: 14, fontWeight: 600, color: 'var(--brand-text)', background: 'var(--brand-color)', border: 'none', borderRadius: 'var(--r-sm)', cursor: 'pointer', boxShadow: '0 2px 6px rgba(var(--brand-rgb),0.30)', whiteSpace: 'nowrap', transition: 'all 0.13s' }}

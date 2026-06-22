@@ -6,6 +6,7 @@ import { WizardProvider, useWizard, calcCharges } from '@/contexts/WizardContext
 import BookingWizard from '@/components/portal/BookingWizard'
 import { useTenantInfo } from '@/lib/useTenantInfo'
 import { Icon, ICONS } from '@/lib/Icon'
+import { loadLogoDataUrl, glidoLogoPng } from '@/lib/pdfBranding'
 
 // EFT details fetched live — see useTenantInfo() inside ConfirmedScreen
 
@@ -125,8 +126,24 @@ function ConfirmedScreen() {
     let y = 18
 
     // ── Header ────────────────────────────────────────────────────────────────
-    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 113, 108)
-    doc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' }); y += 8
+    const logoSrc = tenant?.logoUrl
+    let placedLogo = false
+    if (logoSrc) {
+      const logo = await loadLogoDataUrl(logoSrc)
+      if (logo) {
+        const maxW = 40, maxH = 16
+        const ratio = Math.min(maxW / logo.w, maxH / logo.h)
+        const lw = logo.w * ratio, lh = logo.h * ratio
+        const fmt = logo.dataUrl.includes('image/png') ? 'PNG' : 'JPEG'
+        doc.addImage(logo.dataUrl, fmt, (pw - lw) / 2, y, lw, lh)
+        y += lh + 6
+        placedLogo = true
+      }
+    }
+    if (!placedLogo) {
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 113, 108)
+      doc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' }); y += 8
+    }
 
     doc.setFontSize(20); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 25, 23)
     doc.text('Booking Confirmation', pw / 2, y, { align: 'center' }); y += 9
@@ -196,6 +213,11 @@ function ConfirmedScreen() {
     }
 
     // ── Footer ────────────────────────────────────────────────────────────────
+    const glidoPng = await glidoLogoPng()
+    if (glidoPng) {
+      const gw = 22, gh = gw * (62 / 320)
+      doc.addImage(glidoPng, 'PNG', (pw - gw) / 2, ph - 22, gw, gh)
+    }
     doc.setFontSize(8); doc.setFont('helvetica', 'italic'); doc.setTextColor(156, 163, 175)
     doc.text(`${tenantName} · Generated ${new Date().toLocaleDateString('en-AU')}`, pw / 2, ph - 9, { align: 'center' })
 
@@ -286,8 +308,24 @@ function ConfirmedScreen() {
                 }
 
                 let y = 18
-                pdoc.setFontSize(9); pdoc.setFont('helvetica', 'normal'); pdoc.setTextColor(120, 113, 108)
-                pdoc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' }); y += 8
+                const logoSrc = tenant?.logoUrl
+                let placedLogo = false
+                if (logoSrc) {
+                  const logo = await loadLogoDataUrl(logoSrc)
+                  if (logo) {
+                    const maxW = 40, maxH = 16
+                    const ratio = Math.min(maxW / logo.w, maxH / logo.h)
+                    const lw = logo.w * ratio, lh = logo.h * ratio
+                    const fmt = logo.dataUrl.includes('image/png') ? 'PNG' : 'JPEG'
+                    pdoc.addImage(logo.dataUrl, fmt, (pw - lw) / 2, y, lw, lh)
+                    y += lh + 6
+                    placedLogo = true
+                  }
+                }
+                if (!placedLogo) {
+                  pdoc.setFontSize(9); pdoc.setFont('helvetica', 'normal'); pdoc.setTextColor(120, 113, 108)
+                  pdoc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' }); y += 8
+                }
 
                 pdoc.setFontSize(14); pdoc.setFont('helvetica', 'bold'); pdoc.setTextColor(28, 25, 23)
                 pdoc.text(`Booking Confirmation — Slot ${i + 1} of ${n}`, pw / 2, y, { align: 'center' }); y += 9
@@ -301,13 +339,16 @@ function ConfirmedScreen() {
 
                 // Contact & driver
                 y = sec('Contact & Driver', y)
+                const slotDriverName  = (multi ? cfg?.driverName  : state.driverName)  || state.guestName  || ''
+                const slotDriverPhone = (multi ? cfg?.driverPhone : state.driverPhone) || state.guestPhone || ''
+                const slotVehicleRego = (multi ? cfg?.vehicleRegistration : state.vehicleRegistration) || ''
                 const contactRows: [string,string][] = [
-                  ...(state.guestName           ? [['Guest Name',   state.guestName]           as [string,string]] : []),
-                  ...(state.guestEmail          ? [['Guest Email',  state.guestEmail]          as [string,string]] : []),
-                  ...(state.guestPhone          ? [['Guest Phone',  state.guestPhone]          as [string,string]] : []),
-                  ...(state.driverName          ? [['Driver Name',  state.driverName]          as [string,string]] : []),
-                  ...(state.driverPhone         ? [['Driver Phone', state.driverPhone]         as [string,string]] : []),
-                  ...(state.vehicleRegistration ? [['Vehicle Rego', state.vehicleRegistration] as [string,string]] : []),
+                  ...(state.guestName   ? [['Guest Name',   state.guestName]   as [string,string]] : []),
+                  ...(state.guestEmail  ? [['Guest Email',  state.guestEmail]  as [string,string]] : []),
+                  ...(state.guestPhone  ? [['Guest Phone',  state.guestPhone]  as [string,string]] : []),
+                  ...(slotDriverName    ? [['Driver Name',  slotDriverName]    as [string,string]] : []),
+                  ...(slotDriverPhone   ? [['Driver Phone', slotDriverPhone]   as [string,string]] : []),
+                  ...(slotVehicleRego   ? [['Vehicle Rego', slotVehicleRego]   as [string,string]] : []),
                 ]
                 for (const [label, val] of contactRows) { pRow(label, val, y); y += 5.5 }
 
@@ -346,6 +387,11 @@ function ConfirmedScreen() {
                   for (const [label, val] of chargeRows) { pRow(label, val, y); y += 5.5 }
                 }
 
+                const glidoPng = await glidoLogoPng()
+                if (glidoPng) {
+                  const gw = 22, gh = gw * (62 / 320)
+                  pdoc.addImage(glidoPng, 'PNG', (pw - gw) / 2, ph - 22, gw, gh)
+                }
                 pdoc.setFontSize(8); pdoc.setFont('helvetica', 'italic'); pdoc.setTextColor(156, 163, 175)
                 pdoc.text(`${tenantName} · Generated ${new Date().toLocaleDateString('en-AU')}`, pw / 2, ph - 9, { align: 'center' })
                 pdoc.save(`booking-${r}.pdf`)

@@ -369,5 +369,11 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
     console.error('[createBooking] Supabase insert error:', error.message, error.details, error.hint)
     throw error
   }
+  if (!data) {
+    // INSERT succeeded but SELECT returned nothing (likely RLS blocking the read).
+    // Return a minimal shell using the pre-generated ref so the confirmation screen
+    // can still show the correct reference number.
+    return { id: '', referenceNumber: (input as any).reference_number, status: 'scheduled' } as any
+  }
   return rowToBooking(data)
 }

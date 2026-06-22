@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { usePageTitle } from '@/lib/usePageTitle'
-import { Link, useNavigate, useSearchParams, useOutletContext } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { getBookings, getBookingsByDateRange, cancelBooking } from '@/lib/db/bookings'
 import { supabase } from '@/lib/supabase'
 import { Icon, ICONS } from '@/lib/Icon'
@@ -60,7 +60,7 @@ function FilterSelect({ placeholder, options, value, onChange, block }: {
         onClick={handleOpen}
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
-          height: block ? 38 : 36, fontSize: 15, padding: '0 13px', borderRadius: 'var(--r-sm)',
+          height: block ? 38 : 36, fontSize: 15, padding: '0 13px', borderRadius: 'var(--r-full)',
           cursor: 'pointer', whiteSpace: 'nowrap', outline: 'none',
           transition: 'all 0.12s ease', boxSizing: 'border-box',
           width: block ? '100%' : undefined, justifyContent: block ? 'space-between' : undefined,
@@ -96,7 +96,7 @@ function FilterSelect({ placeholder, options, value, onChange, block }: {
                 onClick={() => { onChange(opt.value); setOpen(false) }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  width: '100%', padding: '8px 10px', borderRadius: 'var(--r-sm)',
+                  width: '100%', padding: '8px 10px', borderRadius: 'var(--r-full)',
                   border: 'none', cursor: 'pointer', textAlign: 'left',
                   fontSize: 15, fontFamily: 'inherit',
                   background: selected ? 'rgba(var(--brand-rgb),0.08)' : 'transparent',
@@ -314,7 +314,7 @@ export default function BookingsPage() {
     hoverTimeout.current = setTimeout(() => setOpenPopover(null), 300)
   }
   const navigate = useNavigate()
-  const { setSidebarExtra } = useOutletContext<{ setSidebarExtra: (node: React.ReactNode) => void }>()
+
 
   const confirmCancel = async () => {
     if (!cancelTarget) return
@@ -437,65 +437,6 @@ export default function BookingsPage() {
 
   const hasFilters = !!(statusFilter || serviceFilter || search || preset !== '30d')
 
-  useEffect(() => {
-    setSidebarExtra(
-      <div style={{ padding: 0 }}>
-        <div style={{ background: '#FFFFFF', borderRadius: 'var(--r-xl)', border: '1px solid rgba(0,0,0,0.08)', padding: 18, display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-
-          {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: 0 }}>Filters</p>
-            {hasFilters && (
-              <button onClick={() => { setStatusFilter(''); setServiceFilter(''); setDateFrom(daysAgo(30)); setDateTo(todaySydney()); setPreset('30d') }}
-                style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', transition: 'color 0.15s' }}
-                onMouseOver={e => (e.currentTarget.style.color = 'var(--brand-color)')}
-                onMouseOut={e  => (e.currentTarget.style.color = 'var(--text-tertiary)')}
-              >Clear</button>
-            )}
-          </div>
-
-          {/* Status + Service — custom dropdowns, full width */}
-          <FilterSelect block placeholder="All Statuses" value={statusFilter} onChange={setStatusFilter}
-            options={[{ value: 'scheduled', label: 'Scheduled' }, { value: 'completed', label: 'Completed' }, { value: 'cancelled', label: 'Cancelled' }]} />
-          <FilterSelect block placeholder="All Services" value={serviceFilter} onChange={setServiceFilter}
-            options={[{ value: 'pickup', label: 'Pick Up' }, { value: 'dropoff', label: 'Drop Off' }]} />
-
-          {/* Preset segmented control */}
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Range</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {(['today', '7d', '30d', 'all'] as const).map(p => {
-                const labels: Record<string, string> = { today: 'Today', '7d': '7 Days', '30d': '30 Days', all: 'All Time' }
-                const active = preset === p
-                return (
-                  <button key={p} type="button" onClick={() => applyPreset(p)}
-                    style={{ height: 36, fontSize: 13, fontWeight: active ? 700 : 500, borderRadius: 'var(--r-sm)', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', fontFamily: 'inherit',
-                      background: active ? 'rgba(var(--brand-rgb),0.10)' : '#F7F6F5',
-                      border: `1px solid ${active ? 'rgba(var(--brand-rgb),0.28)' : 'rgba(0,0,0,0.06)'}`,
-                      color: active ? 'var(--brand-color)' : 'var(--text-secondary)' }}>
-                    {labels[p]}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Date range */}
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Custom Dates</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPreset('all') }}
-                style={{ width: '100%', height: 38, padding: '0 10px', fontSize: 13, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
-              <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPreset('all') }}
-                style={{ width: '100%', height: 38, padding: '0 10px', fontSize: 13, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
-            </div>
-          </div>
-
-        </div>
-      </div>
-    )
-    return () => setSidebarExtra(null)
-  }, [statusFilter, serviceFilter, preset, dateFrom, dateTo, hasFilters, setSidebarExtra])
 
   return (
     <>
@@ -524,14 +465,15 @@ export default function BookingsPage() {
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search by reference, driver name or HBL…"
-            size={40}
-            style={{ height: 40, padding: '0 14px 0 38px', fontSize: 15, color: '#1C1917', background: '#fff', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s, box-shadow 0.15s', fontFamily: 'inherit' }}
+            size={46}
+            style={{ height: 40, padding: '0 14px 0 38px', fontSize: 15, color: '#1C1917', background: '#fff', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s, box-shadow 0.15s', fontFamily: 'inherit' }}
             onFocus={e => { e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(var(--brand-rgb),0.10)' }}
             onBlur={e  => { e.target.style.borderColor = 'rgba(0,0,0,0.12)';            e.target.style.boxShadow = 'none' }}
           />
         </div>
+        <div style={{ flex: 1 }} />
         <button onClick={exportCsv}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 40, padding: '0 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', cursor: 'pointer', transition: 'background 0.12s', flexShrink: 0, fontFamily: 'inherit' }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 40, padding: '0 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', cursor: 'pointer', transition: 'background 0.12s', flexShrink: 0, fontFamily: 'inherit' }}
           onMouseOver={e => { e.currentTarget.style.background = '#F7F6F5' }}
           onMouseOut={e  => { e.currentTarget.style.background = '#fff' }}
         >
@@ -541,6 +483,37 @@ export default function BookingsPage() {
           <span style={{ width: 7, height: 7, borderRadius: 'var(--r-full)', background: liveColor, display: 'inline-block', transition: 'background 0.4s' }} />
           Live
         </span>
+      </div>
+
+      {/* ── Filter bar ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+        <FilterSelect placeholder="All Statuses" value={statusFilter} onChange={setStatusFilter}
+          options={[{ value: 'scheduled', label: 'Scheduled' }, { value: 'completed', label: 'Completed' }, { value: 'cancelled', label: 'Cancelled' }]} />
+        <FilterSelect placeholder="All Services" value={serviceFilter} onChange={setServiceFilter}
+          options={[{ value: 'pickup', label: 'Pick Up' }, { value: 'dropoff', label: 'Drop Off' }]} />
+        {(['today', '7d', '30d', 'all'] as const).map(p => {
+          const labels: Record<string, string> = { today: 'Today', '7d': '7 Days', '30d': '30 Days', all: 'All Time' }
+          const active = preset === p
+          return (
+            <button key={p} type="button" onClick={() => applyPreset(p)}
+              style={{ height: 40, padding: '0 14px', fontSize: 14, fontWeight: active ? 700 : 500, borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                background: active ? 'rgba(var(--brand-rgb),0.10)' : '#F7F6F5',
+                border: `1px solid ${active ? 'rgba(var(--brand-rgb),0.28)' : 'rgba(0,0,0,0.08)'}`,
+                color: active ? 'var(--brand-color)' : 'var(--text-secondary)' }}>
+              {labels[p]}
+            </button>
+          )
+        })}
+        <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPreset('all') }}
+          style={{ height: 40, padding: '0 10px', fontSize: 14, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', outline: 'none', fontFamily: 'inherit' }} />
+        <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPreset('all') }}
+          style={{ height: 40, padding: '0 10px', fontSize: 14, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', outline: 'none', fontFamily: 'inherit' }} />
+        {hasFilters && (
+          <button onClick={() => { setStatusFilter(''); setServiceFilter(''); setDateFrom(daysAgo(30)); setDateTo(todaySydney()); setPreset('30d') }}
+            style={{ height: 40, padding: '0 14px', fontSize: 14, fontWeight: 600, color: 'var(--text-tertiary)', background: 'none', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            Clear
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -657,7 +630,7 @@ export default function BookingsPage() {
                                           onClick={e => { e.stopPropagation(); navigate(navTo) }}
                                           onMouseOver={e => (e.currentTarget.style.background = '#F9FAFB')}
                                           onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
-                                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, cursor: 'pointer', padding: '4px 6px', borderRadius: 'var(--r-sm)', transition: 'background 0.1s', background: 'transparent' }}
+                                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, cursor: 'pointer', padding: '4px 6px', borderRadius: 'var(--r-full)', transition: 'background 0.1s', background: 'transparent' }}
                                         >
                                           <div style={{ minWidth: 0, flex: 1 }}>
                                             <span style={{ fontSize: 14, fontFamily: 'ui-monospace,monospace', color: '#44403C', fontWeight: 600 }}>{slot.referenceNumber}</span>
@@ -728,7 +701,7 @@ export default function BookingsPage() {
                   <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    style={{ height: 32, padding: '0 12px', fontSize: 14, fontWeight: 500, borderRadius: 'var(--r-sm)', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', color: page === 1 ? '#C7C3BF' : '#1C1917', cursor: page === 1 ? 'default' : 'pointer' }}
+                    style={{ height: 32, padding: '0 12px', fontSize: 14, fontWeight: 500, borderRadius: 'var(--r-full)', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', color: page === 1 ? '#C7C3BF' : '#1C1917', cursor: page === 1 ? 'default' : 'pointer' }}
                   >← Prev</button>
                   {Array.from({ length: totalPages }, (_, i) => i + 1)
                     .filter(n => n === 1 || n === totalPages || Math.abs(n - page) <= 1)
@@ -741,14 +714,14 @@ export default function BookingsPage() {
                       <span key={`ellipsis-${i}`} style={{ height: 32, padding: '0 8px', display: 'inline-flex', alignItems: 'center', fontSize: 14, color: 'var(--text-tertiary)' }}>…</span>
                     ) : (
                       <button key={n} onClick={() => setPage(n as number)}
-                        style={{ height: 32, minWidth: 32, padding: '0 10px', fontSize: 14, fontWeight: n === page ? 700 : 500, borderRadius: 'var(--r-sm)', border: '1px solid rgba(0,0,0,0.12)', background: n === page ? 'var(--brand-color)' : '#fff', color: n === page ? 'var(--brand-text)' : '#1C1917', cursor: 'pointer' }}
+                        style={{ height: 32, minWidth: 32, padding: '0 10px', fontSize: 14, fontWeight: n === page ? 700 : 500, borderRadius: 'var(--r-full)', border: '1px solid rgba(0,0,0,0.12)', background: n === page ? 'var(--brand-color)' : '#fff', color: n === page ? 'var(--brand-text)' : '#1C1917', cursor: 'pointer' }}
                       >{n}</button>
                     ))
                   }
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    style={{ height: 32, padding: '0 12px', fontSize: 14, fontWeight: 500, borderRadius: 'var(--r-sm)', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', color: page === totalPages ? '#C7C3BF' : '#1C1917', cursor: page === totalPages ? 'default' : 'pointer' }}
+                    style={{ height: 32, padding: '0 12px', fontSize: 14, fontWeight: 500, borderRadius: 'var(--r-full)', border: '1px solid rgba(0,0,0,0.12)', background: '#fff', color: page === totalPages ? '#C7C3BF' : '#1C1917', cursor: page === totalPages ? 'default' : 'pointer' }}
                   >Next →</button>
                 </div>
               </div>
@@ -774,7 +747,7 @@ export default function BookingsPage() {
             <button
               type="button"
               onClick={() => setCancelTarget(null)}
-              style={{ padding: '9px 18px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ padding: '9px 18px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               Keep Booking
             </button>
@@ -782,7 +755,7 @@ export default function BookingsPage() {
               type="button"
               onClick={confirmCancel}
               disabled={cancelling}
-              style={{ padding: '9px 18px', fontSize: 15, fontWeight: 600, color: '#fff', background: cancelling ? '#FCA5A5' : '#DC2626', border: 'none', borderRadius: 'var(--r-sm)', cursor: cancelling ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.13s' }}
+              style={{ padding: '9px 18px', fontSize: 15, fontWeight: 600, color: '#fff', background: cancelling ? '#FCA5A5' : '#DC2626', border: 'none', borderRadius: 'var(--r-full)', cursor: cancelling ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.13s' }}
             >
               {cancelling ? 'Cancelling…' : 'Cancel Booking'}
             </button>

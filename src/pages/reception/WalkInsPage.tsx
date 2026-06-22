@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { ReactNode } from 'react'
-import { useNavigate, useOutletContext } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { CustomSelect } from '@/components/ui/CustomSelect'
 import { usePageTitle } from '@/lib/usePageTitle'
 import { Icon, ICONS } from '@/lib/Icon'
@@ -131,7 +130,6 @@ export default function WalkInsPage() {
     setDateTo(to)
   }
 
-  const { setSidebarExtra } = useOutletContext<{ setSidebarExtra: (n: ReactNode) => void }>()
   const hasFilters = !!(typeFilter || search || preset !== 'today')
   const clearAll = () => { setTypeFilter(''); setSearch(''); applyPreset('today') }
 
@@ -231,58 +229,6 @@ export default function WalkInsPage() {
     { key: 'completed', label: 'Completed',  sub: 'Processed bookings', icon: ICONS.bookings,  iconBg: 'rgba(107,114,128,0.10)', iconFg: '#6B7280', val: kpi.completed },
   ]
 
-  // ── Sidebar filter card ───────────────────────────────────────────────────────
-  useEffect(() => {
-    setSidebarExtra(
-      <div style={{ width: 176 }}>
-        <div style={{ background: '#FFFFFF', borderRadius: 'var(--r-xl)', border: '1px solid rgba(0,0,0,0.08)', padding: 18, display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: 0 }}>Filters</p>
-            {hasFilters && (
-              <button onClick={clearAll} style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', transition: 'color 0.15s' }}
-                onMouseOver={e => (e.currentTarget.style.color = 'var(--brand-color)')}
-                onMouseOut={e  => (e.currentTarget.style.color = 'var(--text-tertiary)')}
-              >Clear</button>
-            )}
-          </div>
-
-          <CustomSelect placeholder="All Types" value={typeFilter} onChange={setTypeFilter}
-            options={[{ value: 'walkin', label: 'Walk-in Only' }, { value: 'booking', label: 'Booking Only' }]} />
-
-          {/* Range presets */}
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Range</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {PRESETS.map(p => {
-                const active = preset === p.id
-                return (
-                  <button key={p.id} type="button" onClick={() => applyPreset(p.id)}
-                    style={{ height: 36, fontSize: 13, fontWeight: active ? 700 : 500, borderRadius: 'var(--r-sm)', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', fontFamily: 'inherit',
-                      background: active ? 'rgba(var(--brand-rgb),0.10)' : '#F7F6F5',
-                      border: `1px solid ${active ? 'rgba(var(--brand-rgb),0.28)' : 'rgba(0,0,0,0.06)'}`,
-                      color: active ? 'var(--brand-color)' : 'var(--text-secondary)' }}>
-                    {p.label}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Custom dates */}
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Custom Dates</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPreset('all') }}
-                style={{ width: '100%', height: 38, padding: '0 10px', fontSize: 13, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
-              <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPreset('all') }}
-                style={{ width: '100%', height: 38, padding: '0 10px', fontSize: 13, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-    return () => setSidebarExtra(null)
-  }, [typeFilter, search, preset, dateFrom, dateTo, hasFilters, setSidebarExtra])
 
   return (
     <>
@@ -322,18 +268,47 @@ export default function WalkInsPage() {
             type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search name, phone, ref…"
             size={32}
-            style={{ height: 40, padding: '0 14px 0 38px', fontSize: 15, color: '#1C1917', background: '#fff', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s, box-shadow 0.15s', fontFamily: 'inherit' }}
+            style={{ height: 40, padding: '0 14px 0 38px', fontSize: 15, color: '#1C1917', background: '#fff', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s, box-shadow 0.15s', fontFamily: 'inherit' }}
             onFocus={e => { e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)'; e.target.style.boxShadow = '0 0 0 3px rgba(var(--brand-rgb),0.10)' }}
             onBlur={e  => { e.target.style.borderColor = 'rgba(0,0,0,0.12)';            e.target.style.boxShadow = 'none' }}
           />
         </div>
+        <div style={{ flex: 1 }} />
         <button onClick={exportCsv}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 40, padding: '0 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', cursor: 'pointer', transition: 'background 0.12s', flexShrink: 0, fontFamily: 'inherit' }}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 40, padding: '0 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', cursor: 'pointer', transition: 'background 0.12s', flexShrink: 0, fontFamily: 'inherit' }}
           onMouseOver={e => { e.currentTarget.style.background = '#F7F6F5' }}
           onMouseOut={e  => { e.currentTarget.style.background = '#fff' }}
         >
           <Icon name={ICONS.download} size={15} /> Export CSV
         </button>
+      </div>
+
+      {/* Filter bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+        <CustomSelect placeholder="All Types" value={typeFilter} onChange={setTypeFilter} width={160}
+          options={[{ value: 'walkin', label: 'Walk-in Only' }, { value: 'booking', label: 'Booking Only' }]} />
+        {PRESETS.map(p => {
+          const active = preset === p.id
+          return (
+            <button key={p.id} type="button" onClick={() => applyPreset(p.id)}
+              style={{ height: 40, padding: '0 14px', fontSize: 14, fontWeight: active ? 700 : 500, borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                background: active ? 'rgba(var(--brand-rgb),0.10)' : '#F7F6F5',
+                border: `1px solid ${active ? 'rgba(var(--brand-rgb),0.28)' : 'rgba(0,0,0,0.08)'}`,
+                color: active ? 'var(--brand-color)' : 'var(--text-secondary)' }}>
+              {p.label}
+            </button>
+          )
+        })}
+        <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPreset('all') }}
+          style={{ height: 40, padding: '0 10px', fontSize: 14, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', outline: 'none', fontFamily: 'inherit' }} />
+        <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPreset('all') }}
+          style={{ height: 40, padding: '0 10px', fontSize: 14, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', outline: 'none', fontFamily: 'inherit' }} />
+        {hasFilters && (
+          <button onClick={clearAll}
+            style={{ height: 40, padding: '0 14px', fontSize: 14, fontWeight: 600, color: 'var(--text-tertiary)', background: 'none', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            Clear
+          </button>
+        )}
       </div>
 
       {/* Table */}

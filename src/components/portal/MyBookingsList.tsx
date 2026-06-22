@@ -312,14 +312,14 @@ export function MyBookingsList({ bookings, query, onCancelled }: Props) {
 
       {/* Detail slide-over */}
       {detailBooking && (
-        <BookingDetailPanel booking={detailBooking} onClose={() => setDetailBooking(null)} />
+        <BookingDetailPanel booking={detailBooking} onClose={() => setDetailBooking(null)} onCancelRequest={b => { setDetailBooking(null); setCancelTarget(b) }} />
       )}
     </>
   )
 }
 
 // ── Detail slide-over panel ───────────────────────────────────────────────────
-function BookingDetailPanel({ booking: b, onClose }: { booking: Booking; onClose: () => void }) {
+function BookingDetailPanel({ booking: b, onClose, onCancelRequest }: { booking: Booking; onClose: () => void; onCancelRequest?: (b: Booking) => void }) {
   const isPickup  = b.serviceType === 'pickup'
   const isDropoff = b.serviceType === 'dropoff'
   const isFCL     = b.loadType === 'fcl'
@@ -404,10 +404,12 @@ function BookingDetailPanel({ booking: b, onClose }: { booking: Booking; onClose
 
         {/* Footer actions */}
         <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(0,0,0,0.07)', display: 'flex', gap: 8, position: 'sticky', bottom: 0, background: '#fff' }}>
-          <button type="button" onClick={() => downloadQR(b)}
-            style={{ flex: 1, padding: '10px 12px', borderRadius: 'var(--r-sm)', border: '1.5px solid rgba(0,0,0,0.10)', background: '#fff', fontSize: 15, fontWeight: 600, color: '#1C1917', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
-            <Icon name={ICONS.qrCode} size={15} /> Download QR
-          </button>
+          {b.status === 'scheduled' && (
+            <button type="button" onClick={() => onCancelRequest?.(b)}
+              style={{ flex: 1, padding: '10px 12px', borderRadius: 'var(--r-sm)', border: '1.5px solid rgba(239,68,68,0.30)', background: 'rgba(239,68,68,0.05)', fontSize: 15, fontWeight: 600, color: '#DC2626', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
+              <Icon name={ICONS.xCircle} size={15} /> Cancel Booking
+            </button>
+          )}
           <button type="button" onClick={() => downloadPDF(b)}
             style={{ flex: 1, padding: '10px 12px', borderRadius: 'var(--r-sm)', border: 'none', background: 'var(--brand-color)', color: 'var(--brand-text)', fontSize: 15, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit', boxShadow: '0 2px 8px rgba(var(--brand-rgb),0.30)' }}>
             <Icon name={ICONS.download} size={15} /> Export PDF

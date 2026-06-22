@@ -261,6 +261,9 @@ export default function VisitorDetailPage() {
                 {booking.container_size       && <FieldBlock label="Container Size"  value={booking.container_size}               icon={ICONS.container}  />}
                 {booking.house_bill_number    && <FieldBlock label="HBL"             value={booking.house_bill_number}       mono                         />}
                 {booking.entry_number         && <FieldBlock label="Entry Number"    value={booking.entry_number}            mono                         />}
+                {booking.purpose             && <FieldBlock label="Purpose"          value={booking.purpose}                                              />}
+                {booking.booking_reference   && <FieldBlock label="Booking Ref"      value={booking.booking_reference}       mono                         />}
+                {booking.consolidator        && <FieldBlock label="Consolidator"     value={booking.consolidator}                                         />}
               </div>
             </div>
           )}
@@ -299,18 +302,23 @@ export default function VisitorDetailPage() {
             </div>
           )}
 
-          {/* Licence Details */}
-          {hasLicence && (
+          {/* Identity Check */}
+          {(hasLicence || cr?.licence_scan_method) && (
             <div style={CARD}>
-              <p style={SL}>Licence Details</p>
+              <p style={SL}>Identity Check</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={RL}>Licence No.</span>
-                  <span style={{ ...RV, fontFamily: 'ui-monospace,monospace', fontSize: 15 }}>{cr.licence_number}</span>
-                </div>
-                {cr.licence_name    && <InfoRow label="Name on Licence" value={cr.licence_name} />}
-                {cr.licence_dob     && <InfoRow label="Date of Birth"   value={cr.licence_dob} />}
-                {cr.licence_expiry  && (
+                {cr?.licence_scan_method && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={RL}>Scan Method</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, padding: '3px 10px', borderRadius: 'var(--r-full)', background: 'rgba(0,0,0,0.05)', color: '#374151' }}>
+                      {cr.licence_scan_method}
+                    </span>
+                  </div>
+                )}
+                {cr?.licence_number  && <InfoRow label="Licence No."      value={cr.licence_number}  />}
+                {cr?.licence_name    && <InfoRow label="Name on Licence"  value={cr.licence_name}    />}
+                {cr?.licence_dob     && <InfoRow label="Date of Birth"    value={cr.licence_dob}     />}
+                {cr?.licence_expiry  && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={RL}>Expiry</span>
                     <span style={{ ...RV, color: cr.expiry_valid === false ? '#EF4444' : '#1C1917' }}>
@@ -318,12 +326,13 @@ export default function VisitorDetailPage() {
                     </span>
                   </div>
                 )}
-                {cr.licence_address && <InfoRow label="Address" value={cr.licence_address} />}
-                {cr.name_match_result && (
+                {cr?.licence_address && <InfoRow label="Address"          value={cr.licence_address} />}
+                {cr?.name_match_result && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={RL}>Name Match</span>
                     <span style={{
-                      display: 'inline-flex', alignItems: 'center', fontSize: 14, fontWeight: 600, padding: '3px 10px', borderRadius: 'var(--r-full)',
+                      display: 'inline-flex', alignItems: 'center', fontSize: 14, fontWeight: 600,
+                      padding: '3px 10px', borderRadius: 'var(--r-full)',
                       background: cr.name_match_result === 'match' ? 'rgba(34,197,94,0.10)' : cr.name_match_result === 'mismatch' ? 'rgba(239,68,68,0.10)' : 'rgba(0,0,0,0.05)',
                       color:      cr.name_match_result === 'match' ? '#16A34A'               : cr.name_match_result === 'mismatch' ? '#DC2626'               : '#78716C',
                     }}>
@@ -372,11 +381,11 @@ export default function VisitorDetailPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <button
                   onClick={() => setConfirmModal(true)}
-                  style={{ width: '100%', padding: '11px 16px', borderRadius: 'var(--r-sm)', border: 'none', background: 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit', transition: 'opacity 0.15s' }}
+                  style={{ width: '100%', padding: '11px 16px', borderRadius: 'var(--r-full)', border: 'none', background: 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit', transition: 'opacity 0.15s' }}
                   onMouseOver={e => { e.currentTarget.style.opacity = '0.88' }}
                   onMouseOut={e  => { e.currentTarget.style.opacity = '1' }}
                 >
-                  <Icon name={ICONS.checkSquare} size={19} /> Mark as Complete
+                  <Icon name={ICONS.checkSquare} size={19} /> Log Out User
                 </button>
               </div>
             </div>
@@ -494,7 +503,7 @@ function Btn({ color, onClick, loading, children }: { color: 'brand' | 'ghost'; 
     <button
       onClick={onClick}
       disabled={loading}
-      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 15, fontWeight: 600, borderRadius: 'var(--r-sm)', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...s[color] }}
+      style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 15, fontWeight: 600, borderRadius: 'var(--r-full)', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...s[color] }}
     >
       {children}
     </button>

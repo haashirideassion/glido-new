@@ -53,7 +53,7 @@ export function Step1ServiceType() {
     dispatch({ type: 'SET', field: 'guestEmail', value: user.email })
     setModName(user.firstName?.trim() ?? '')
     setModEmail(user.email ?? '')
-  }, [loggedIn]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loggedIn, user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const commitEdit = (raw: string) => {
     const n = parseInt(raw, 10)

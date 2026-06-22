@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { ReactNode } from 'react'
-import { Link, useOutletContext } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { usePageTitle } from '@/lib/usePageTitle'
 import { Icon, ICONS } from '@/lib/Icon'
 import { CustomSelect } from '@/components/ui/CustomSelect'
@@ -187,61 +186,8 @@ export default function ReportsConfigPage() {
 
   const QUICK = [{ label: 'Today', from: today(), to: today() }, { label: '7 Days', from: daysAgo(7), to: today() }, { label: '15 Days', from: daysAgo(15), to: today() }]
 
-  const { setSidebarExtra } = useOutletContext<{ setSidebarExtra: (n: ReactNode) => void }>()
   const hasFilters = !!(status || search || from !== daysAgo(7) || to !== today())
   const clearAll = () => { setStatus(''); setSearch(''); setFrom(daysAgo(7)); setTo(today()) }
-
-  useEffect(() => {
-    setSidebarExtra(
-      <div style={{ width: 176 }}>
-        <div style={{ background: '#FFFFFF', borderRadius: 'var(--r-xl)', border: '1px solid rgba(0,0,0,0.08)', padding: 18, display: 'flex', flexDirection: 'column', gap: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: 0 }}>Filters</p>
-            {hasFilters && (
-              <button onClick={clearAll} style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', transition: 'color 0.15s' }}
-                onMouseOver={e => (e.currentTarget.style.color = 'var(--brand-color)')}
-                onMouseOut={e  => (e.currentTarget.style.color = 'var(--text-tertiary)')}
-              >Clear</button>
-            )}
-          </div>
-
-          <CustomSelect placeholder="All Statuses" value={status} onChange={setStatus}
-            options={[{ value: 'checked_in', label: 'Checked In' }, { value: 'completed', label: 'Completed' }, { value: 'scheduled', label: 'Scheduled' }]} />
-
-          {/* Range presets */}
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Range</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {QUICK.map(q => {
-                const active = from === q.from && to === q.to
-                return (
-                  <button key={q.label} type="button" onClick={() => { setFrom(q.from); setTo(q.to) }}
-                    style={{ height: 36, fontSize: 13, fontWeight: active ? 700 : 500, borderRadius: 'var(--r-sm)', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap', fontFamily: 'inherit',
-                      background: active ? 'rgba(var(--brand-rgb),0.10)' : '#F7F6F5',
-                      border: `1px solid ${active ? 'rgba(var(--brand-rgb),0.28)' : 'rgba(0,0,0,0.06)'}`,
-                      color: active ? 'var(--brand-color)' : 'var(--text-secondary)' }}>
-                    {q.label}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Custom dates */}
-          <div>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Custom Dates</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <input type="date" value={from} onChange={e => setFrom(e.target.value)}
-                style={{ width: '100%', height: 38, padding: '0 10px', fontSize: 13, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
-              <input type="date" value={to} onChange={e => setTo(e.target.value)}
-                style={{ width: '100%', height: 38, padding: '0 10px', fontSize: 13, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-    return () => setSidebarExtra(null)
-  }, [status, search, from, to, hasFilters, setSidebarExtra])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -284,15 +230,44 @@ export default function ReportsConfigPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', pointerEvents: 'none' }}><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search visitor, ID, or person…" size={32}
-            style={{ height: 40, padding: '0 14px 0 38px', fontSize: 15, color: '#1C1917', background: '#fff', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search visitor, ID, or person…" size={38}
+            style={{ height: 40, padding: '0 14px 0 38px', fontSize: 15, color: '#1C1917', background: '#fff', border: '1.5px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
         </div>
-        <button onClick={exportCsv} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 40, padding: '0 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', cursor: 'pointer', transition: 'background 0.12s', flexShrink: 0, fontFamily: 'inherit' }}
+        <div style={{ flex: 1 }} />
+        <button onClick={exportCsv} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 40, padding: '0 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', cursor: 'pointer', transition: 'background 0.12s', flexShrink: 0, fontFamily: 'inherit' }}
           onMouseOver={e => (e.currentTarget.style.background = '#F7F6F5')}
           onMouseOut={e  => (e.currentTarget.style.background = '#fff')}
         >
           <Icon name={ICONS.download} size={15} /> Export CSV
         </button>
+      </div>
+
+      {/* Filter bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <CustomSelect placeholder="All Statuses" value={status} onChange={setStatus} width={160}
+          options={[{ value: 'checked_in', label: 'Checked In' }, { value: 'completed', label: 'Completed' }, { value: 'scheduled', label: 'Scheduled' }]} />
+        {QUICK.map(q => {
+          const active = from === q.from && to === q.to
+          return (
+            <button key={q.label} type="button" onClick={() => { setFrom(q.from); setTo(q.to) }}
+              style={{ height: 40, padding: '0 14px', fontSize: 14, fontWeight: active ? 700 : 500, borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                background: active ? 'rgba(var(--brand-rgb),0.10)' : '#F7F6F5',
+                border: `1px solid ${active ? 'rgba(var(--brand-rgb),0.28)' : 'rgba(0,0,0,0.08)'}`,
+                color: active ? 'var(--brand-color)' : 'var(--text-secondary)' }}>
+              {q.label}
+            </button>
+          )
+        })}
+        <input type="date" value={from} onChange={e => setFrom(e.target.value)}
+          style={{ height: 40, padding: '0 10px', fontSize: 14, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', outline: 'none', fontFamily: 'inherit' }} />
+        <input type="date" value={to} onChange={e => setTo(e.target.value)}
+          style={{ height: 40, padding: '0 10px', fontSize: 14, color: '#1C1917', background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', outline: 'none', fontFamily: 'inherit' }} />
+        {hasFilters && (
+          <button onClick={clearAll}
+            style={{ height: 40, padding: '0 14px', fontSize: 14, fontWeight: 600, color: 'var(--text-tertiary)', background: 'none', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit' }}>
+            Clear
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -306,7 +281,7 @@ export default function ReportsConfigPage() {
             {loading && <span style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>Loading…</span>}
             <button
               onClick={() => setConfigOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 'var(--r-sm)', border: '1.5px solid rgba(0,0,0,0.08)', background: '#fff', fontSize: 15, fontWeight: 600, color: '#1C1917', cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 'var(--r-full)', border: '1.5px solid rgba(0,0,0,0.08)', background: '#fff', fontSize: 15, fontWeight: 600, color: '#1C1917', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               <Icon name={ICONS.settings} size={15} />
               Configure Report
@@ -389,7 +364,7 @@ export default function ReportsConfigPage() {
               {ALL_COLUMNS.map(col => {
                 const checked = visibleColumns.includes(col.key)
                 return (
-                  <label key={col.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 'var(--r-sm)', border: `1.5px solid ${checked ? 'rgba(var(--brand-rgb),0.25)' : 'rgba(0,0,0,0.08)'}`, cursor: 'pointer', background: checked ? 'rgba(var(--brand-rgb),0.03)' : '#fff', transition: 'all 0.15s' }}>
+                  <label key={col.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 'var(--r-full)', border: `1.5px solid ${checked ? 'rgba(var(--brand-rgb),0.25)' : 'rgba(0,0,0,0.08)'}`, cursor: 'pointer', background: checked ? 'rgba(var(--brand-rgb),0.03)' : '#fff', transition: 'all 0.15s' }}>
                     <span style={{ fontSize: 15, fontWeight: 500, color: '#1C1917' }}>{col.label}</span>
                     <input type="checkbox" checked={checked} onChange={() => toggleColumn(col.key)}
                       style={{ width: 18, height: 18, accentColor: 'var(--brand-color, #FC6514)', cursor: 'pointer' }} />
@@ -406,7 +381,7 @@ export default function ReportsConfigPage() {
                 { key: 'includeDateRange',  label: 'Include date range in header' },
                 { key: 'includeTimestamp',  label: 'Include generated timestamp' },
               ] as const).map(opt => (
-                <label key={opt.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 'var(--r-sm)', border: '1.5px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}>
+                <label key={opt.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: 'var(--r-full)', border: '1.5px solid rgba(0,0,0,0.08)', cursor: 'pointer' }}>
                   <span style={{ fontSize: 15, fontWeight: 500, color: '#1C1917' }}>{opt.label}</span>
                   <input type="checkbox" checked={exportConfig[opt.key]} onChange={() => toggleExport(opt.key)}
                     style={{ width: 18, height: 18, accentColor: 'var(--brand-color, #FC6514)', cursor: 'pointer' }} />
@@ -418,7 +393,7 @@ export default function ReportsConfigPage() {
             <button
               onClick={saveConfig}
               disabled={saving}
-              style={{ width: '100%', padding: '13px', borderRadius: 'var(--r-md)', border: 'none', background: saving ? '#D1D5DB' : 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
+              style={{ width: '100%', padding: '13px', borderRadius: 'var(--r-full)', border: 'none', background: saving ? '#D1D5DB' : 'var(--brand-color, #FC6514)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
             >
               {saving ? 'Saving…' : 'Save as Default'}
             </button>

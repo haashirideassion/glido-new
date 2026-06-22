@@ -45,6 +45,7 @@ interface SlotConfigState {
   sameDayCutoff:      string
   holdDuration:       string
   capacityByHour:     Record<string, number>  // e.g. { "08:00": 4, "09:00": 6 }
+  capacityByCombo:    Record<string, number>
 }
 
 const DEFAULT_SLOT_CONFIG: SlotConfigState = {
@@ -54,6 +55,7 @@ const DEFAULT_SLOT_CONFIG: SlotConfigState = {
   sameDayCutoff:      '08:00',
   holdDuration:       '10',
   capacityByHour:     {},
+  capacityByCombo:    { 'pickup-lcl': 5, 'pickup-fcl': 5, 'dropoff-lcl': 5, 'dropoff-fcl': 5 },
 }
 
 /** Generate hourly (or sub-hourly) time-bucket start times between open and close. */
@@ -174,7 +176,7 @@ function GroupLabel({ children, first }: { children: React.ReactNode; first?: bo
 }
 const INPUT: React.CSSProperties = { width: '100%', padding: '11px 14px', fontSize: 15, color: '#1C1917', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 'var(--r-sm)', outline: 'none', transition: 'border-color 0.15s ease, box-shadow 0.15s ease', boxSizing: 'border-box' }
 const CARD: React.CSSProperties  = { background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-lg)', padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 20 }
-const SAVE: React.CSSProperties  = { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', background: 'var(--brand-color)', color: 'var(--brand-text)', border: 'none', borderRadius: 'var(--r-sm)', fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22),0 4px 14px rgba(var(--brand-rgb),0.40)', marginTop: 20, transition: 'box-shadow 0.15s ease' }
+const SAVE: React.CSSProperties  = { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 24px', background: 'var(--brand-color)', color: 'var(--brand-text)', border: 'none', borderRadius: 'var(--r-full)', fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22),0 4px 14px rgba(var(--brand-rgb),0.40)', marginTop: 20, transition: 'box-shadow 0.15s ease' }
 
 // 30-min increments 00:00 → 23:30
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
@@ -637,6 +639,7 @@ export default function SettingsPage() {
           sameDayCutoff:      tenant.same_day_cutoff_time          ?? '',
           holdDuration:       String(tenant.slot_hold_duration_min ?? DEFAULT_SLOT_CONFIG.holdDuration),
           capacityByHour,
+          capacityByCombo:    ((tenant as any).slot_capacity_by_combo as Record<string, number> | null) ?? DEFAULT_SLOT_CONFIG.capacityByCombo,
         })
       })
       .catch(() => { /* use defaults */ })
@@ -656,6 +659,7 @@ export default function SettingsPage() {
         slot_capacity_by_hour:    Object.keys(slotConfig.capacityByHour).length > 0
           ? slotConfig.capacityByHour
           : null,
+        slot_capacity_by_combo:   slotConfig.capacityByCombo,
       } as any)
       toast('Slot configuration saved', 'success')
       setSlotConfigDirty(false)
@@ -794,6 +798,30 @@ export default function SettingsPage() {
     setDocDirty(true)
   }
 
+  const addDocToCombo = (comboKey: string) => {
+    const newId = String(Date.now())
+    setDocRequirements(prev => [
+      ...prev,
+      { id: newId, name: '', required: false, fileTypes: [], appliesTo: [comboKey] },
+    ])
+    setCustomInputIds(prev => new Set([...prev, newId]))
+    setDocDirty(true)
+  }
+
+  const removeDocFromCombo = (docId: string, comboKey: string) => {
+    setDocRequirements(prev => {
+      const updated = prev.map(d => {
+        if (d.id !== docId) return d
+        const newAppliesTo = d.appliesTo.filter(k => k !== comboKey)
+        return { ...d, appliesTo: newAppliesTo }
+      })
+      // Remove the doc entirely if it no longer applies to any combo
+      return updated.filter(d => d.appliesTo.length > 0)
+    })
+    setCustomInputIds(prev => { const s = new Set(prev); s.delete(docId); return s })
+    setDocDirty(true)
+  }
+
   // ── User Management ───────────────────────────────────────────────────────────
   const loadStaffUsers = useCallback(async () => {
     setUsersLoading(true)
@@ -916,13 +944,40 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 3000)
   }
 
+  const saveCurrentTab = async () => {
+    if (tab === 'General') {
+      if (generalDirty) await saveGeneral()
+      if (whDirty) await saveWorkingHours({ preventDefault: () => {} } as any)
+    } else if (tab === 'Bookings') {
+      if (slotConfigDirty) await saveSlotConfig()
+      if (pricingDirty) await savePricing()
+      if (eftDirty) await saveEft()
+      if (stripeDirty) await saveStripe()
+      if (compayDirty) await saveCompay()
+    } else if (tab === 'Integrations') {
+      if (cargowiseDirty) await saveCargowise()
+      if (smtpDirty) await saveSmtp()
+      if (docDirty) await saveDocRequirements()
+    }
+  }
+  const tabDirty = (
+    (tab === 'General'      && (generalDirty || whDirty)) ||
+    (tab === 'Bookings'     && (slotConfigDirty || pricingDirty || eftDirty || stripeDirty || compayDirty)) ||
+    (tab === 'Integrations' && (cargowiseDirty || smtpDirty || docDirty))
+  )
+  const tabSaving = (
+    (tab === 'General'      && (generalSaving || whSaving)) ||
+    (tab === 'Bookings'     && (slotConfigSaving || pricingSaving || eftSaving || stripeSaving || compaySaving)) ||
+    (tab === 'Integrations' && (cargowiseSaving || smtpSaving || docSaving))
+  )
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       {/* Tab switcher */}
       <div style={{ display: 'flex', gap: 2, background: 'rgba(0,0,0,0.04)', borderRadius: 'var(--r-md)', padding: 4, marginBottom: 24, width: '100%' }}>
         {visibleGroups.map(g => (
           <button key={g.id} onClick={() => { setTab(g.id); window.location.hash = GROUP_TO_HASH[g.id] }} style={{
-            flex: 1, padding: '8px 16px', borderRadius: 'var(--r-sm)', fontSize: 15, fontWeight: tab === g.id ? 600 : 500,
+            flex: 1, padding: '8px 16px', borderRadius: 'var(--r-full)', fontSize: 15, fontWeight: tab === g.id ? 600 : 500,
             border: 'none', cursor: 'pointer', transition: 'all 0.15s ease', whiteSpace: 'nowrap', textAlign: 'center',
             background: tab === g.id ? '#FFFFFF' : 'transparent',
             color: tab === g.id ? '#1C1917' : 'var(--text-secondary)',
@@ -1094,7 +1149,6 @@ export default function SettingsPage() {
             )}
           </div>
 
-          <SaveBtn loading={whSaving} dirty={whDirty} />
         </form>
       )}
 
@@ -1165,7 +1219,7 @@ export default function SettingsPage() {
                         {general.logoUrl && (
                           <img src={`${general.logoUrl}?t=${Date.now()}`} alt="Logo" style={{ height: 48, objectFit: 'contain', maxWidth: 160, borderRadius: 'var(--r-sm)', border: '1px solid rgba(0,0,0,0.08)', background: '#f9fafb' }} />
                         )}
-                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 'var(--r-sm)', cursor: logoUploading ? 'not-allowed' : 'pointer', opacity: logoUploading ? 0.6 : 1, alignSelf: 'flex-start' }}>
+                        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', fontSize: 15, fontWeight: 600, color: '#374151', background: '#FFFFFF', border: '1px solid #E2E0DD', borderRadius: 'var(--r-full)', cursor: logoUploading ? 'not-allowed' : 'pointer', opacity: logoUploading ? 0.6 : 1, alignSelf: 'flex-start' }}>
                           {logoUploading ? 'Uploading…' : general.logoUrl ? 'Change Logo' : 'Upload Logo'}
                           <input type="file" accept="image/*" style={{ display: 'none' }} disabled={logoUploading} onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f) }} />
                         </label>
@@ -1187,9 +1241,6 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              <button type="button" onClick={saveGeneral} disabled={generalSaving || !generalDirty} style={{ ...SAVE, opacity: (generalSaving || !generalDirty) ? 0.4 : 1, cursor: (generalSaving || !generalDirty) ? 'not-allowed' : 'pointer' }}>
-                {generalSaving ? 'Saving…' : 'Save changes'}
-              </button>
             </div>
           )}
 
@@ -1234,7 +1285,7 @@ export default function SettingsPage() {
                         ]}
                       />
                     </Field>
-                    <Field label="Default Max Bookings Per Slot" hint="Fallback for any hour not individually configured below.">
+                    <Field label="Default Max Bookings Per Slot" hint="Fallback for hours not individually configured below.">
                       <FocusInput type="number" min="1" max="999" value={slotConfig.maxBookingsPerSlot}
                         onChange={e => { setSlotConfig(s => ({ ...s, maxBookingsPerSlot: e.target.value })); setSlotConfigDirty(true) }} />
                     </Field>
@@ -1246,6 +1297,40 @@ export default function SettingsPage() {
                       <FocusInput type="number" min="5" max="30" value={slotConfig.holdDuration}
                         onChange={e => { setSlotConfig(s => ({ ...s, holdDuration: e.target.value })); setSlotConfigDirty(true) }} />
                     </Field>
+                  </div>
+
+                  {/* Capacity by combination — full width */}
+                  <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 4 }}>Capacity by Booking Type</p>
+                    <p style={{ fontSize: 14, color: 'var(--text-tertiary)', marginBottom: 16 }}>Max bookings per time slot for each service + load type combination.</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr 1fr', gap: 12, alignItems: 'center', maxWidth: 480 }}>
+                      {/* Header row */}
+                      <div />
+                      {(['LCL', 'FCL'] as const).map(load => (
+                        <div key={load} style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{load}</div>
+                      ))}
+                      {/* Data rows */}
+                      {(['pickup', 'dropoff'] as const).map(svc => (
+                        <>
+                          <div key={`${svc}-lbl`} style={{ fontSize: 15, fontWeight: 600, color: '#1C1917' }}>{svc === 'pickup' ? 'Pick Up' : 'Drop Off'}</div>
+                          {(['lcl', 'fcl'] as const).map(load => {
+                            const key = `${svc}-${load}`
+                            return (
+                              <FocusInput
+                                key={key}
+                                type="number" min="1" max="999"
+                                value={String(slotConfig.capacityByCombo[key] ?? 5)}
+                                onChange={e => {
+                                  setSlotConfig(s => ({ ...s, capacityByCombo: { ...s.capacityByCombo, [key]: Number(e.target.value) } }))
+                                  setSlotConfigDirty(true)
+                                }}
+                                style={{ textAlign: 'center' }}
+                              />
+                            )
+                          })}
+                        </>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Validation banner — working hours extend beyond slot periods */}
@@ -1323,9 +1408,6 @@ export default function SettingsPage() {
                   })()}
                 </>
               )}
-              <button type="button" onClick={saveSlotConfig} disabled={slotConfigSaving || !slotConfigDirty} style={{ ...SAVE, opacity: (slotConfigSaving || !slotConfigDirty) ? 0.4 : 1, cursor: (slotConfigSaving || !slotConfigDirty) ? 'not-allowed' : 'pointer' }}>
-                {slotConfigSaving ? 'Saving…' : 'Save changes'}
-              </button>
             </div>
           )}
 
@@ -1383,9 +1465,6 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              <button type="button" onClick={savePricing} disabled={pricingSaving || !pricingDirty} style={{ ...SAVE, opacity: (pricingSaving || !pricingDirty) ? 0.4 : 1, cursor: (pricingSaving || !pricingDirty) ? 'not-allowed' : 'pointer' }}>
-                {pricingSaving ? 'Saving…' : 'Save changes'}
-              </button>
             </div>
           )}
 
@@ -1416,9 +1495,6 @@ export default function SettingsPage() {
                     </Field>
                   </div>
                 )}
-                <button type="button" onClick={saveEft} disabled={eftSaving || !eftDirty} style={{ ...SAVE, opacity: (eftSaving || !eftDirty) ? 0.4 : 1, cursor: (eftSaving || !eftDirty) ? 'not-allowed' : 'pointer' }}>
-                  {eftSaving ? 'Saving…' : 'Save changes'}
-                </button>
               </div>
 
               {/* Stripe */}
@@ -1450,9 +1526,6 @@ export default function SettingsPage() {
                     </Field>
                   </div>
                 )}
-                <button type="button" onClick={saveStripe} disabled={stripeSaving || !stripeDirty} style={{ ...SAVE, opacity: (stripeSaving || !stripeDirty) ? 0.4 : 1, cursor: (stripeSaving || !stripeDirty) ? 'not-allowed' : 'pointer' }}>
-                  {stripeSaving ? 'Saving…' : 'Save changes'}
-                </button>
               </div>
 
               {/* ComPay */}
@@ -1463,10 +1536,6 @@ export default function SettingsPage() {
                     onChange={e => { setCompay(v => ({ ...v, clientNumber: e.target.value })); setCompayDirty(true) }}
                     placeholder="e.g. 123456" />
                 </Field>
-                <button type="button" onClick={saveCompay} disabled={compaySaving || !compayDirty}
-                  style={{ ...SAVE, opacity: (compaySaving || !compayDirty) ? 0.4 : 1, cursor: (compaySaving || !compayDirty) ? 'not-allowed' : 'pointer' }}>
-                  {compaySaving ? 'Saving…' : 'Save changes'}
-                </button>
               </div>
 
               {/* Require payment toggle */}
@@ -1504,7 +1573,7 @@ export default function SettingsPage() {
             <div>
               {/* CargoWise */}
               <div style={CARD}>
-                <SectionHead title="CargoWise API (ICS)" desc="Enables automatic customs clearance status checks." />
+                <SectionHead title="ICS API" desc="Enables automatic customs clearance status checks." />
                 {integrationsLoading ? (
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
                     {[0,1,2,3].map(i => <div key={i} style={{ height: 44, borderRadius: 'var(--r-sm)', background: 'rgba(0,0,0,0.06)' }} />)}
@@ -1540,9 +1609,6 @@ export default function SettingsPage() {
                     </Field>
                   </div>
                 )}
-                <button type="button" onClick={saveCargowise} disabled={cargowiseSaving || !cargowiseDirty} style={{ ...SAVE, opacity: (cargowiseSaving || !cargowiseDirty) ? 0.4 : 1, cursor: (cargowiseSaving || !cargowiseDirty) ? 'not-allowed' : 'pointer' }}>
-                  {cargowiseSaving ? 'Saving…' : 'Save changes'}
-                </button>
               </div>
 
               {/* SMTP */}
@@ -1591,9 +1657,6 @@ export default function SettingsPage() {
                     </Field>
                   </div>
                 )}
-                <button type="button" onClick={saveSmtp} disabled={smtpSaving || !smtpDirty} style={{ ...SAVE, opacity: (smtpSaving || !smtpDirty) ? 0.4 : 1, cursor: (smtpSaving || !smtpDirty) ? 'not-allowed' : 'pointer' }}>
-                  {smtpSaving ? 'Saving…' : 'Save changes'}
-                </button>
               </div>
             </div>
           )}
@@ -1604,123 +1667,112 @@ export default function SettingsPage() {
             <div style={CARD}>
               <SectionHead title="Document Requirements" desc="Configure which documents are required per service + cargo type combination." />
               {docLoading ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-                  {[0,1,2].map(i => <div key={i} style={{ height: 200, borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.06)' }} />)}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {[0,1,2,4].map(i => <div key={i} style={{ height: 80, borderRadius: 'var(--r-md)', background: 'rgba(0,0,0,0.06)' }} />)}
                 </div>
               ) : (
-                <>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-                    {docRequirements.map(doc => {
-                      // Custom mode: either user explicitly clicked "+ Add Custom", or the loaded name isn't in the predefined list
-                      const isCustom = customInputIds.has(doc.id) || (!PREDEFINED_DOCS.includes(doc.name) && doc.name !== '')
-                      return (
-                        <div key={doc.id} style={{ background: '#F9F9F8', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-md)', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12, minHeight: 260, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-
-                          {/* Name dropdown + Required + Delete in one row */}
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
-                              <CustomSelect
-                                placeholder="Select document..."
-                                value={isCustom ? '__custom__' : doc.name}
-                                onChange={v => {
-                                  if (v === '__custom__') {
-                                    setCustomInputIds(prev => new Set([...prev, doc.id]))
-                                    if (!isCustom) updateDoc(doc.id, 'name', '')
-                                  } else {
-                                    setCustomInputIds(prev => { const s = new Set(prev); s.delete(doc.id); return s })
-                                    updateDoc(doc.id, 'name', v)
-                                  }
-                                }}
-                                options={[
-                                  { value: 'Delivery Order',             label: 'Delivery Order' },
-                                  { value: 'Biosecurity Direction',      label: 'Biosecurity Direction' },
-                                  { value: 'Interim Receipt',            label: 'Interim Receipt' },
-                                  { value: 'Booking Confirmation',       label: 'Booking Confirmation' },
-                                  { value: 'Packing List',               label: 'Packing List' },
-                                  { value: 'Cartage Advice',             label: 'Cartage Advice' },
-                                  { value: 'Dangerous Goods Declaration',label: 'Dangerous Goods Declaration' },
-                                  { value: 'Driver Licence',             label: 'Driver Licence' },
-                                  { value: 'Vehicle Registration',       label: 'Vehicle Registration' },
-                                  { value: 'Container Details',          label: 'Container Details' },
-                                  { value: '__custom__',                 label: '+ Add Custom Document' },
-                                ]}
-                              />
-                              {isCustom && (
-                                <FocusInput
-                                  type="text"
-                                  value={doc.name}
-                                  placeholder="Custom document name"
-                                  onChange={e => updateDoc(doc.id, 'name', e.target.value)}
-                                />
-                              )}
-                            </div>
-                            {/* Required + Delete stacked or side by side */}
-                            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                              <button type="button" onClick={() => updateDoc(doc.id, 'required', !doc.required)}
-                                style={{ height: 36, padding: '0 10px', borderRadius: 'var(--r-sm)', border: '1px solid rgba(0,0,0,0.10)', background: doc.required ? 'rgba(var(--brand-rgb),0.08)' : '#F7F6F5', color: doc.required ? 'var(--brand-color)' : '#78716C', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
-                                {doc.required ? 'Required' : 'Optional'}
-                              </button>
-                              <button type="button" onClick={() => removeDoc(doc.id)}
-                                style={{ height: 36, width: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--r-sm)', border: '1px solid rgba(239,68,68,0.20)', background: 'rgba(239,68,68,0.05)', color: '#EF4444', cursor: 'pointer', transition: 'background 0.15s', flexShrink: 0 }}
-                                onMouseOver={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.12)')}
-                                onMouseOut={e  => (e.currentTarget.style.background = 'rgba(239,68,68,0.05)')}>
-                                <Icon name={ICONS.trash} size={13} />
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* File Types */}
-                          <div>
-                            <span style={{ ...LABEL, marginBottom: 6 }}>File Types</span>
-                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                              {FILE_TYPE_OPTIONS.map(ft => {
-                                const on = doc.fileTypes.includes(ft)
-                                return (
-                                  <button key={ft} type="button" onClick={() => toggleDocArray(doc.id, 'fileTypes', ft)}
-                                    style={{ padding: '4px 10px', fontSize: 13, fontWeight: 600, borderRadius: 'var(--r-full)', border: `1px solid ${on ? 'rgba(var(--brand-rgb),0.35)' : 'rgba(0,0,0,0.12)'}`, background: on ? 'rgba(var(--brand-rgb),0.08)' : '#FAFAF9', color: on ? 'var(--brand-color)' : '#78716C', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.13s' }}>
-                                    {ft}
-                                  </button>
-                                )
-                              })}
-                            </div>
-                          </div>
-
-                          {/* Applies To */}
-                          <div>
-                            <span style={{ ...LABEL, marginBottom: 6 }}>Applies To</span>
-                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                              {APPLIES_TO_OPTIONS.map(opt => {
-                                const on = doc.appliesTo.includes(opt.key)
-                                return (
-                                  <button key={opt.key} type="button" onClick={() => toggleDocArray(doc.id, 'appliesTo', opt.key)}
-                                    style={{ padding: '4px 10px', fontSize: 13, fontWeight: 600, borderRadius: 'var(--r-full)', border: `1px solid ${on ? 'rgba(var(--brand-rgb),0.35)' : 'rgba(0,0,0,0.12)'}`, background: on ? 'rgba(var(--brand-rgb),0.08)' : '#FAFAF9', color: on ? 'var(--brand-color)' : '#78716C', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.13s', whiteSpace: 'nowrap' }}>
-                                    {opt.label}
-                                  </button>
-                                )
-                              })}
-                            </div>
-                          </div>
-
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
+                  {APPLIES_TO_OPTIONS.map(combo => {
+                    const comboDocs = docRequirements.filter(d => d.appliesTo.includes(combo.key))
+                    return (
+                      <div key={combo.key} style={{ background: '#F9F9F8', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
+                        {/* Combo header */}
+                        <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(0,0,0,0.07)', background: 'rgba(0,0,0,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontWeight: 700, fontSize: 14, color: '#1C1917' }}>{combo.label}</span>
+                          <span style={{ fontSize: 12, color: '#78716C', background: 'rgba(0,0,0,0.06)', borderRadius: 'var(--r-full)', padding: '2px 8px', fontWeight: 600 }}>{comboDocs.length} doc{comboDocs.length !== 1 ? 's' : ''}</span>
                         </div>
-                      )
-                    })}
-                  </div>
 
-                </>
+                        {/* Doc rows */}
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          {comboDocs.length === 0 && (
+                            <div style={{ padding: '20px 16px', textAlign: 'center', color: '#A8A29E', fontSize: 13 }}>No documents configured</div>
+                          )}
+                          {comboDocs.map((doc, idx) => {
+                            const isCustom = customInputIds.has(doc.id) || (!PREDEFINED_DOCS.includes(doc.name) && doc.name !== '')
+                            return (
+                              <div key={doc.id} style={{ padding: '12px 16px', borderTop: idx === 0 ? 'none' : '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {/* Name row */}
+                                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                                    <CustomSelect
+                                      placeholder="Select document..."
+                                      value={isCustom ? '__custom__' : doc.name}
+                                      onChange={v => {
+                                        if (v === '__custom__') {
+                                          setCustomInputIds(prev => new Set([...prev, doc.id]))
+                                          if (!isCustom) updateDoc(doc.id, 'name', '')
+                                        } else {
+                                          setCustomInputIds(prev => { const s = new Set(prev); s.delete(doc.id); return s })
+                                          updateDoc(doc.id, 'name', v)
+                                        }
+                                      }}
+                                      options={[
+                                        { value: 'Delivery Order',             label: 'Delivery Order' },
+                                        { value: 'Biosecurity Direction',      label: 'Biosecurity Direction' },
+                                        { value: 'Interim Receipt',            label: 'Interim Receipt' },
+                                        { value: 'Booking Confirmation',       label: 'Booking Confirmation' },
+                                        { value: 'Packing List',               label: 'Packing List' },
+                                        { value: 'Cartage Advice',             label: 'Cartage Advice' },
+                                        { value: 'Dangerous Goods Declaration',label: 'Dangerous Goods Declaration' },
+                                        { value: 'Driver Licence',             label: 'Driver Licence' },
+                                        { value: 'Vehicle Registration',       label: 'Vehicle Registration' },
+                                        { value: 'Container Details',          label: 'Container Details' },
+                                        { value: '__custom__',                 label: '+ Add Custom Document' },
+                                      ]}
+                                    />
+                                    {isCustom && (
+                                      <FocusInput
+                                        type="text"
+                                        value={doc.name}
+                                        placeholder="Custom document name"
+                                        onChange={e => updateDoc(doc.id, 'name', e.target.value)}
+                                      />
+                                    )}
+                                  </div>
+                                  <div style={{ flex: 1 }} />
+                                  <button type="button" onClick={() => updateDoc(doc.id, 'required', !doc.required)}
+                                    style={{ height: 32, padding: '0 10px', borderRadius: 'var(--r-full)', border: '1px solid rgba(0,0,0,0.10)', background: doc.required ? 'rgba(var(--brand-rgb),0.08)' : '#F7F6F5', color: doc.required ? 'var(--brand-color)' : '#78716C', fontWeight: 600, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                    {doc.required ? 'Required' : 'Optional'}
+                                  </button>
+                                  <button type="button" onClick={() => removeDocFromCombo(doc.id, combo.key)}
+                                    style={{ height: 32, width: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--r-full)', border: '1px solid rgba(239,68,68,0.20)', background: 'rgba(239,68,68,0.05)', color: '#EF4444', cursor: 'pointer', transition: 'background 0.15s', flexShrink: 0 }}
+                                    onMouseOver={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.12)')}
+                                    onMouseOut={e  => (e.currentTarget.style.background = 'rgba(239,68,68,0.05)')}>
+                                    <Icon name={ICONS.trash} size={12} />
+                                  </button>
+                                </div>
+                                {/* File type chips */}
+                                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                                  {FILE_TYPE_OPTIONS.map(ft => {
+                                    const on = doc.fileTypes.includes(ft)
+                                    return (
+                                      <button key={ft} type="button" onClick={() => toggleDocArray(doc.id, 'fileTypes', ft)}
+                                        style={{ padding: '3px 8px', fontSize: 12, fontWeight: 600, borderRadius: 'var(--r-full)', border: `1px solid ${on ? 'rgba(var(--brand-rgb),0.35)' : 'rgba(0,0,0,0.12)'}`, background: on ? 'rgba(var(--brand-rgb),0.08)' : '#FAFAF9', color: on ? 'var(--brand-color)' : '#A8A29E', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.13s' }}>
+                                        {ft}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+
+                        {/* Add doc to this combo */}
+                        <div style={{ padding: '10px 16px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                          <button type="button" onClick={() => addDocToCombo(combo.key)}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.06)', border: '1px solid rgba(var(--brand-rgb),0.22)', borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
+                            onMouseOver={e => (e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.10)')}
+                            onMouseOut={e  => (e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.06)')}>
+                            <Icon name={ICONS.add} size={12} />
+                            Add document
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               )}
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24 }}>
-                <button type="button" onClick={addDocRow}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 16px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.06)', border: '1px solid rgba(var(--brand-rgb),0.22)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit', transition: 'background 0.15s' }}
-                  onMouseOver={e => (e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.10)')}
-                  onMouseOut={e  => (e.currentTarget.style.background = 'rgba(var(--brand-rgb),0.06)')}>
-                  <Icon name={ICONS.add} size={14} />
-                  Add Document Type
-                </button>
-                <button type="button" onClick={saveDocRequirements} disabled={docSaving || !docDirty} style={{ ...SAVE, marginTop: 0, opacity: (docSaving || !docDirty) ? 0.4 : 1, cursor: (docSaving || !docDirty) ? 'not-allowed' : 'pointer' }}>
-                  {docSaving ? 'Saving…' : 'Save changes'}
-                </button>
-              </div>
             </div>
           )}
           {/* User Management */}
@@ -1734,7 +1786,7 @@ export default function SettingsPage() {
 
                   {!showInviteForm ? (
                     <button type="button" onClick={() => setShowInviteForm(true)}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.25)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 18px', fontSize: 15, fontWeight: 600, color: 'var(--brand-color)', background: 'rgba(var(--brand-rgb),0.07)', border: '1px solid rgba(var(--brand-rgb),0.25)', borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit' }}>
                       <Icon name={ICONS.add} size={14} />
                       Invite Staff Member
                     </button>
@@ -1775,7 +1827,7 @@ export default function SettingsPage() {
                           {inviteSending ? 'Sending…' : 'Send Invite'}
                         </button>
                         <button type="button" onClick={() => { setShowInviteForm(false); setInvite({ firstName: '', lastName: '', email: '', role: 'reception_staff' }) }}
-                          style={{ marginTop: 0, padding: '11px 20px', fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ marginTop: 0, padding: '11px 20px', fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)', background: '#F7F6F5', border: '1px solid rgba(0,0,0,0.10)', borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit' }}>
                           Cancel
                         </button>
                       </div>
@@ -1830,9 +1882,8 @@ export default function SettingsPage() {
                                     BadgeEl
                                   ) : (
                                     <CustomSelect
-                                      placeholder="Select role"
                                       value={u.role}
-                                      onChange={v => updateRole(u.id, v)}
+                                      onChange={v => { if (v) updateRole(u.id, v) }}
                                       width={170}
                                       options={[
                                         { value: 'reception_staff', label: 'Reception Staff' },
@@ -1850,10 +1901,12 @@ export default function SettingsPage() {
                                   {u.last_login_at ? fmtDateTime(u.last_login_at) : 'Never'}
                                 </td>
                                 <td style={{ padding: '12px 14px' }}>
-                                  <button type="button" onClick={() => toggleActive(u.id, u.is_active)}
-                                    style={{ padding: '6px 14px', fontSize: 14, fontWeight: 600, borderRadius: 'var(--r-sm)', border: `1px solid ${u.is_active ? 'rgba(239,68,68,0.22)' : 'rgba(34,197,94,0.22)'}`, background: u.is_active ? 'rgba(239,68,68,0.06)' : 'rgba(34,197,94,0.06)', color: u.is_active ? '#DC2626' : '#16A34A', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-                                    {u.is_active ? 'Deactivate' : 'Activate'}
-                                  </button>
+                                  {u.role !== 'super_admin' && (
+                                    <button type="button" onClick={() => toggleActive(u.id, u.is_active)}
+                                      style={{ padding: '6px 14px', fontSize: 14, fontWeight: 600, borderRadius: 'var(--r-full)', border: `1px solid ${u.is_active ? 'rgba(239,68,68,0.22)' : 'rgba(34,197,94,0.22)'}`, background: u.is_active ? 'rgba(239,68,68,0.06)' : 'rgba(34,197,94,0.06)', color: u.is_active ? '#DC2626' : '#16A34A', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                                      {u.is_active ? 'Deactivate' : 'Activate'}
+                                    </button>
+                                  )}
                                 </td>
                               </tr>
                             )
@@ -1868,6 +1921,35 @@ export default function SettingsPage() {
           })()}
         </form>
       )}
+
+      {/* Sticky save footer */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40,
+        padding: '14px 32px',
+        background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(12px)',
+        borderTop: '1px solid rgba(0,0,0,0.08)',
+        display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 16,
+      }}>
+        {tabDirty && (
+          <p style={{ fontSize: 14, color: 'var(--brand-color)', fontWeight: 600 }}>You have unsaved changes</p>
+        )}
+        <button
+          type="button"
+          onClick={saveCurrentTab}
+          disabled={!tabDirty || tabSaving}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '10px 24px', borderRadius: 'var(--r-full)', border: 'none',
+            fontSize: 15, fontWeight: 600, fontFamily: 'inherit', cursor: (!tabDirty || tabSaving) ? 'not-allowed' : 'pointer',
+            background: tabDirty ? 'var(--brand-color, #FC6514)' : 'rgba(0,0,0,0.08)',
+            color: tabDirty ? '#fff' : 'var(--text-tertiary)',
+            opacity: tabSaving ? 0.6 : 1,
+            transition: 'all 0.2s',
+          }}
+        >
+          {tabSaving ? 'Saving…' : 'Save changes'}
+        </button>
+      </div>
     </div>
   )
 }

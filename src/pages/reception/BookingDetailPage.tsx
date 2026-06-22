@@ -6,6 +6,8 @@ import { fmtDateTime } from '@/lib/time'
 import { toast } from '@/lib/toast'
 import { supabase } from '@/lib/supabase'
 import { generateQRDataURL } from '@/lib/qr'
+import { useTenantInfo } from '@/lib/useTenantInfo'
+import { loadLogoDataUrl, glidoLogoPng } from '@/lib/pdfBranding'
 import {
   getBookingById, checkInBooking, completeBooking,
   cancelBooking, rescheduleBooking, refreshIcsStatus,
@@ -71,10 +73,11 @@ const blur  = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 
 export default function BookingDetailPage() {
   usePageTitle('Glido | Booking')
+  const tenant = useTenantInfo()
   const { id, groupRef } = useParams<{ id: string; groupRef: string }>()
   const [b, setB]         = useState<Booking | null>(null)
   const [groupSlots, setGroupSlots] = useState<Booking[]>([])  // all slots in a group
-  const [openSlot, setOpenSlot] = useState<number>(0)          // accordion: index of open slot row
+  const [openSlots, setOpenSlots] = useState<Set<number>>(new Set([0]))
   const [loading, setLoading] = useState(true)
   const [acting, setActing]   = useState('')
 
@@ -192,6 +195,102 @@ export default function BookingDetailPage() {
     ? { label: 'Warning',       bg: 'rgba(251,191,36,0.10)', color: '#B45309', border: 'rgba(251,191,36,0.22)' }
     : { label: 'Mismatch',      bg: 'rgba(239,68,68,0.10)',  color: '#EF4444', border: 'rgba(239,68,68,0.22)'  }
 
+  const exportGroupPdf = async () => {
+    const { jsPDF } = await import('jspdf')
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const pw = doc.internal.pageSize.getWidth()
+    const ph = doc.internal.pageSize.getHeight()
+
+    const logoSrc = tenant?.logoUrl
+    const tenantName = tenant?.name || 'Container Freight Station'
+    const glidoPng = await glidoLogoPng()
+
+    for (let i = 0; i < groupSlots.length; i++) {
+      const slot = groupSlots[i]
+      if (i > 0) doc.addPage()
+
+      let y = 18
+
+      let placedLogo = false
+      if (logoSrc) {
+        const logo = await loadLogoDataUrl(logoSrc)
+        if (logo) {
+          const maxW = 40, maxH = 16
+          const ratio = Math.min(maxW / logo.w, maxH / logo.h)
+          const lw = logo.w * ratio, lh = logo.h * ratio
+          const fmt = logo.dataUrl.includes('image/png') ? 'PNG' : 'JPEG'
+          doc.addImage(logo.dataUrl, fmt, (pw - lw) / 2, y, lw, lh)
+          y += lh + 6
+          placedLogo = true
+        }
+      }
+      if (!placedLogo) {
+        doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 113, 108)
+        doc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' }); y += 8
+      }
+
+      doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 25, 23)
+      doc.text(`Slot ${i + 1} of ${groupSlots.length}`, pw / 2, y, { align: 'center' }); y += 8
+      doc.setFontSize(13); doc.setFont('courier', 'bold'); doc.setTextColor(100, 92, 80)
+      doc.text(slot.referenceNumber, pw / 2, y, { align: 'center' }); y += 10
+
+      const qrUrl = await generateQRDataURL(slot.referenceNumber, 220)
+      if (qrUrl) { const sz = 56; doc.addImage(qrUrl, 'PNG', (pw - sz) / 2, y, sz, sz); y += sz + 6 }
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139)
+      doc.text('Present this QR code at the CFS gate for check-in', pw / 2, y, { align: 'center' }); y += 10
+
+      doc.setDrawColor(220, 215, 210); doc.line(20, y, pw - 20, y); y += 8
+
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 25, 23)
+      doc.text('Booking Details', 20, y); y += 6
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5)
+
+      const serviceLabel = `${slot.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · ${slot.loadType?.toUpperCase()}`
+      const slotDriver = slot.driverName || b?.driverName || ''
+      const slotDriverPhone = slot.driverPhone || b?.driverPhone || ''
+      const slotVehicle = slot.vehicleRegistration || b?.vehicleRegistration || ''
+
+      const rows: [string, string][] = [
+        ...(b?.guestName         ? [['Guest Name',      b.guestName]                                as [string,string]] : []),
+        ...(b?.guestEmail        ? [['Guest Email',     b.guestEmail]                               as [string,string]] : []),
+        ...(b?.guestPhone        ? [['Guest Phone',     b.guestPhone]                               as [string,string]] : []),
+        ...(slotDriver           ? [['Driver',          slotDriver]                                 as [string,string]] : []),
+        ...(slotDriverPhone      ? [['Driver Phone',    slotDriverPhone]                            as [string,string]] : []),
+        ...(slotVehicle          ? [['Vehicle Rego',    slotVehicle]                                as [string,string]] : []),
+        ['Service',   serviceLabel],
+        ['Date',      slot.slotDate || '—'],
+        ['Time',      `${slot.slotStartTime} – ${slot.slotEndTime}`],
+        ...(slot.houseBillNumber  ? [['HBL',            slot.houseBillNumber]                       as [string,string]] : []),
+        ...(slot.containerNumber  ? [['Container No.',  slot.containerNumber]                       as [string,string]] : []),
+        ...(slot.containerSize    ? [['Container Size', slot.containerSize]                         as [string,string]] : []),
+        ...(slot.entryNumber      ? [['Entry Number',   slot.entryNumber]                           as [string,string]] : []),
+        ...(slot.purpose          ? [['Purpose',        slot.purpose]                               as [string,string]] : []),
+        ...(slot.consolidator     ? [['Consolidator',   slot.consolidator]                          as [string,string]] : []),
+        ...(slot.weightKg         ? [['Weight',         `${slot.weightKg.toLocaleString()} kg`]    as [string,string]] : []),
+        ...(slot.volumeCbm        ? [['Volume',         `${slot.volumeCbm} CBM`]                   as [string,string]] : []),
+        ...(slot.packageCount     ? [['Packages',       `${slot.packageCount}`]                     as [string,string]] : []),
+        ...((slot.palletCount ?? 0) > 0 ? [['Pallets', `${slot.palletCount} × ${slot.palletType}`] as [string,string]] : []),
+      ]
+
+      for (const [label, val] of rows) {
+        doc.setTextColor(120, 113, 108); doc.text(label, 20, y)
+        doc.setTextColor(28, 25, 23);   doc.text(val, pw / 2, y)
+        y += 5.5
+      }
+
+      if (glidoPng) {
+        const gw = 22, gh = gw * (62 / 320)
+        doc.addImage(glidoPng, 'PNG', (pw - gw) / 2, ph - 26, gw, gh)
+      }
+      doc.setFontSize(8); doc.setFont('helvetica', 'italic'); doc.setTextColor(156, 163, 175)
+      doc.text('Present this QR code at the CFS gate for check-in', pw / 2, ph - 14, { align: 'center' })
+      doc.text(`Generated ${new Date().toLocaleDateString('en-AU')}`, pw / 2, ph - 9, { align: 'center' })
+    }
+
+    const groupRef = b?.groupReference ?? b?.referenceNumber ?? 'booking'
+    doc.save(`${groupRef}.pdf`)
+  }
+
   return (
     <div>
       {/* ── Checked-in redirect banner ── */}
@@ -245,7 +344,42 @@ export default function BookingDetailPage() {
             </span>
           )}
         </div>
-        <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>Created {fmtDateTime(b.createdAt)}</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {groupSlots.length > 1 && (
+            <button
+              type="button"
+              onClick={exportGroupPdf}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 14px', fontSize: 14, fontWeight: 600, color: '#fff', background: 'var(--brand-color, #FC6514)', border: 'none', borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity 0.15s' }}
+              onMouseOver={e => { e.currentTarget.style.opacity = '0.88' }}
+              onMouseOut={e  => { e.currentTarget.style.opacity = '1' }}
+            >
+              <Icon name={ICONS.document} size={16}/> Export All Slots PDF
+            </button>
+          )}
+          {groupSlots.length > 1 && groupSlots.some(s => s.status === 'scheduled') && (
+            <button
+              type="button"
+              disabled={acting === 'checkin-all'}
+              onClick={async () => {
+                setActing('checkin-all')
+                try {
+                  const scheduled = groupSlots.filter(s => s.status === 'scheduled')
+                  await Promise.all(scheduled.map(s => checkInBooking(s.id)))
+                  setGroupSlots(prev => prev.map(s =>
+                    s.status === 'scheduled' ? { ...s, status: 'checked_in' as any } : s
+                  ))
+                  setB(prev => prev ? { ...prev, status: 'checked_in' as any } : prev)
+                  toast('All slots checked in', 'success')
+                } catch { toast('Failed to check in all slots', 'error') }
+                finally { setActing('') }
+              }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', fontSize: 15, fontWeight: 600, background: 'linear-gradient(135deg,#22C55E,#16A34A)', color: '#fff', border: 'none', borderRadius: 'var(--r-full)', boxShadow: '0 2px 8px rgba(34,197,94,0.30)', cursor: acting === 'checkin-all' ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: acting === 'checkin-all' ? 0.7 : 1, transition: 'all 0.15s' }}
+            >
+              {acting === 'checkin-all' ? 'Checking in…' : 'Check In All'}
+            </button>
+          )}
+          <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>Created {fmtDateTime(b.createdAt)}</p>
+        </div>
       </div>
 
       {/* ── 2-col layout ── */}
@@ -261,7 +395,8 @@ export default function BookingDetailPage() {
               {b.guestName   && <InfoRow label="Full Name"    value={b.guestName}   icon={ICONS.user}     />}
               {b.companyName && <InfoRow label="Company"      value={b.companyName} icon={ICONS.building} />}
               {b.guestPhone  && <InfoRow label="Phone Number" value={b.guestPhone}  icon={ICONS.phone}    />}
-              {!b.guestName && !b.companyName && !b.guestPhone && (
+              {b.guestEmail  && <InfoRow label="Email"        value={b.guestEmail}  icon={ICONS.email}    />}
+              {!b.guestName && !b.companyName && !b.guestPhone && !b.guestEmail && (
                 <p style={{ fontSize: 15, color: 'var(--text-tertiary)' }}>No visitor details recorded</p>
               )}
             </div>
@@ -288,15 +423,7 @@ export default function BookingDetailPage() {
                 {groupSlots.map((slot, i) => {
                   const slotStatusStyle = STATUS_BADGE[slot.status] ?? STATUS_BADGE.scheduled
                   const serviceLabel = `${slot.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · ${slot.loadType?.toUpperCase()}`
-                  const isOpen = openSlot === i
-
-                  const downloadSlotQr = async () => {
-                    const url = await generateQRDataURL(slot.referenceNumber, 220)
-                    const a = document.createElement('a')
-                    a.href = url
-                    a.download = `${slot.referenceNumber}-QR.png`
-                    a.click()
-                  }
+                  const isOpen = openSlots.has(i)
 
                   const exportSlotPdf = async () => {
                     const { jsPDF } = await import('jspdf')
@@ -305,8 +432,25 @@ export default function BookingDetailPage() {
                     const pw = doc.internal.pageSize.getWidth()
                     const ph = doc.internal.pageSize.getHeight()
                     let y = 18
-                    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 113, 108)
-                    doc.text('BOOKING CONFIRMATION', pw / 2, y, { align: 'center' }); y += 8
+                    const logoSrc = tenant?.logoUrl
+                    const tenantName = tenant?.name || 'Container Freight Station'
+                    let placedLogo = false
+                    if (logoSrc) {
+                      const logo = await loadLogoDataUrl(logoSrc)
+                      if (logo) {
+                        const maxW = 40, maxH = 16
+                        const ratio = Math.min(maxW / logo.w, maxH / logo.h)
+                        const lw = logo.w * ratio, lh = logo.h * ratio
+                        const fmt = logo.dataUrl.includes('image/png') ? 'PNG' : 'JPEG'
+                        doc.addImage(logo.dataUrl, fmt, (pw - lw) / 2, y, lw, lh)
+                        y += lh + 6
+                        placedLogo = true
+                      }
+                    }
+                    if (!placedLogo) {
+                      doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(120, 113, 108)
+                      doc.text(tenantName.toUpperCase(), pw / 2, y, { align: 'center' }); y += 8
+                    }
                     doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 25, 23)
                     doc.text(`Slot ${i + 1} of ${groupSlots.length}`, pw / 2, y, { align: 'center' }); y += 8
                     doc.setFontSize(13); doc.setFont('courier', 'bold'); doc.setTextColor(100, 92, 80)
@@ -318,18 +462,39 @@ export default function BookingDetailPage() {
                     doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(28, 25, 23)
                     doc.text('Booking Details', 20, y); y += 6
                     doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5)
+                    const slotDriver = slot.driverName || b?.driverName || ''
+                    const slotDriverPhone = slot.driverPhone || b?.driverPhone || ''
+                    const slotVehicle = slot.vehicleRegistration || b?.vehicleRegistration || ''
                     const rows: [string, string][] = [
-                      ['Driver',    b?.driverName || '—'],
+                      ...(b?.guestName         ? [['Guest Name',      b.guestName]                              as [string,string]] : []),
+                      ...(b?.guestEmail        ? [['Guest Email',     b.guestEmail]                             as [string,string]] : []),
+                      ...(b?.guestPhone        ? [['Guest Phone',     b.guestPhone]                             as [string,string]] : []),
+                      ...(slotDriver           ? [['Driver',          slotDriver]                               as [string,string]] : []),
+                      ...(slotDriverPhone      ? [['Driver Phone',    slotDriverPhone]                          as [string,string]] : []),
+                      ...(slotVehicle          ? [['Vehicle Rego',    slotVehicle]                              as [string,string]] : []),
                       ['Service',   serviceLabel],
                       ['Date',      slot.slotDate || '—'],
                       ['Time',      `${slot.slotStartTime} – ${slot.slotEndTime}`],
-                      ...(slot.houseBillNumber  ? [['HBL',       slot.houseBillNumber]  as [string,string]] : []),
-                      ...(slot.containerNumber  ? [['Container', slot.containerNumber]  as [string,string]] : []),
+                      ...(slot.houseBillNumber  ? [['HBL',            slot.houseBillNumber]                     as [string,string]] : []),
+                      ...(slot.containerNumber  ? [['Container No.',  slot.containerNumber]                     as [string,string]] : []),
+                      ...(slot.containerSize    ? [['Container Size', slot.containerSize]                       as [string,string]] : []),
+                      ...(slot.entryNumber      ? [['Entry Number',   slot.entryNumber]                         as [string,string]] : []),
+                      ...(slot.purpose          ? [['Purpose',        slot.purpose]                             as [string,string]] : []),
+                      ...(slot.consolidator     ? [['Consolidator',   slot.consolidator]                        as [string,string]] : []),
+                      ...(slot.weightKg         ? [['Weight',         `${slot.weightKg.toLocaleString()} kg`]  as [string,string]] : []),
+                      ...(slot.volumeCbm        ? [['Volume',         `${slot.volumeCbm} CBM`]                 as [string,string]] : []),
+                      ...(slot.packageCount     ? [['Packages',       `${slot.packageCount}`]                   as [string,string]] : []),
+                      ...((slot.palletCount ?? 0) > 0 ? [['Pallets', `${slot.palletCount} × ${slot.palletType}`] as [string,string]] : []),
                     ]
                     for (const [label, val] of rows) {
                       doc.setTextColor(120, 113, 108); doc.text(label, 20, y)
                       doc.setTextColor(28, 25, 23);   doc.text(val, pw / 2, y)
                       y += 5.5
+                    }
+                    const glidoPng = await glidoLogoPng()
+                    if (glidoPng) {
+                      const gw = 22, gh = gw * (62 / 320)
+                      doc.addImage(glidoPng, 'PNG', (pw - gw) / 2, ph - 26, gw, gh)
                     }
                     doc.setFontSize(8); doc.setFont('helvetica', 'italic'); doc.setTextColor(156, 163, 175)
                     doc.text('Present this QR code at the CFS gate for check-in', pw / 2, ph - 14, { align: 'center' })
@@ -341,7 +506,7 @@ export default function BookingDetailPage() {
                     <div key={slot.id}>
                       {/* Collapsed row — always visible */}
                       <div
-                        onClick={() => setOpenSlot(isOpen ? -1 : i)}
+                        onClick={() => setOpenSlots(prev => { const next = new Set(prev); isOpen ? next.delete(i) : next.add(i); return next })}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 12,
                           padding: '14px 20px', cursor: 'pointer',
@@ -373,19 +538,31 @@ export default function BookingDetailPage() {
                             {slot.consolidator     && <FieldBlock label="Consolidator"   value={slot.consolidator} />}
                           </div>
 
+                          {/* Per-slot driver */}
+                          {(slot.driverName || slot.driverPhone || slot.vehicleRegistration) && (
+                            <div style={{ marginBottom: 20 }}>
+                              <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.09em', color: '#9CA3AF', marginBottom: 10 }}>Driver (this slot)</p>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                                {slot.driverName         && <InfoRow label="Driver Name"   value={slot.driverName}          icon={ICONS.user}  />}
+                                {slot.driverPhone        && <InfoRow label="Phone"         value={slot.driverPhone}         icon={ICONS.phone} />}
+                                {slot.vehicleRegistration && <InfoRow label="Vehicle Rego" value={slot.vehicleRegistration} icon={ICONS.truck} mono />}
+                              </div>
+                            </div>
+                          )}
+
                           {/* Per-slot action + download row */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             {slot.status === 'scheduled' && (<>
                               <button type="button"
                                 disabled={acting === slot.id + '-checkin'}
                                 onClick={async () => { setActing(slot.id + '-checkin'); try { await checkInBooking(slot.id); setGroupSlots(prev => { const next = prev.map(s => s.id === slot.id ? { ...s, status: 'checked_in' as any } : s); const allChecked = next.every(s => s.status === 'checked_in' || s.status === 'completed' || s.status === 'cancelled'); if (allChecked) setB(p => p ? { ...p, status: 'checked_in' as any } : p); return next }); toast('Checked in', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
-                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(34,197,94,0.10)', color: '#16A34A', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(34,197,94,0.10)', color: '#16A34A', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit' }}>
                                 {acting === slot.id + '-checkin' ? '…' : 'Check In'}
                               </button>
                               <button type="button"
                                 disabled={acting === slot.id + '-cancel'}
                                 onClick={async () => { setActing(slot.id + '-cancel'); try { await cancelBooking(slot.id); setGroupSlots(prev => prev.map(s => s.id === slot.id ? { ...s, status: 'cancelled' as any } : s)); if (slot.id === b?.id) setB(prev => prev ? { ...prev, status: 'cancelled' as any } : prev); toast('Cancelled', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
-                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.20)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.20)', borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit' }}>
                                 {acting === slot.id + '-cancel' ? '…' : 'Cancel Slot'}
                               </button>
                             </>)}
@@ -393,25 +570,48 @@ export default function BookingDetailPage() {
                               <button type="button"
                                 disabled={acting === slot.id + '-complete'}
                                 onClick={async () => { setActing(slot.id + '-complete'); try { await completeBooking(slot.id); setGroupSlots(prev => prev.map(s => s.id === slot.id ? { ...s, status: 'completed' as any } : s)); if (slot.id === b?.id) setB(prev => prev ? { ...prev, status: 'completed' as any } : prev); toast('Completed', 'success') } catch { toast('Failed', 'error') } finally { setActing('') } }}
-                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(107,114,128,0.10)', color: '#374151', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                                style={{ padding: '7px 14px', fontSize: 14, fontWeight: 600, background: 'rgba(107,114,128,0.10)', color: '#374151', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit' }}>
                                 {acting === slot.id + '-complete' ? '…' : 'Mark as Complete'}
                               </button>
                             )}
                             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                              <button type="button" onClick={downloadSlotQr}
-                                style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 14, fontWeight: 600, color: '#374151', background: '#fff', border: '1.5px solid rgba(0,0,0,0.14)', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}
-                                onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.28)' }}
-                                onMouseOut={e  => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.14)' }}>
-                                <Icon name={ICONS.download} size={17}/> QR
-                              </button>
                               <button type="button" onClick={exportSlotPdf}
-                                style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 14, fontWeight: 600, color: '#fff', background: 'var(--brand-color, #FC6514)', border: 'none', borderRadius: 'var(--r-sm)', cursor: 'pointer', fontFamily: 'inherit' }}
+                                style={{ height: 34, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '0 12px', fontSize: 14, fontWeight: 600, color: '#fff', background: 'var(--brand-color, #FC6514)', border: 'none', borderRadius: 'var(--r-full)', cursor: 'pointer', fontFamily: 'inherit' }}
                                 onMouseOver={e => { e.currentTarget.style.opacity = '0.88' }}
                                 onMouseOut={e  => { e.currentTarget.style.opacity = '1' }}>
                                 <Icon name={ICONS.document} size={17}/> PDF
                               </button>
                             </div>
                           </div>
+                          {(() => {
+                            const slotDocs = bookingDocs.filter((d: any) => d.booking_id === slot.id)
+                            if (slotDocs.length === 0) return null
+                            return (
+                              <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+                                <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Documents</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                  {slotDocs.map((doc: any) => {
+                                    const { data: { publicUrl } } = supabase.storage.from('booking-documents').getPublicUrl(doc.storage_path)
+                                    return (
+                                      <div key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#F7F6F5', borderRadius: 'var(--r-sm)', padding: '10px 14px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                                          <Icon name={ICONS.document} size={17} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
+                                          <div style={{ minWidth: 0 }}>
+                                            <p style={{ fontSize: 14, fontWeight: 600, color: '#1C1917', margin: 0 }}>{fmtDocType(doc.document_type, doc.filename)}</p>
+                                            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.filename}</p>
+                                          </div>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                                          {doc.file_size_bytes ? <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{(doc.file_size_bytes / 1024).toFixed(0)} KB</span> : null}
+                                          <a href={publicUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, fontWeight: 600, color: 'var(--brand-color)', textDecoration: 'none' }}>View</a>
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )
+                          })()}
                         </div>
                       )}
                     </div>
@@ -456,31 +656,56 @@ export default function BookingDetailPage() {
             <p style={SL}>Documents</p>
             {bookingDocs.length === 0 ? (
               <p style={{ fontSize: 15, color: 'var(--text-tertiary)' }}>No documents uploaded</p>
+            ) : groupSlots.length > 1 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {groupSlots.map((slot, i) => {
+                  const slotDocs = bookingDocs.filter((d: any) => d.booking_id === slot.id)
+                  if (slotDocs.length === 0) return null
+                  return (
+                    <div key={slot.id}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
+                        Slot {i + 1} — {slot.serviceType === 'pickup' ? 'Pick Up' : 'Drop Off'} · {(slot.loadType ?? '').toUpperCase()} · {slot.referenceNumber}
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {slotDocs.map((doc: any) => {
+                          const { data: { publicUrl } } = supabase.storage.from('booking-documents').getPublicUrl(doc.storage_path)
+                          return (
+                            <div key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#F7F6F5', borderRadius: 'var(--r-sm)', padding: '10px 14px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                                <Icon name={ICONS.document} size={19} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
+                                <div style={{ minWidth: 0 }}>
+                                  <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', margin: 0 }}>{fmtDocType(doc.document_type, doc.filename)}</p>
+                                  <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.filename}</p>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                                {doc.file_size_bytes ? <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{(doc.file_size_bytes / 1024).toFixed(0)} KB</span> : null}
+                                <a href={publicUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, fontWeight: 600, color: 'var(--brand-color)', textDecoration: 'none' }}>View</a>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {bookingDocs.map((doc: any) => {
                   const { data: { publicUrl } } = supabase.storage.from('booking-documents').getPublicUrl(doc.storage_path)
                   return (
                     <div key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#F7F6F5', borderRadius: 'var(--r-sm)', padding: '10px 14px' }}>
-                      {/* Left: type label + filename */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                         <Icon name={ICONS.document} size={19} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
                         <div style={{ minWidth: 0 }}>
-                          <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', margin: 0 }}>
-                            {fmtDocType(doc.document_type, doc.filename)}
-                          </p>
+                          <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', margin: 0 }}>{fmtDocType(doc.document_type, doc.filename)}</p>
                           <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.filename}</p>
                         </div>
                       </div>
-                      {/* Right: file size + View */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                        {doc.file_size_bytes ? (
-                          <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{(doc.file_size_bytes / 1024).toFixed(0)} KB</span>
-                        ) : null}
-                        <a href={publicUrl} target="_blank" rel="noopener noreferrer"
-                          style={{ fontSize: 14, fontWeight: 600, color: 'var(--brand-color)', textDecoration: 'none' }}>
-                          View
-                        </a>
+                        {doc.file_size_bytes ? <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{(doc.file_size_bytes / 1024).toFixed(0)} KB</span> : null}
+                        <a href={publicUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 14, fontWeight: 600, color: 'var(--brand-color)', textDecoration: 'none' }}>View</a>
                       </div>
                     </div>
                   )
@@ -608,7 +833,7 @@ export default function BookingDetailPage() {
                   {hasCheckedIn && allDone && (
                     <button
                       onClick={() => openAction('checkin')}
-                      style={{ width: '100%', padding: '11px 16px', borderRadius: 'var(--r-sm)', border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', color: '#1C1917', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                      style={{ width: '100%', padding: '11px 16px', borderRadius: 'var(--r-full)', border: '1.5px solid rgba(0,0,0,0.12)', background: '#fff', color: '#1C1917', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
                     >
                       Slot Actions
                     </button>
@@ -936,7 +1161,7 @@ function Btn({ color, onClick, loading, children }: { color: 'brand' | 'green' |
     danger: { background: 'rgba(239,68,68,0.08)', color: '#DC2626', border: '1px solid rgba(239,68,68,0.25)' },
   }
   return (
-    <button onClick={onClick} disabled={loading} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 15, fontWeight: 600, borderRadius: 'var(--r-sm)', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...s[color] }}>
+    <button onClick={onClick} disabled={loading} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', fontSize: 15, fontWeight: 600, borderRadius: 'var(--r-full)', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1, transition: 'all 0.15s', fontFamily: 'inherit', ...s[color] }}>
       {children}
     </button>
   )
