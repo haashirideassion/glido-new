@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { fetchSavedDrivers } from '@/lib/useSavedDrivers'
 import type { SavedDriver } from '@/lib/useSavedDrivers'
 import { useWizard } from '@/contexts/WizardContext'
@@ -139,10 +139,43 @@ export function Step5Documents() {
       if (nextIncomplete !== -1) setActiveSlot5(nextIncomplete)
     }
 
+    // Auto-advance countdown — only fires once per slot (tracked by alreadyAdvanced set)
+    const [countdown, setCountdown] = useState<number | null>(null)
+    const countdownRef   = useRef<ReturnType<typeof setInterval> | null>(null)
+    const alreadyAdvanced = useRef<Set<number>>(new Set())
+
+    const clearCountdown = () => {
+      if (countdownRef.current) { clearInterval(countdownRef.current); countdownRef.current = null }
+      setCountdown(null)
+    }
+
+    useEffect(() => {
+      const isDone  = activeCfg5 && isSlotDetailDone(activeCfg5)
+      const hasNext = state.slotConfigs.some((_, i) => i > activeSlot5)
+      const alreadyDone = alreadyAdvanced.current.has(activeSlot5)
+      if (isDone && hasNext && !alreadyDone) {
+        setCountdown(5)
+        countdownRef.current = setInterval(() => {
+          setCountdown(prev => {
+            if (prev === null) return null
+            if (prev <= 1) {
+              clearInterval(countdownRef.current!)
+              countdownRef.current = null
+              alreadyAdvanced.current.add(activeSlot5)
+              advanceToNextIncomplete()
+              return null
+            }
+            return prev - 1
+          })
+        }, 1000)
+      } else {
+        clearCountdown()
+      }
+      return () => { if (countdownRef.current) clearInterval(countdownRef.current) }
+    }, [activeSlot5, activeCfg5?.driverName, activeCfg5?.driverPhone, activeCfg5?.vehicleRegistration, activeCfg5?.hbl, activeCfg5?.containerNumber, activeCfg5?.containerSize, activeCfg5?.entryNumber, activeCfg5?.purpose, activeCfg5?.consolidator, activeCfg5?.bookingReference]) // eslint-disable-line react-hooks/exhaustive-deps
+
     const handleSlotBlur = () => {
-      if (!activeCfg5) return
-      if (!isSlotDetailDone(activeCfg5)) return
-      advanceToNextIncomplete()
+      // Auto-advance is handled by the countdown timer — do nothing on blur
     }
 
     // Driver picked from the saved-drivers dropdown — dispatched state is stale this tick,
@@ -174,7 +207,7 @@ export function Step5Documents() {
               <button
                 key={i}
                 type="button"
-                onClick={() => setActiveSlot5(i)}
+                onClick={() => { clearCountdown(); setActiveSlot5(i) }}
                 style={{
                   padding: '10px 24px', fontSize: 15,
                   fontWeight: active ? 700 : 500,
@@ -196,6 +229,23 @@ export function Step5Documents() {
             )
           })}
         </div>
+
+        {/* Auto-advance toast — fixed bottom-centre */}
+        {countdown !== null && (
+          <div style={{ position: 'fixed', bottom: 122, left: '50%', transform: 'translateX(-50%)', zIndex: 9999, background: '#1C1917', borderRadius: 'var(--r-full)', boxShadow: '0 8px 32px rgba(0,0,0,0.28)', padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 14, whiteSpace: 'nowrap' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 8 }}>
+                Slot {activeSlot5 + 1} complete ✓ — moving to Slot {activeSlot5 + 2} in {countdown}s
+              </div>
+              <div style={{ height: 3, background: 'rgba(255,255,255,0.15)', borderRadius: 99, overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: 'var(--brand-color)', borderRadius: 99, width: `${((5 - countdown) / 5) * 100}%`, transition: 'width 1s linear' }} />
+              </div>
+            </div>
+            <button type="button" onClick={clearCountdown} style={{ fontSize: 12, fontWeight: 600, color: '#fff', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.20)', borderRadius: 'var(--r-full)', padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' }}>
+              Stay
+            </button>
+          </div>
+        )}
 
         {/* Active slot panel */}
         <style>{`@keyframes slideInFromRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}`}</style>
