@@ -228,14 +228,16 @@ export default function ReceptionLayout() {
         {/* Nav pill */}
         <nav className="nav-pill">
           {NAV.filter(item => !(item.to === '/reception/settings' && isStaff)).map(item => {
-            const isActive = item.to === '/reception' ? pathname === '/reception' : pathname.startsWith(item.to)
+            const isActive = item.to === '/reception'
+              ? pathname === '/reception'
+              : pathname.startsWith(item.to) && pathname !== '/reception/bookings/new'
             const hasChildren = 'children' in item && item.children
             return (
               <div key={item.to}>
                 <NavLink
                   to={item.to}
                   end={item.to === '/reception'}
-                  className={({ isActive: a }) => `nav-item${a ? ' active' : ''}`}
+                  className={() => `nav-item${isActive ? ' active' : ''}`}
                   data-label={item.label}
                 >
                   <div className="nav-item-icon">

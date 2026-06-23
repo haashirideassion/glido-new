@@ -22,7 +22,7 @@ export function PurposeScreen() {
   if (state.currentScreen !== 'purpose') return null
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px', overflowY: 'auto' }}>
+    <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
       <div style={{ width: '100%', maxWidth: 540, textAlign: 'center' }}>
 
         {/* Header icon */}

@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { Icon, ICONS } from '@/lib/Icon'
 import { fmtTime } from '@/lib/time'
 import type { DashboardStats, Booking } from '@/data/types'
@@ -75,6 +76,7 @@ export function KpiTiles({ stats, loading }: Props) {
 }
 
 export function RecentVisitors({ stats, loading }: Props) {
+  const navigate = useNavigate()
   const recent = [...(stats.recentVisitors ?? [])].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5)
 
   return (
@@ -109,7 +111,13 @@ export function RecentVisitors({ stats, loading }: Props) {
               const badgeStyle = (STATUS_STYLE[bv] ?? STATUS_STYLE.scheduled) + 'border-radius:9999px;padding:4px 10px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;'
               const initials = b.driverName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
               return (
-                <tr key={b.id} style={{ borderBottom: '1px solid rgba(0,0,0,0.045)' }}>
+                <tr
+                  key={b.id}
+                  onClick={() => navigate(`/reception/visitors/${b.id}`)}
+                  style={{ borderBottom: '1px solid rgba(0,0,0,0.045)', cursor: 'pointer', transition: 'background 0.12s ease' }}
+                  onMouseOver={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.02)')}
+                  onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
+                >
                   <td style={{ padding: '16px 0' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div style={{ width: 36, height: 36, borderRadius: 'var(--r-full)', background: '#F5F5F4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', flexShrink: 0, border: '1px solid rgba(0,0,0,0.04)' }}>{initials}</div>

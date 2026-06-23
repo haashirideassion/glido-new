@@ -35,11 +35,9 @@ export default function DashboardPage() {
         getTenant(DEFAULT_TENANT_ID),
       ])
       setStats(s)
-      // Exclude bookings where every slot in the group is already checked in
-      // (group check not possible here without the full day's rows by group, so
-      //  filter individual checked-in rows — single-slot bookings disappear immediately,
-      //  multi-slot groups still show via their remaining scheduled rows)
-      setBookings(bs.filter(b => b.status !== 'checked_in'))
+      // Keep the full day's rows; grouping + checked-in exclusion happens at render
+      // (so multi-slot bookings keep their true slot count for the pill)
+      setBookings(bs)
       if (tenant) {
         setCapacityByHour((tenant as any).slot_capacity_by_hour ?? {})
         setDefaultCapacity(tenant.max_bookings_per_slot ?? 5)
@@ -73,6 +71,8 @@ export default function DashboardPage() {
   const slotCounts: Record<string, number> = {}
   const groupSlots: Record<string, Booking[]> = {}
   for (const [key, slots] of groupMap) {
+    // Hide a booking only when ALL its slots are already checked in
+    if (slots.every(s => s.status === 'checked_in')) continue
     const primary = slots[0]
     const worstStatus = slots.reduce(
       (worst, s) => ((STATUS_RANK[s.status] ?? 9) < (STATUS_RANK[worst] ?? 9) ? s.status : worst),
@@ -103,7 +103,7 @@ export default function DashboardPage() {
 
       <BookingTable bookings={groupedRows} slotCounts={slotCounts} groupSlots={groupSlots} currentDate={today} loading={isLoading} />
       <RecentVisitors stats={stats} loading={isLoading} />
-      <DayChart bookings={bookings} loading={isLoading} capacityByHour={capacityByHour} defaultCapacity={defaultCapacity} />
+      <DayChart bookings={bookings.filter(b => b.status !== 'checked_in')} loading={isLoading} capacityByHour={capacityByHour} defaultCapacity={defaultCapacity} />
     </div>
   )
 }

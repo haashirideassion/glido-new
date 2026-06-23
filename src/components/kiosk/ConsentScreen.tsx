@@ -6,7 +6,7 @@ export function ConsentScreen() {
   if (state.currentScreen !== 'consent') return null
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '120px 32px 40px', overflowY: 'auto' }}>
+    <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px' }}>
       <div style={{ width: '100%', maxWidth: 448, textAlign: 'center' }}>
         <div style={{ width: 64, height: 64, background: 'rgba(245,158,11,0.10)', borderRadius: 'var(--r-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
           <Icon name={ICONS.shield} size={36} style={{ color: '#D97706' }} />

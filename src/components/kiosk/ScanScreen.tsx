@@ -140,7 +140,7 @@ export function ScanScreen() {
 
   // ── Render — mirrors LookupScreen layout exactly ─────────────────────────────
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', overflowY: 'auto' }}>
+    <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px' }}>
       <div style={{ width: '100%', maxWidth: 448, textAlign: 'center' }}>
 
         {/* Icon — orange rounded square, identical to LookupScreen's search icon */}
