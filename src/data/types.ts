@@ -17,6 +17,7 @@ export interface Booking {
   slotStartTime: string      // HH:MM
   slotEndTime: string        // HH:MM
   guestName?: string         // if guest booking
+  guestEmail?: string
   guestPhone?: string
   companyName?: string
   driverName: string         // person physically visiting

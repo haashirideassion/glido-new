@@ -117,7 +117,7 @@ async function downloadPDF(b: Booking) {
   // Contact & Driver
   y = sec('Contact & Driver', y)
   const contactRows: [string, string][] = [
-    ...(b.guestName           ? [['Guest Name',   b.guestName]           as [string,string]] : []),
+    ...(b.guestName && b.guestName !== b.guestEmail ? [['Guest Name',   b.guestName]           as [string,string]] : []),
     ...(b.guestPhone          ? [['Guest Phone',  b.guestPhone]          as [string,string]] : []),
     ...(b.driverName          ? [['Driver Name',  b.driverName]          as [string,string]] : []),
     ...(b.driverPhone         ? [['Driver Phone', b.driverPhone]         as [string,string]] : []),
@@ -361,7 +361,7 @@ function BookingDetailPanel({ booking: b, onClose, onCancelRequest }: { booking:
 
           {/* Contact & Driver */}
           <Section title="Contact & Driver">
-            <DetailRow label="Guest Name"   value={b.guestName} />
+            {b.guestName && b.guestName !== b.guestEmail && <DetailRow label="Guest Name"   value={b.guestName} />}
             <DetailRow label="Guest Phone"  value={b.guestPhone} />
             <DetailRow label="Driver Name"  value={b.driverName} />
             <DetailRow label="Driver Phone" value={b.driverPhone} />

@@ -251,7 +251,7 @@ export default function BookingDetailPage() {
       const slotVehicle = slot.vehicleRegistration || b?.vehicleRegistration || ''
 
       const rows: [string, string][] = [
-        ...(b?.guestName         ? [['Guest Name',      b.guestName]                                as [string,string]] : []),
+        ...(b?.guestName && b.guestName !== b.guestEmail ? [['Guest Name',      b.guestName]                                as [string,string]] : []),
         ...(b?.guestEmail        ? [['Guest Email',     b.guestEmail]                               as [string,string]] : []),
         ...(b?.guestPhone        ? [['Guest Phone',     b.guestPhone]                               as [string,string]] : []),
         ...(slotDriver           ? [['Driver',          slotDriver]                                 as [string,string]] : []),
@@ -392,7 +392,7 @@ export default function BookingDetailPage() {
           <div style={CARD}>
             <p style={SL}>Visitor Details</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {b.guestName   && <InfoRow label="Full Name"    value={b.guestName}   icon={ICONS.user}     />}
+              {b.guestName && b.guestName !== b.guestEmail && <InfoRow label="Full Name"    value={b.guestName}   icon={ICONS.user}     />}
               {b.companyName && <InfoRow label="Company"      value={b.companyName} icon={ICONS.building} />}
               {b.guestPhone  && <InfoRow label="Phone Number" value={b.guestPhone}  icon={ICONS.phone}    />}
               {b.guestEmail  && <InfoRow label="Email"        value={b.guestEmail}  icon={ICONS.email}    />}
@@ -466,7 +466,7 @@ export default function BookingDetailPage() {
                     const slotDriverPhone = slot.driverPhone || b?.driverPhone || ''
                     const slotVehicle = slot.vehicleRegistration || b?.vehicleRegistration || ''
                     const rows: [string, string][] = [
-                      ...(b?.guestName         ? [['Guest Name',      b.guestName]                              as [string,string]] : []),
+                      ...(b?.guestName && b.guestName !== b.guestEmail ? [['Guest Name',      b.guestName]                              as [string,string]] : []),
                       ...(b?.guestEmail        ? [['Guest Email',     b.guestEmail]                             as [string,string]] : []),
                       ...(b?.guestPhone        ? [['Guest Phone',     b.guestPhone]                             as [string,string]] : []),
                       ...(slotDriver           ? [['Driver',          slotDriver]                               as [string,string]] : []),

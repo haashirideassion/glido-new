@@ -148,7 +148,7 @@ function ConfirmedScreen() {
     // ── Contact details ───────────────────────────────────────────────────────
     y = section(doc, 'Contact & Driver', y)
     const contactRows: [string, string][] = [
-      ...(state.guestName           ? [['Guest Name',   state.guestName]           as [string,string]] : []),
+      ...(state.guestName && state.guestName !== state.guestEmail ? [['Guest Name',   state.guestName]           as [string,string]] : []),
       ...(state.guestEmail          ? [['Guest Email',  state.guestEmail]          as [string,string]] : []),
       ...(state.guestPhone          ? [['Guest Phone',  state.guestPhone]          as [string,string]] : []),
       ...(state.companyName         ? [['Company',      state.companyName]         as [string,string]] : []),
@@ -329,7 +329,7 @@ function ConfirmedScreen() {
                 const slotDriverPhone = (multi ? cfg?.driverPhone : state.driverPhone) || state.guestPhone || ''
                 const slotVehicleRego = (multi ? cfg?.vehicleRegistration : state.vehicleRegistration) || ''
                 const contactRows: [string,string][] = [
-                  ...(state.guestName   ? [['Guest Name',   state.guestName]   as [string,string]] : []),
+                  ...(state.guestName && state.guestName !== state.guestEmail ? [['Guest Name',   state.guestName]   as [string,string]] : []),
                   ...(state.guestEmail  ? [['Guest Email',  state.guestEmail]  as [string,string]] : []),
                   ...(state.guestPhone  ? [['Guest Phone',  state.guestPhone]  as [string,string]] : []),
                   ...(slotDriverName    ? [['Driver Name',  slotDriverName]    as [string,string]] : []),

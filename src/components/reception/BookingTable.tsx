@@ -1,9 +1,9 @@
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { todaySydney } from '@/lib/time'
 import { toast } from '@/lib/toast'
 import type { Booking } from '@/data/types'
 
-const ICS_LABEL: Record<string, string> = { cleared: 'Cleared', held: 'Held', examination: 'Examination', pending: 'Pending', unavailable: 'N/A' }
 const ICS_BAR_COLOR: Record<string, string> = {
   cleared:     '#16A34A',
   held:        '#DC2626',
@@ -19,6 +19,7 @@ const ICS_LEGEND = [
   { key: 'pending',     label: 'Pending'     },
   { key: 'unavailable', label: 'N/A'         },
 ]
+
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; border: string; icon: string }> = {
   scheduled:  { label: 'Scheduled',  bg: '#EFF6FF', color: '#2563EB', border: '#BFDBFE', icon: 'M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' },
   checked_in: { label: 'Checked In', bg: '#F0FDF4', color: '#16A34A', border: '#BBF7D0', icon: 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' },
@@ -28,14 +29,30 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; 
 
 interface Props {
   bookings: Booking[]
+  slotCounts?: Record<string, number>
+  groupSlots?: Record<string, Booking[]>
   currentDate?: string
   loading?: boolean
 }
 
-export function BookingTable({ bookings, currentDate, loading }: Props) {
+export function BookingTable({ bookings, slotCounts, groupSlots, currentDate, loading }: Props) {
   const today = todaySydney()
   const displayDate = currentDate ?? today
   const navigate = useNavigate()
+
+  const [openPopover,   setOpenPopover]   = useState<string | null>(null)
+  const [popoverCoords, setPopoverCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
+  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleMouseEnter = (key: string, e: React.MouseEvent<HTMLElement>) => {
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
+    const rect = e.currentTarget.getBoundingClientRect()
+    setPopoverCoords({ top: rect.bottom + 4, left: rect.left })
+    setOpenPopover(key)
+  }
+  const handleMouseLeave = () => {
+    hoverTimeout.current = setTimeout(() => setOpenPopover(null), 300)
+  }
 
   return (
     <div style={{ background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 'var(--r-md)', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02),0 4px 20px rgba(0,0,0,0.04)', marginBottom: 20 }}>
@@ -48,7 +65,6 @@ export function BookingTable({ bookings, currentDate, loading }: Props) {
           <p style={{ fontSize: 14, color: 'var(--text-tertiary)', margin: '2px 0 0' }}>{bookings.length} records</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          {/* ICS legend */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {ICS_LEGEND.map(l => (
               <span key={l.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#94A3B8', whiteSpace: 'nowrap' }}>
@@ -82,12 +98,16 @@ export function BookingTable({ bookings, currentDate, loading }: Props) {
             </thead>
             <tbody>
               {bookings.map(b => {
-                const ics = b.icsStatus ?? ''
-                const rowBg = ics === 'held' ? 'rgba(239,68,68,0.035)' : ''
+                const ics        = b.icsStatus ?? ''
+                const rowBg      = ics === 'held' ? 'rgba(239,68,68,0.035)' : ''
                 const displayRef = b.groupReference ?? b.referenceNumber
                 const navTarget  = b.groupReference
                   ? `/reception/bookings/group/${b.groupReference}`
                   : `/reception/bookings/${b.id}`
+                const groupKey  = b.groupReference ?? b.id
+                const slotCount = slotCounts?.[groupKey] ?? 1
+                const slots     = groupSlots?.[groupKey] ?? []
+
                 return (
                   <tr
                     key={b.id}
@@ -100,18 +120,66 @@ export function BookingTable({ bookings, currentDate, loading }: Props) {
                       <div style={{ width: 6, minHeight: 40, height: '100%', borderRadius: 'var(--r-xs)', background: ICS_BAR_COLOR[ics] ?? ICS_BAR_COLOR.unavailable }} />
                     </td>
                     <td style={{ padding: '18px 16px', whiteSpace: 'nowrap' }}>
-                      <span
-                        style={{ fontFamily: 'ui-monospace,monospace', fontSize: 15, fontWeight: 700, color: '#1C1917', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, transition: 'color 0.15s' }}
-                        onMouseOver={e => (e.currentTarget.style.color = 'var(--brand-color)')}
-                        onMouseOut={e  => (e.currentTarget.style.color = '#1C1917')}
-                        title="Click to copy"
-                        onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(displayRef).then(() => toast('Reference copied', 'info')).catch(() => {}) }}
-                      >
-                        {displayRef}
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.45, flexShrink: 0 }}>
-                          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                        </svg>
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span
+                          style={{ fontFamily: 'ui-monospace,monospace', fontSize: 15, fontWeight: 700, color: '#1C1917', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, transition: 'color 0.15s' }}
+                          onMouseOver={e => (e.currentTarget.style.color = 'var(--brand-color)')}
+                          onMouseOut={e  => (e.currentTarget.style.color = '#1C1917')}
+                          title="Click to copy"
+                          onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(displayRef).then(() => toast('Reference copied', 'info')).catch(() => {}) }}
+                        >
+                          {displayRef}
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.45, flexShrink: 0 }}>
+                            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                          </svg>
+                        </span>
+                        {slotCount > 1 && (
+                          <>
+                            <button
+                              onMouseEnter={e => { e.stopPropagation(); handleMouseEnter(groupKey, e) }}
+                              onMouseLeave={handleMouseLeave}
+                              onClick={e => { e.stopPropagation(); navigate(navTarget) }}
+                              style={{ padding: '2px 8px', borderRadius: 'var(--r-full)', background: 'rgba(var(--brand-rgb),0.10)', border: '1px solid rgba(var(--brand-rgb),0.22)', color: 'var(--brand-color)', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit' }}
+                            >
+                              {slotCount} slots
+                            </button>
+                            {openPopover === groupKey && (
+                              <div
+                                onMouseEnter={() => { if (hoverTimeout.current) clearTimeout(hoverTimeout.current); setOpenPopover(groupKey) }}
+                                onMouseLeave={handleMouseLeave}
+                                style={{ position: 'fixed', top: popoverCoords.top, left: popoverCoords.left, background: '#fff', border: '1.5px solid rgba(0,0,0,0.08)', borderRadius: 'var(--r-md)', padding: '10px 12px', zIndex: 9999, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: 240 }}
+                              >
+                                <p style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>All Slot References</p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                  {slots.map(slot => (
+                                    <div
+                                      key={slot.id}
+                                      onClick={e => { e.stopPropagation(); navigate(navTarget) }}
+                                      onMouseOver={e => (e.currentTarget.style.background = '#F9FAFB')}
+                                      onMouseOut={e  => (e.currentTarget.style.background = 'transparent')}
+                                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, cursor: 'pointer', padding: '4px 6px', borderRadius: 'var(--r-full)', transition: 'background 0.1s', background: 'transparent' }}
+                                    >
+                                      <div style={{ minWidth: 0, flex: 1 }}>
+                                        <span style={{ fontSize: 14, fontFamily: 'ui-monospace,monospace', color: '#44403C', fontWeight: 600 }}>{slot.referenceNumber}</span>
+                                        <span style={{ fontSize: 13, color: '#9CA3AF', marginLeft: 6 }}>{slot.slotStartTime} – {slot.slotEndTime}</span>
+                                      </div>
+                                      <button
+                                        onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(slot.referenceNumber).then(() => toast('Reference copied', 'info')).catch(() => {}) }}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', padding: 2, flexShrink: 0 }}
+                                        title="Copy"
+                                      >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--brand-color)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </td>
                     <td style={{ padding: '18px 16px' }}>
                       <p style={{ fontSize: 15, fontWeight: 600, color: '#1C1917', margin: 0 }}>{b.driverName}</p>

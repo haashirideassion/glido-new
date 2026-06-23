@@ -178,13 +178,9 @@ export function Step5Documents() {
       // Auto-advance is handled by the countdown timer — do nothing on blur
     }
 
-    // Driver picked from the saved-drivers dropdown — dispatched state is stale this tick,
-    // so check completeness against the merged values before advancing.
-    const handleDriverSelected = (d: SavedDriver) => {
-      if (!activeCfg5) return
-      const merged = { ...activeCfg5, driverName: d.name, driverPhone: d.phone, vehicleRegistration: d.vehicle_registration }
-      if (isSlotDetailDone(merged)) advanceToNextIncomplete()
-    }
+    // Driver picked from the saved-drivers dropdown — auto-advance is handled by the
+    // countdown timer, which reacts to the dispatched slotConfigs change. Do nothing here.
+    const handleDriverSelected = (_d: SavedDriver) => {}
 
     return (
       <div>

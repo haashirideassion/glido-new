@@ -61,6 +61,28 @@ export default function DashboardPage() {
     return () => { supabase.removeChannel(channel) }
   }, [refresh])
 
+  // Group slots into one row per booking (by group_reference), surface worst status, build slot maps
+  const STATUS_RANK: Record<string, number> = { checked_in: 0, scheduled: 1, completed: 2, cancelled: 3 }
+  const groupMap = new Map<string, Booking[]>()
+  for (const b of bookings) {
+    const key = b.groupReference ?? b.id
+    if (!groupMap.has(key)) groupMap.set(key, [])
+    groupMap.get(key)!.push(b)
+  }
+  const groupedRows: Booking[] = []
+  const slotCounts: Record<string, number> = {}
+  const groupSlots: Record<string, Booking[]> = {}
+  for (const [key, slots] of groupMap) {
+    const primary = slots[0]
+    const worstStatus = slots.reduce(
+      (worst, s) => ((STATUS_RANK[s.status] ?? 9) < (STATUS_RANK[worst] ?? 9) ? s.status : worst),
+      primary.status,
+    )
+    groupedRows.push({ ...primary, status: worstStatus })
+    slotCounts[key] = slots.length
+    groupSlots[key] = slots
+  }
+
   return (
     <div>
       <KpiTiles stats={stats} loading={isLoading} />
@@ -79,7 +101,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <BookingTable bookings={bookings} currentDate={today} loading={isLoading} />
+      <BookingTable bookings={groupedRows} slotCounts={slotCounts} groupSlots={groupSlots} currentDate={today} loading={isLoading} />
       <RecentVisitors stats={stats} loading={isLoading} />
       <DayChart bookings={bookings} loading={isLoading} capacityByHour={capacityByHour} defaultCapacity={defaultCapacity} />
     </div>

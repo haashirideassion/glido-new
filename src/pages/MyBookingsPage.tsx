@@ -55,9 +55,9 @@ export default function MyBookingsPage() {
   // Filter → sort → paginate
   const filtered = bookings.filter(b => !statusFilter || b.status === statusFilter)
   const sorted = [...filtered].sort((a, b) => {
-    if (sortBy === 'date_asc')  return (a.slotDate + a.slotStartTime).localeCompare(b.slotDate + b.slotStartTime)
+    if (sortBy === 'date_asc')  return (a.createdAt ?? '').localeCompare(b.createdAt ?? '')
     if (sortBy === 'status')    return (a.status ?? '').localeCompare(b.status ?? '')
-    return (b.slotDate + b.slotStartTime).localeCompare(a.slotDate + a.slotStartTime) // date_desc
+    return (b.createdAt ?? '').localeCompare(a.createdAt ?? '') // date_desc — newest created first
   })
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
   const paged = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -120,7 +120,7 @@ export default function MyBookingsPage() {
         <form onSubmit={submitSearch} style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           <input
             type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Booking reference — e.g. GLD-2026-10142"
+            placeholder="e.g. GLD-2026-10142"
             style={{ ...FIELD, fontFamily: search ? 'ui-monospace,monospace' : undefined }}
             onFocus={e => (e.target.style.borderColor = 'rgba(var(--brand-rgb),0.50)')}
             onBlur={e  => (e.target.style.borderColor = 'rgba(0,0,0,0.12)')}
